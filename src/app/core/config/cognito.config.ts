@@ -1,5 +1,7 @@
-// Replace these placeholder values with your actual AWS Cognito credentials
+import { environment } from '../../../environments/environment';
+
 export const cognitoConfig = {
-  userPoolId: 'us-east-1_MkSNYVlii',          // e.g. 'us-east-1_AbCdEfGhI'
-  userPoolClientId: '5n24f952o2ub2j6lku168spfa2', // e.g. '1abc2defghij3klmnop4qrstu5'
+  userPoolId: environment.cognito.userPoolId,
+  userPoolClientId: environment.cognito.userPoolClientId,
+  oauth: environment.cognito.oauth,
 };

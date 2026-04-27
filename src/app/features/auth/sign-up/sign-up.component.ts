@@ -207,6 +207,7 @@ import { AuthService } from "../../../core/auth/auth.service";
           <div class="flex gap-3">
             <button
               type="button"
+              (click)="onGoogleSignIn()"
               class="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
               <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
@@ -270,6 +271,10 @@ export default class SignUpComponent {
       return undefined;
     });
   });
+
+  onGoogleSignIn(): void {
+    this.authService.signInWithGoogle();
+  }
 
   onSubmit() {
     this.errorMessage.set(null);

@@ -34,56 +34,54 @@ export default class HomeComponent implements OnInit, OnDestroy {
   seconds = signal(30);
   cartCount = signal(2);
 
-
   categories: Category[] = [
-    { name: 'All Departments', icon: '🏪', slug: 'all' },
-    { name: 'Vegetables & Fruits', icon: '🥦', slug: 'vegetables' },
-    { name: 'Beverages', icon: '🥤', slug: 'beverages' },
-    { name: 'Meats & Seafood', icon: '🥩', slug: 'meats' },
-    { name: 'Bread & Bakery', icon: '🍞', slug: 'bakery' },
-    { name: 'Milk & Dairy', icon: '🥛', slug: 'dairy' },
-    { name: 'Dry Goods & Spices', icon: '🌶️', slug: 'spices' },
-    { name: 'Frozen Food', icon: '🧊', slug: 'frozen' },
-    { name: 'Wine & Spirits', icon: '🍷', slug: 'wine' },
-    { name: 'Healthcare', icon: '💊', slug: 'health' },
+    { name: 'All Categories',       icon: '🏪', slug: 'all' },
+    { name: 'Semen de Toro',        icon: '🧬', slug: 'bull-semen' },
+    { name: 'Insumos de IA',        icon: '💉', slug: 'ia-supplies' },
+    { name: 'Nitrógeno Líquido',    icon: '❄️', slug: 'nitrogen' },
+    { name: 'Equipos de IA',        icon: '🔬', slug: 'equipment' },
+    { name: 'Genética Importada',   icon: '🌎', slug: 'imported' },
+    { name: 'Razas Criollas',       icon: '🐂', slug: 'creole' },
+    { name: 'Reproductores Brahman',icon: '🐃', slug: 'brahman' },
+    { name: 'Suplementos',          icon: '💊', slug: 'supplements' },
+    { name: 'Certificados',         icon: '📋', slug: 'certificates' },
   ];
 
-
   featuredProducts: Product[] = [
-    { id: 1, name: 'Organic Fresh Tomatoes', price: 4.99, originalPrice: 6.99, emoji: '🍅', badge: 'Organic', rating: 4.5, reviews: 128 },
-    { id: 2, name: 'Premium Orange Juice', price: 3.49, originalPrice: 4.99, emoji: '🍊', badge: 'Sale', rating: 4.2, reviews: 85 },
-    { id: 3, name: 'Whole Grain Bread', price: 2.99, emoji: '🍞', badge: 'Fresh', rating: 4.7, reviews: 214 },
-    { id: 4, name: 'Almond Milk 1L', price: 5.49, originalPrice: 6.99, emoji: '🥛', badge: 'Vegan', rating: 4.4, reviews: 67 },
-    { id: 5, name: 'Greek Yogurt Pack', price: 3.99, originalPrice: 5.49, emoji: '🫙', badge: 'Sale', rating: 4.6, reviews: 193 },
-    { id: 6, name: 'Mixed Berry Jam', price: 4.29, emoji: '🫐', rating: 4.3, reviews: 42 },
+    { id: 1, name: 'Angus "Blackcap Exc. 1A"',    price: 45.00, originalPrice: 60.00, emoji: '🧬', badge: 'Top Gen.', rating: 4.8, reviews: 214 },
+    { id: 2, name: 'Brahman "BR Excellence 908"',  price: 38.00,                      emoji: '🐂', badge: 'Oferta',   rating: 4.6, reviews: 128 },
+    { id: 3, name: 'Simmental "SIM Master 1247"',  price: 52.00, originalPrice: 70.00, emoji: '🧬', badge: 'Importado',rating: 4.9, reviews: 97  },
+    { id: 4, name: 'Holstein "HOL Supreme 440"',   price: 28.00,                      emoji: '🐄',                   rating: 4.5, reviews: 183 },
+    { id: 5, name: 'Gyr Puro "Campeão 22"',        price: 65.00, originalPrice: 80.00, emoji: '🐃', badge: 'Brasil',  rating: 4.7, reviews: 76  },
+    { id: 6, name: 'Brangus "K-Force 109"',        price: 42.00,                      emoji: '🧬', badge: 'Nuevo',   rating: 4.4, reviews: 52  },
   ];
 
   bestSellers: Product[] = [
-    { id: 7, name: 'Atlantic Salmon Fillet', price: 12.99, originalPrice: 15.99, emoji: '🐟', badge: '20% Off', rating: 4.8, reviews: 342 },
-    { id: 8, name: 'Avocado (per kg)', price: 7.49, emoji: '🥑', badge: 'New', rating: 4.5, reviews: 156 },
-    { id: 9, name: 'Premium Coffee Blend', price: 11.99, originalPrice: 14.99, emoji: '☕', badge: 'Hot', rating: 4.7, reviews: 428 },
-    { id: 10, name: 'Organic Honey 500g', price: 8.99, emoji: '🍯', badge: 'Organic', rating: 4.9, reviews: 267 },
+    { id: 7,  name: 'Contenedor Nitrógeno 35L',    price: 520.00, originalPrice: 650.00, emoji: '❄️', badge: '20% Off', rating: 4.8, reviews: 342 },
+    { id: 8,  name: 'Kit Pistola IA Profesional',  price: 89.00,                         emoji: '💉', badge: 'Nuevo',   rating: 4.5, reviews: 156 },
+    { id: 9,  name: 'Cebu Brahman "BH-209 Elite"', price: 75.00, originalPrice: 95.00,   emoji: '🧬', badge: 'Hot',     rating: 4.7, reviews: 428 },
+    { id: 10, name: 'Guantes Rectales x100 unid.', price: 18.99,                         emoji: '🧤',                  rating: 4.6, reviews: 267 },
   ];
 
   popularProducts: Product[] = [
-    { id: 11, name: 'Sweet Corn Pack', price: 3.29, originalPrice: 4.49, emoji: '🌽', badge: 'Sale', rating: 4.3, reviews: 97 },
-    { id: 12, name: 'Fresh Strawberries', price: 5.99, emoji: '🍓', badge: 'New', rating: 4.8, reviews: 184 },
-    { id: 13, name: 'Olive Oil Extra Virgin', price: 9.49, originalPrice: 11.99, emoji: '🫒', badge: 'Best', rating: 4.7, reviews: 312 },
-    { id: 14, name: 'Brown Rice 2kg', price: 4.79, emoji: '🍚', rating: 4.2, reviews: 76 },
-    { id: 15, name: 'Dark Chocolate 70%', price: 3.99, originalPrice: 5.49, emoji: '🍫', badge: 'Sale', rating: 4.6, reviews: 241 },
-    { id: 16, name: 'Peanut Butter 500g', price: 6.49, emoji: '🥜', rating: 4.4, reviews: 158 },
-    { id: 17, name: 'Cherry Tomatoes', price: 3.79, emoji: '🍒', badge: 'Organic', rating: 4.5, reviews: 89 },
-    { id: 18, name: 'Coconut Water 1L', price: 4.99, originalPrice: 6.49, emoji: '🥥', badge: 'Sale', rating: 4.3, reviews: 113 },
+    { id: 11, name: 'Catéteres IA x25',             price: 12.50, originalPrice: 16.00, emoji: '💉', badge: 'Oferta',   rating: 4.3, reviews: 97  },
+    { id: 12, name: 'Vainas 0.5ml x200',            price: 22.00,                       emoji: '🧪', badge: 'Nuevo',    rating: 4.8, reviews: 184 },
+    { id: 13, name: 'Angus "Force 309"',             price: 55.00, originalPrice: 70.00, emoji: '🧬', badge: 'Best',     rating: 4.7, reviews: 312 },
+    { id: 14, name: 'Termo Transporte 3L',           price: 180.00,                      emoji: '❄️',                   rating: 4.2, reviews: 76  },
+    { id: 15, name: 'Brahman "Top Star 22"',         price: 48.00, originalPrice: 62.00, emoji: '🐃', badge: 'Oferta',   rating: 4.6, reviews: 241 },
+    { id: 16, name: 'Descongelador Digital',         price: 145.00,originalPrice:180.00, emoji: '🔬',                   rating: 4.4, reviews: 158 },
+    { id: 17, name: 'Gyr "BH-Rei 07"',              price: 72.00,                       emoji: '🧬', badge: 'Import.',  rating: 4.5, reviews: 89  },
+    { id: 18, name: 'Nitrógeno Líquido 10L',         price: 35.00, originalPrice: 45.00, emoji: '❄️', badge: 'Oferta',   rating: 4.3, reviews: 113 },
   ];
 
   dealProduct: Product = {
     id: 99,
-    name: 'Fresh Organic Vegetables Bundle',
-    price: 24.99,
-    originalPrice: 39.99,
-    emoji: '🥬',
+    name: 'Brahman Rojo Elite "BHR Champion 888"',
+    price: 180.00,
+    originalPrice: 290.00,
+    emoji: '🐃',
     badge: '38% Off',
-    rating: 4.8,
+    rating: 4.9,
     reviews: 512,
   };
 

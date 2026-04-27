@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { Category } from '../../../features/marketplace/home/home.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserStore } from '../../../core/store/user.store';
 
 @Component({
   selector: 'app-navbar',
@@ -80,54 +82,37 @@ import { Category } from '../../../features/marketplace/home/home.component';
     <!-- Icons -->
     <div class="flex items-center gap-4 ml-auto flex-shrink-0">
       <!-- Account -->
-      <a
-        routerLink="/auth/sign-in"
-        class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors group"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-6 h-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      @if (!isAuthenticated()) {
+        <a
+          routerLink="/auth/sign-in"
+          class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-          />
-        </svg>
-        <span class="text-[10px]">Account</span>
-      </a>
-
-      <!-- Wishlist -->
-      <button
-        class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors relative"
-      >
-        <div class="relative">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          @if (wishlistCount() > 0) {
-            <span
-              class="absolute -top-2 -right-2 bg-[#C8812A] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
-            >{{ wishlistCount() }}</span>
-          }
+          <span class="text-[10px]">Account</span>
+        </a>
+      } @else {
+        <div class="relative group">
+          <button class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="text-[10px] max-w-[72px] truncate">{{ userName() }}</span>
+          </button>
+          <div class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[140px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
+            <button
+              (click)="logout()"
+              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign out
+            </button>
+          </div>
         </div>
-        <span class="text-[10px]">Wishlist</span>
-      </button>
+      }
 
       <!-- Cart -->
       <button
@@ -164,7 +149,7 @@ import { Category } from '../../../features/marketplace/home/home.component';
 </header>
 
 <!-- ===== NAV BAR ===== -->
-<nav class="bg-white border-b border-gray-200 shadow-sm">
+<!-- <nav class="bg-white border-b border-gray-200 shadow-sm">
   <div class="max-w-[1400px] mx-auto flex items-center">
     <div
       class="flex items-center gap-2 bg-[#0B1D2E] text-white px-5 py-3.5 cursor-pointer hover:bg-[#162a3d] transition-colors flex-shrink-0 select-none"
@@ -198,28 +183,37 @@ import { Category } from '../../../features/marketplace/home/home.component';
       <span>100% Organic Products</span>
     </div>
   </div>
-</nav>
+</nav> -->
 
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavbarComponent {
+  private authService = inject(AuthService);
+  private userStore = inject(UserStore);
+  private router = inject(Router);
+
   cartCount = signal(2);
-  wishlistCount = signal(4);
-  navLinks = ['Home', 'Shop', 'Deals', 'New Arrivals', 'About', 'Blog'];
+  // navLinks = ['Home', 'Shop', 'Deals', 'New Arrivals', 'About', 'Blog'];
+
+  isAuthenticated = computed(() => this.authService.currentUser() !== null);
+  userName = computed(() => this.userStore.user()?.buyerProfile?.fullName ?? 'User');
 
   categories: Category[] = [
-    { name: 'All Departments', icon: '🏪', slug: 'all' },
-    { name: 'Vegetables & Fruits', icon: '🥦', slug: 'vegetables' },
-    { name: 'Beverages', icon: '🥤', slug: 'beverages' },
-    { name: 'Meats & Seafood', icon: '🥩', slug: 'meats' },
-    { name: 'Bread & Bakery', icon: '🍞', slug: 'bakery' },
-    { name: 'Milk & Dairy', icon: '🥛', slug: 'dairy' },
-    { name: 'Dry Goods & Spices', icon: '🌶️', slug: 'spices' },
-    { name: 'Frozen Food', icon: '🧊', slug: 'frozen' },
-    { name: 'Wine & Spirits', icon: '🍷', slug: 'wine' },
-    { name: 'Healthcare', icon: '💊', slug: 'health' },
+    { name: 'All Categories', icon: '🏪', slug: 'all' },
+    { name: 'Semen de Toro', icon: '🧬', slug: 'bull-semen' },
+    { name: 'Insumos de IA', icon: '💉', slug: 'ia-supplies' },
+    { name: 'Nitrógeno Líquido', icon: '❄️', slug: 'nitrogen' },
+    { name: 'Equipos de IA', icon: '🔬', slug: 'equipment' },
+    { name: 'Genética Importada', icon: '🌎', slug: 'imported' },
+    { name: 'Razas Criollas', icon: '🐂', slug: 'creole' },
+    { name: 'Reproductores Brahman', icon: '🐃', slug: 'brahman' },
+    { name: 'Suplementos', icon: '💊', slug: 'supplements' },
+    { name: 'Certificados', icon: '📋', slug: 'certificates' },
   ];
 
-
+  async logout() {
+    await this.authService.logout();
+    this.router.navigate(['/auth/sign-in']);
+  }
 }

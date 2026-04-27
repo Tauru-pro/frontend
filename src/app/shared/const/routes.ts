@@ -3,4 +3,6 @@ export enum RoutesApp {
     signIn = 'sign-in',
     signUp = 'sign-up',
     verifyEmail = 'verify-email',
+    callback = 'callback',
+    admin = 'admin',
 }
