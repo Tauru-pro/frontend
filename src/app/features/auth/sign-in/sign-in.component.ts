@@ -433,8 +433,7 @@ export default class SignInComponent {
             this.signInStep.set('mfa');
             break;
           default:
-            if (result.isSignedIn)
-              this.router.navigate(this.userStore.user()?.role === 'ADMIN' ? ['/admin'] : ['/']);
+            if (result.isSignedIn) this.navigateByRole();
         }
       } catch (err) {
         this.errorMessage.set(this.authService.getErrorMessage(err));
@@ -448,12 +447,18 @@ export default class SignInComponent {
       try {
         const { newPassword } = this.newPasswordModel();
         const result = await this.authService.confirmSignInChallenge(newPassword);
-        if (result.isSignedIn)
-          this.router.navigate(this.userStore.user()?.role === 'ADMIN' ? ['/admin'] : ['/']);
+        if (result.isSignedIn) this.navigateByRole();
       } catch (err) {
         this.errorMessage.set(this.authService.getErrorMessage(err));
       }
     });
+  }
+
+  private navigateByRole(): void {
+    const role = this.userStore.user()?.role;
+    if (role === 'ADMIN')       this.router.navigate(['/admin']);
+    else if (role === 'SELLER') this.router.navigate(['/seller/products']);
+    else                        this.router.navigate(['/']);
   }
 
   onSubmitMfa(): void {
@@ -462,8 +467,7 @@ export default class SignInComponent {
       try {
         const { code } = this.mfaModel();
         const result = await this.authService.confirmSignInChallenge(code);
-        if (result.isSignedIn)
-          this.router.navigate(this.userStore.user()?.role === 'ADMIN' ? ['/admin'] : ['/']);
+        if (result.isSignedIn) this.navigateByRole();
       } catch (err) {
         this.errorMessage.set(this.authService.getErrorMessage(err));
       }

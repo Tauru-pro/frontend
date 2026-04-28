@@ -84,6 +84,9 @@ export default class CallbackComponent implements OnInit, OnDestroy {
 
   private async navigateByRole(): Promise<void> {
     if (!this.userStore.user()) await this.userStore.loadUser();
-    this.router.navigate(this.userStore.user()?.role === 'ADMIN' ? ['/admin'] : ['/']);
+    const role = this.userStore.user()?.role;
+    if (role === 'ADMIN')       this.router.navigate(['/admin']);
+    else if (role === 'SELLER') this.router.navigate(['/seller/products']);
+    else                        this.router.navigate(['/']);
   }
 }
