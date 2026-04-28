@@ -1,29 +1,18 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { UserStore } from '../../core/store/user.store';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { UserStore } from '../../../core/store/user.store';
+import { AuthService } from '../../../core/auth/auth.service';
 
-interface NavItem {
-  label: string;
-  path: string;
-  icon: SafeHtml;
-}
+import { NavItem } from '../../interfaces';
 
 @Component({
-  selector: 'app-seller-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  selector: 'app-sidebar',
+  imports: [RouterLink, RouterLinkActive],
+  host: {
+    class: 'w-full'
+  },
   template: `
-    <div class="flex h-screen overflow-hidden bg-gray-50">
-
-      <!-- Mobile overlay -->
+    <!-- Mobile overlay -->
       @if (sidebarOpen()) {
         <div
           class="fixed inset-0 bg-black/40 z-20 lg:hidden"
@@ -42,12 +31,12 @@ interface NavItem {
           <div class="w-8 h-8 bg-[#C8812A] rounded-lg flex items-center justify-center flex-shrink-0">
             <span class="text-white font-bold text-sm">T</span>
           </div>
-          <span class="text-white font-semibold text-sm tracking-wide">Tauru · Vendedor</span>
+          <span class="text-white font-semibold text-sm tracking-wide">Tauru · Backoffice</span>
         </div>
 
         <!-- Nav -->
         <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          @for (item of navItems; track item.path) {
+          @for (item of navItems(); track item.path) {
             <a
               [routerLink]="item.path"
               routerLinkActive="bg-white/10 text-white"
@@ -69,7 +58,7 @@ interface NavItem {
             </div>
             <div class="min-w-0">
               <p class="text-white text-xs font-medium truncate">{{ userEmail() }}</p>
-              <p class="text-[#C8812A] text-[10px] font-semibold uppercase tracking-wider">Vendedor</p>
+              <p class="text-[#C8812A] text-[10px] font-semibold uppercase tracking-wider">Admin</p>
             </div>
           </div>
           <button
@@ -80,12 +69,12 @@ interface NavItem {
             <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
-            Cerrar sesión
+            Sign out
           </button>
         </div>
       </aside>
 
-      <!-- Main area -->
+        <!-- Main area -->
       <div class="flex-1 flex flex-col min-w-0 lg:pl-64">
 
         <!-- Header -->
@@ -101,7 +90,7 @@ interface NavItem {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
             </button>
-            <span class="text-sm font-semibold text-gray-800">Portal Vendedor</span>
+            <span class="text-sm font-semibold text-gray-800">Admin Panel</span>
           </div>
 
           <!-- Avatar -->
@@ -112,34 +101,25 @@ interface NavItem {
 
         <!-- Page content -->
         <main class="flex-1 overflow-y-auto p-6">
-          <router-outlet />
+          <!-- <router-outlet /> -->
+           <ng-content/>
         </main>
       </div>
-    </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SellerLayoutComponent {
+export class SidebarComponent {
+  private userStore = inject(UserStore);
   private authService = inject(AuthService);
-  private userStore   = inject(UserStore);
-  private router      = inject(Router);
-  private sanitizer   = inject(DomSanitizer);
+  private router = inject(Router);
 
   sidebarOpen = signal(false);
 
-  userEmail   = computed(() => this.userStore.user()?.email ?? '');
-  userInitial = computed(() => (this.userStore.user()?.email?.[0] ?? 'V').toUpperCase());
+  navItems = input<NavItem[]>()
 
-  private svg(raw: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(raw);
-  }
+  userEmail = computed(() => this.userStore.user()?.email ?? '');
+  userInitial = computed(() => (this.userStore.user()?.email?.[0] ?? 'A').toUpperCase());
 
-  navItems: NavItem[] = [
-    {
-      label: 'Mis Productos',
-      path: '/seller/products',
-      icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>`),
-    },
-  ];
 
   signOut(): void {
     this.authService.logout().then(() => this.router.navigate(['/auth/sign-in']));

@@ -5,10 +5,10 @@ import { AuthService } from '../auth/auth.service';
 import { UserStore } from '../store/user.store';
 
 export const adminGuard: CanActivateFn = async () => {
-  const platformId  = inject(PLATFORM_ID);
+  const platformId = inject(PLATFORM_ID);
   const authService = inject(AuthService);
-  const router      = inject(Router);
-  const userStore   = inject(UserStore);
+  const router = inject(Router);
+  const userStore = inject(UserStore);
 
   if (!isPlatformBrowser(platformId)) return true;
 
@@ -16,6 +16,7 @@ export const adminGuard: CanActivateFn = async () => {
   if (!user) return router.createUrlTree(['/auth/sign-in']);
 
   if (!userStore.user()) await userStore.loadUser();
+
   if (userStore.user()?.role !== 'ADMIN') return router.createUrlTree(['/']);
 
   return true;

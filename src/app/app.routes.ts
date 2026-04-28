@@ -1,10 +1,8 @@
-import { Routes } from '@angular/router';
-import { HomeLayoutComponent } from './shared/layouts/home-layout.component';
 import { BackofficeLayoutComponent } from './shared/layouts/backoffice-layout.component';
-import { SellerLayoutComponent } from './shared/layouts/seller-layout.component';
-import { authGuard } from './core/guards/auth.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { HomeLayoutComponent } from './shared/layouts/home-layout.component';
 import { sellerGuard } from './core/guards/seller.guard';
+import { adminGuard } from './core/guards/admin.guard';
+import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
@@ -25,7 +23,7 @@ export const routes: Routes = [
   },
   {
     path: 'seller',
-    component: SellerLayoutComponent,
+    component: BackofficeLayoutComponent,
     canActivate: [sellerGuard],
     loadChildren: () => import('./features/seller/seller-routes'),
   },
