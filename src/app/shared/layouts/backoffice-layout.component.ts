@@ -15,7 +15,7 @@ import { UserStore } from '../../core/store/user.store';
   imports: [RouterOutlet, SidebarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex h-screen overflow-hidden bg-surface">
+    <div class="flex h-screen bg-surface">
       <app-sidebar [navItems]="navItems()">
           <router-outlet/>
       </app-sidebar>
@@ -24,7 +24,7 @@ import { UserStore } from '../../core/store/user.store';
 })
 export class BackofficeLayoutComponent {
   private sanitizer = inject(DomSanitizer);
-  private userStore  = inject(UserStore);
+  private userStore = inject(UserStore);
 
   private svg(raw: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(raw);
@@ -68,6 +68,11 @@ export class BackofficeLayoutComponent {
       label: 'Mis Productos',
       path: '/seller/products',
       icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>`),
+    },
+    {
+      label: 'Mis Toros',
+      path: '/seller/bulls',
+      icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>`),
     },
     {
       label: 'Configuración',

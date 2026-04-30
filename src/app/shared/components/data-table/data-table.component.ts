@@ -1,15 +1,26 @@
 import {
+  AfterContentInit,
   ChangeDetectionStrategy,
   Component,
   ContentChild,
+  ContentChildren,
   input,
   output,
+  QueryList,
   TemplateRef,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { TableEmptyDirective, TableHeadersDirective, TableRowDirective } from '../../directives';
+import { TableEmptyDirective } from '../../directives/table-empty.directive';
+import { TableCellDirective } from '../../directives/table-cell.directive';
+import { TableColumn } from '../../interfaces/table-column.interface';
 
-export { TableEmptyDirective, TableHeadersDirective, TableRowDirective } from '../../directives';
+export { TableEmptyDirective } from '../../directives/table-empty.directive';
+export { TableCellDirective } from '../../directives/table-cell.directive';
+export type { TableColumn } from '../../interfaces/table-column.interface';
+
+const TH_BASE = 'text-left text-xs font-semibold text-gray-400 uppercase tracking-wider';
+const TD_BASE = 'px-4 py-4';
+
 @Component({
   selector: 'app-data-table',
   standalone: true,
@@ -44,16 +55,22 @@ export { TableEmptyDirective, TableHeadersDirective, TableRowDirective } from '.
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-gray-100">
-                @if (headersTpl) {
-                  <ng-container *ngTemplateOutlet="headersTpl.templateRef" />
+                @for (col of columns(); track col.key) {
+                  <th [class]="thClass(col)">{{ col.label }}</th>
                 }
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
               @for (row of rows(); track $index) {
                 <tr class="hover:bg-gray-50 transition-colors">
-                  @if (rowTpl) {
-                    <ng-container *ngTemplateOutlet="rowTpl.templateRef; context: { $implicit: row }" />
+                  @for (col of columns(); track col.key) {
+                    <td [class]="tdClass(col)">
+                      @if (cellTplMap.get(col.key); as tpl) {
+                        <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+                      } @else {
+                        {{ asRecord(row)[col.key] }}
+                      }
+                    </td>
                   }
                 </tr>
               }
@@ -93,8 +110,9 @@ export { TableEmptyDirective, TableHeadersDirective, TableRowDirective } from '.
     </div>
   `,
 })
-export class DataTableComponent<T> {
+export class DataTableComponent<T> implements AfterContentInit {
   rows = input.required<T[]>();
+  columns = input.required<TableColumn<T>[]>();
   loading = input(false);
   page = input(1);
   totalPages = input(0);
@@ -103,9 +121,27 @@ export class DataTableComponent<T> {
 
   pageChange = output<number>();
 
-  @ContentChild(TableHeadersDirective) headersTpl?: TableHeadersDirective;
-  @ContentChild(TableRowDirective) rowTpl?: TableRowDirective<T>;
   @ContentChild(TableEmptyDirective) emptyTpl?: TableEmptyDirective;
+  @ContentChildren(TableCellDirective) private cellTpls!: QueryList<TableCellDirective<T>>;
 
+  protected cellTplMap = new Map<string, TemplateRef<{ $implicit: T }>>();
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
+
+  ngAfterContentInit(): void {
+    this.cellTplMap = new Map(
+      this.cellTpls.map(d => [d.columnKey, d.templateRef]),
+    );
+  }
+
+  protected thClass(col: TableColumn<T>): string {
+    return `${TH_BASE} ${col.headerClass ?? 'px-4 py-3'}`;
+  }
+
+  protected tdClass(col: TableColumn<T>): string {
+    return col.cellClass ? `${TD_BASE} ${col.cellClass}` : TD_BASE;
+  }
+
+  protected asRecord(row: T): Record<string, unknown> {
+    return row as Record<string, unknown>;
+  }
 }

@@ -6,9 +6,11 @@ import {
   CreateProductDto,
   PaginatedResponse,
   Product,
+  ProductMedia,
   ProductStatus,
   UpdateProductDto,
 } from '../models/product.model';
+import { ConfirmMediaUploadDto, RequestUploadUrlDto, ResponseUploadDto } from '../models/upload.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -42,4 +44,21 @@ export class ProductService {
   deleteProduct(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  requestPresignedUrl(id: string, body: RequestUploadUrlDto) {
+    return this.http.post<ResponseUploadDto>(`${this.apiUrl}/${id}/media/presign`, body)
+  }
+
+  confirmMediaUpload(id: string, body: ConfirmMediaUploadDto) {
+    return this.http.post<ProductMedia>(`${this.apiUrl}/${id}/media/confirm`, body)
+  }
+
+  deleteMedia(id: string, mediaId: string) {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/media/${mediaId}`)
+  }
+
+  setCoverImage(id: string, mediaId: string) {
+    return this.http.patch<ProductMedia>(`${this.apiUrl}/${id}/media/${mediaId}/cover`, null)
+  }
+
 }

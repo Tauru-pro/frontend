@@ -3,10 +3,10 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  PresignedUrlResponse,
   SellerProfile,
   UpdateSellerProfileDto,
 } from '../models/user.model';
+import { ResponseUploadDto } from '../models/upload.model';
 
 @Injectable({ providedIn: 'root' })
 export class SellerService {
@@ -21,14 +21,12 @@ export class SellerService {
     return this.http.patch<SellerProfile>(`${this.baseUrl}/users/seller-profile`, dto);
   }
 
-  getPresignedUrl(fileName: string, contentType: string): Observable<PresignedUrlResponse> {
-    return this.http.get<PresignedUrlResponse>(`${this.baseUrl}/uploads/presigned-url`, {
-      params: { fileName, contentType },
-    });
+  getPresignedUrl(mimeType: string): Observable<ResponseUploadDto> {
+    return this.http.post<ResponseUploadDto>(`${this.baseUrl}/users/seller-profile/logo/presign`, { mimeType });
   }
 
-  uploadToS3(presignedUrl: string, file: File): Observable<void> {
-    const headers = new HttpHeaders({ 'Content-Type': file.type });
-    return this.http.put<void>(presignedUrl, file, { headers });
+
+  confirm(s3Key: string): Observable<SellerProfile> {
+    return this.http.post<SellerProfile>(`${this.baseUrl}/users/seller-profile/logo/confirm`, { s3Key });
   }
 }

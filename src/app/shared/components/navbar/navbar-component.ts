@@ -104,7 +104,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
           <div class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[160px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
             <a
               *hasRole="['ADMIN', 'SELLER']"
-              routerLink="/admin/dashboard"
+              [routerLink]="dashboardRoute()"
               class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,6 +209,9 @@ export class NavbarComponent {
 
   isAuthenticated = computed(() => this.authService.currentUser() !== null);
   userName = computed(() => this.userStore.user()?.buyerProfile?.fullName ?? 'User');
+  dashboardRoute = computed(() =>
+    this.userStore.user()?.role === 'ADMIN' ? '/admin/dashboard' : '/seller'
+  );
 
   categories: Category[] = [
     { name: 'All Categories', icon: '🏪', slug: 'all' },

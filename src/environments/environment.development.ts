@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/api/v1',
-  s3BaseUrl: 'https://tauru-assets.s3.amazonaws.com',
+  cdn: 'https://d29jd8kr1el63j.cloudfront.net',
   cognito: {
     userPoolId: 'us-east-1_MkSNYVlii',
     userPoolClientId: '5n24f952o2ub2j6lku168spfa2',

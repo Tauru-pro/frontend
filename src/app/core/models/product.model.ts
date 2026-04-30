@@ -1,3 +1,5 @@
+import { Bull } from "./bull.model";
+
 export type ProductType = 'STRAW' | 'SUPPLIES';
 export type ProductOrigin = 'NATIONAL' | 'IMPORTED';
 export type RegistrationType = 'PURO' | 'COMERCIAL';
@@ -20,12 +22,8 @@ export interface Product {
   productType: ProductType;
   name: string;
   description: string | null;
-  breed: string;
-  origin: ProductOrigin;
-  registrationType: RegistrationType | null;
-  bullName: string | null;
-  invimaRegistration: string | null;
-  pricePerDose: number;
+  price: number;
+  bull: Bull
   stockQuantity: number;
   stockReserved: number;
   status: ProductStatus;
@@ -47,12 +45,7 @@ export interface CreateProductDto {
   productType: ProductType;
   name: string;
   description?: string;
-  breed: string;
-  origin: ProductOrigin;
-  registrationType?: RegistrationType;
-  bullName?: string;
-  invimaRegistration?: string;
-  pricePerDose: number;
+  price: number;
   stockQuantity: number;
 }
 

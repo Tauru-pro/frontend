@@ -36,8 +36,8 @@ interface SettingsFormModel {
 
       <!-- Page header -->
       <div>
-        <h1 class="text-xl font-bold text-gray-900">ConfiguraciÃ³n</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Actualiza la informaciÃ³n de tu negocio</p>
+        <h1 class="text-xl font-bold text-gray-900">Configuración</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Actualiza la información de tu negocio</p>
       </div>
 
       @if (loading()) {
@@ -106,7 +106,7 @@ interface SettingsFormModel {
                   class="hidden"
                   (change)="onFileSelected($event)"
                 />
-                <p class="text-xs text-gray-400">JPG, PNG o WEBP Â· MÃ¡x. 5 MB</p>
+                <p class="text-xs text-gray-400">JPG, PNG o WEBP  Max. 5 MB</p>
 
                 @if (uploadError()) {
                   <p class="text-red-400 text-xs flex items-center gap-1">
@@ -122,7 +122,7 @@ interface SettingsFormModel {
 
           <!-- InformaciÃ³n del negocio -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">InformaciÃ³n del negocio</h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información del negocio</h2>
 
             <!-- Nombre del negocio -->
             <div>
@@ -148,7 +148,7 @@ interface SettingsFormModel {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <!-- TelÃ©fono de contacto -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">TelÃ©fono de contacto</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Teléfono de contacto</label>
                 <input
                   type="tel"
                   [formField]="settingsForm.contactPhone"
@@ -163,7 +163,7 @@ interface SettingsFormModel {
                 <input
                   type="text"
                   [formField]="settingsForm.city"
-                  placeholder="Ej. BogotÃ¡"
+                  placeholder="Ej. Bogotá"
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
@@ -171,7 +171,7 @@ interface SettingsFormModel {
 
             <!-- DirecciÃ³n -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">DirecciÃ³n</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Dirección</label>
               <input
                 type="text"
                 [formField]="settingsForm.address"
@@ -258,11 +258,6 @@ export default class SellerSettingsComponent implements OnInit {
       this.populateForm(cached);
       return;
     }
-    // this.loading.set(true);
-    // await this.userStore.loadSellerProfile();
-    // const profile = this.userStore.sellerProfile();
-    // if (profile) this.populateForm(profile);
-    // this.loading.set(false);
   }
 
   private populateForm(profile: ReturnType<typeof this.userStore.user>): void {
@@ -280,7 +275,7 @@ export default class SellerSettingsComponent implements OnInit {
   }
 
   private logoUrl(key: string): string {
-    return `${environment.s3BaseUrl}/${key}`;
+    return `${environment.cdn}/${key}`;
   }
 
   onFileSelected(event: Event): void {
@@ -316,28 +311,25 @@ export default class SellerSettingsComponent implements OnInit {
     this.uploadToS3(file);
   }
 
-  private uploadToS3(file: File): void {
+  private async uploadToS3(file: File): Promise<void> {
     this.uploading.set(true);
-    this.sellerService.getPresignedUrl(file.name, file.type).subscribe({
-      next: ({ url, key }) => {
-        this.sellerService.uploadToS3(url, file).subscribe({
-          next: () => {
-            this.logoKey.set(key);
-            this.uploading.set(false);
-          },
-          error: () => {
-            this.uploadError.set('No se pudo subir la imagen. Intenta de nuevo.');
-            this.logoPreview.set(this.logoKey() ? this.logoUrl(this.logoKey()) : null);
-            this.uploading.set(false);
-          },
-        });
-      },
-      error: () => {
-        this.uploadError.set('No se pudo obtener la URL de subida. Intenta de nuevo.');
-        this.logoPreview.set(this.logoKey() ? this.logoUrl(this.logoKey()) : null);
-        this.uploading.set(false);
-      },
+
+    const { uploadUrl, s3Key } = await firstValueFrom(
+      this.sellerService.getPresignedUrl(file.type)
+    );
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type },
     });
+    if (!response.ok) {
+      this.uploading.set(false);
+      throw new Error(`No se pudo subir ${file.name}`);
+    }
+    await firstValueFrom(
+      this.sellerService.confirm(s3Key),
+    );
+    this.uploading.set(false);
   }
 
   onSubmit(): void {
@@ -351,8 +343,7 @@ export default class SellerSettingsComponent implements OnInit {
           bussinesName: values.bussinesName,
           contactPhone: values.contactPhone || undefined,
           city: values.city || undefined,
-          address: values.address || undefined,
-          logoKey: this.logoKey() || undefined,
+          address: values.address || undefined
         };
         const updated = await firstValueFrom(this.sellerService.updateMyProfile(dto));
         this.userStore.patchSellerProfile(updated);
