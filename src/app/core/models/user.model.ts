@@ -1,11 +1,14 @@
-
+export type UserRole = 'ADMIN' | 'SELLER' | 'BUYER';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+export type SellerStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 export interface UserProfile {
   id: string;
   email: string;
-  role: string;
-  status: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt?: string;
   oauthProviders: OauthProvider[];
-  sellerProfile?: string;
+  sellerProfile?: SellerProfile;
   buyerProfile?: BuyerProfile;
 }
 
@@ -20,7 +23,44 @@ export interface BuyerProfile {
   whatsapp?: string;
 }
 
+export interface SellerProfile {
+  id: string;
+  userId: string;
+  bussinesName: string;
+  contactPhone?: string;
+  logoKey: string;
+  city?: string;
+  address?: string;
+  status?: SellerStatus;
+}
+
 export interface OauthProvider {
   provider: string;
   providerUserId: string;
+}
+
+export interface CreateUserDto {
+  email: string;
+  fullName: string;
+  role: UserRole;
+}
+
+export interface UpdateUserDto {
+  fullName?: string;
+  role?: UserRole;
+  status?: UserStatus;
+  phone?: string;
+}
+
+export interface UpdateSellerProfileDto {
+  bussinesName?: string;
+  contactPhone?: string;
+  city?: string;
+  address?: string;
+  logoKey?: string;
+}
+
+export interface PresignedUrlResponse {
+  url: string;
+  key: string;
 }

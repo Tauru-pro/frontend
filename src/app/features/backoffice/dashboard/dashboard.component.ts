@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface StatCard {
@@ -21,11 +22,22 @@ interface ActivityRow {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [NgClass],
+  imports: [NgClass, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <a
+          routerLink="/"
+          class="flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Ir al Marketplace
+        </a>
+      </div>
 
       <!-- Stat Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
@@ -55,7 +67,7 @@ interface ActivityRow {
               type="button"
               class="px-4 py-2 text-sm font-medium rounded-xl border transition-all"
               [ngClass]="action.primary
-                ? 'bg-[#0B1D2E] text-white border-transparent hover:bg-[#162a3d]'
+                ? 'bg-primary text-white border-transparent hover:bg-primary-dark'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'"
             >
               {{ action.label }}
@@ -114,7 +126,7 @@ export default class DashboardComponent {
       value: '2,847',
       delta: '+12%',
       positive: true,
-      color: 'bg-[#0B1D2E]',
+      color: 'bg-primary',
       icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`),
     },
     {
@@ -122,7 +134,7 @@ export default class DashboardComponent {
       value: '1,293',
       delta: '+8%',
       positive: true,
-      color: 'bg-[#C8812A]',
+      color: 'bg-accent',
       icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>`),
     },
     {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 
@@ -15,11 +15,11 @@ import { AuthService } from '../../../core/auth/auth.service';
       <!-- Logo -->
       <div class="flex justify-center mb-8">
         <a routerLink="/" class="flex items-center gap-2.5">
-          <div class="w-10 h-10 bg-[#C8812A] rounded-lg flex items-center justify-center font-bold text-white text-xl">T</div>
+          <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-xl">T</div>
           <div class="leading-none">
             <div class="flex items-baseline gap-0.5">
-              <span class="text-2xl font-bold text-[#0B1D2E]">Tauru</span>
-              <span class="text-[#C8812A] font-bold text-2xl">.</span>
+              <span class="text-2xl font-bold text-primary">Tauru</span>
+              <span class="text-accent font-bold text-2xl">.</span>
             </div>
             <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>
           </div>
@@ -32,14 +32,14 @@ import { AuthService } from '../../../core/auth/auth.service';
 
           <!-- Icon -->
           <div class="flex justify-center mb-5">
-            <div class="w-16 h-16 bg-[#0B1D2E]/5 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 text-[#0B1D2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center">
+              <svg class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
 
-          <h1 class="text-xl font-bold text-[#0B1D2E] text-center mb-1">Verify your email</h1>
+          <h1 class="text-xl font-bold text-primary text-center mb-1">Verify your email</h1>
           <p class="text-sm text-gray-400 text-center mb-6 leading-relaxed">
             We sent a 6-digit code to<br />
             <span class="font-medium text-gray-600">{{ email() ?? 'your email address' }}</span>
@@ -75,14 +75,14 @@ import { AuthService } from '../../../core/auth/auth.service';
                 [value]="code()"
                 (input)="onCodeInput($event)"
                 placeholder="Enter 6-digit code"
-                class="w-full border border-gray-200 rounded-lg px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all tracking-[0.3em] font-mono text-center text-base"
+                class="w-full border border-gray-200 rounded-lg px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all tracking-[0.3em] font-mono text-center text-base"
               />
             </div>
 
             <button
               type="submit"
               [disabled]="loading() || code().length < 6"
-              class="w-full bg-[#0B1D2E] hover:bg-[#162a3d] active:bg-[#0a1825] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full bg-primary hover:bg-primary-dark  text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (loading()) {
                 <span class="flex items-center justify-center gap-2">
@@ -106,7 +106,7 @@ import { AuthService } from '../../../core/auth/auth.service';
                 type="button"
                 (click)="onResend()"
                 [disabled]="resendLoading()"
-                class="text-[#C8812A] hover:text-[#b8721a] font-medium transition-colors hover:underline ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="text-accent hover:text-accent-dark font-medium transition-colors hover:underline ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 @if (resendLoading()) { Sending... } @else { Resend code }
               </button>
@@ -118,7 +118,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 
       <p class="text-center text-sm text-gray-400 mt-6">
         Wrong email?
-        <a routerLink="/auth/sign-up" class="text-[#0B1D2E] font-semibold hover:text-[#C8812A] transition-colors ml-1">
+        <a routerLink="/auth/sign-up" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
           Go back to sign up
         </a>
       </p>
@@ -175,3 +175,4 @@ export default class VerifyEmailComponent {
     }
   }
 }
+

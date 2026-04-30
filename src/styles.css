@@ -2,10 +2,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #0B1D2E;
-  --color-secondary: #1A3D2A;
-  --color-accent: #C8812A;
-  --color-surface: #F3F0E8;
+  /* ── Primario: Cobalt Blue ── */
+  --color-primary:        #004aad;
+  --color-primary-dark:   #003585;
+  --color-primary-light:  #e8f0fb;
+
+  /* ── Secundario: Green ── */
+  --color-secondary:      #00bf63;
+  --color-secondary-dark: #009e52;
+  --color-secondary-light:#e6fff3;
+
+  /* ── Acento: Amber (cálido, contrasta con cobalt + green) ── */
+  --color-accent:         #f59e0b;
+  --color-accent-dark:    #d97706;
+  --color-accent-light:   #fef3c7;
+
+  /* ── Fondos ── */
+  --color-surface:        #f1f5f9;
+  --color-surface-muted:  #e8f0fb;
+  --color-card:           #ffffff;
+
+  /* ── UI oscuro ── */
+  --color-dark:           #0a1628;
+  --color-footer:         #060d1a;
+
   --font-family-sans: 'IBM Plex Sans', sans-serif;
 }
 
@@ -17,5 +37,53 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'IBM Plex Sans', sans-serif;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface);
+}
+
+@layer utilities {
+  .btn-primary {
+    @apply bg-primary text-white font-medium rounded-xl
+           hover:bg-primary-dark transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary-outline {
+    @apply border-2 border-primary text-primary
+           hover:bg-primary hover:text-white
+           font-semibold rounded-xl transition-colors;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white font-semibold rounded-xl
+           hover:bg-accent-dark transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white font-medium rounded-xl
+           hover:bg-secondary-dark transition-colors;
+  }
+
+  .form-input {
+    @apply w-full border border-gray-200 rounded-xl px-3.5 py-2.5
+           text-sm text-gray-900 placeholder-gray-300 bg-white
+           focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary
+           transition-all;
+  }
+
+  .card {
+    @apply bg-card rounded-2xl border border-gray-100 shadow-sm;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl
+           text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all;
+  }
+
+  .badge-accent {
+    @apply bg-accent text-white text-[10px] font-bold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-secondary {
+    @apply bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full;
+  }
 }

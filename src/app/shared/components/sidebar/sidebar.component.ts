@@ -23,12 +23,12 @@ import { NavItem } from '../../interfaces';
       <!-- Sidebar -->
       <aside
         [class]="sidebarOpen()
-          ? 'fixed inset-y-0 left-0 z-30 w-64 bg-[#0B1D2E] flex flex-col transition-transform duration-300 translate-x-0'
-          : 'fixed inset-y-0 left-0 z-30 w-64 bg-[#0B1D2E] flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0'"
+          ? 'fixed inset-y-0 left-0 z-30 w-64 bg-primary flex flex-col transition-transform duration-300 translate-x-0'
+          : 'fixed inset-y-0 left-0 z-30 w-64 bg-primary flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0'"
       >
         <!-- Logo -->
         <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-          <div class="w-8 h-8 bg-[#C8812A] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
             <span class="text-white font-bold text-sm">T</span>
           </div>
           <span class="text-white font-semibold text-sm tracking-wide">Tauru · Backoffice</span>
@@ -53,12 +53,12 @@ import { NavItem } from '../../interfaces';
         <!-- User info + sign out -->
         <div class="px-3 pb-4 border-t border-white/10 pt-4">
           <div class="flex items-center gap-3 px-3 mb-3">
-            <div class="w-8 h-8 bg-[#C8812A] rounded-full flex items-center justify-center flex-shrink-0">
+            <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
               <span class="text-white text-xs font-bold">{{ userInitial() }}</span>
             </div>
             <div class="min-w-0">
               <p class="text-white text-xs font-medium truncate">{{ userEmail() }}</p>
-              <p class="text-[#C8812A] text-[10px] font-semibold uppercase tracking-wider">Admin</p>
+              <p class="text-accent text-[10px] font-semibold uppercase tracking-wider">{{userRole()}}</p>
             </div>
           </div>
           <button
@@ -94,7 +94,7 @@ import { NavItem } from '../../interfaces';
           </div>
 
           <!-- Avatar -->
-          <div class="w-8 h-8 bg-[#0B1D2E] rounded-full flex items-center justify-center">
+          <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <span class="text-white text-xs font-bold">{{ userInitial() }}</span>
           </div>
         </header>
@@ -119,7 +119,7 @@ export class SidebarComponent {
 
   userEmail = computed(() => this.userStore.user()?.email ?? '');
   userInitial = computed(() => (this.userStore.user()?.email?.[0] ?? 'A').toUpperCase());
-
+  userRole = computed(() => this.userStore.user()?.role)
 
   signOut(): void {
     this.authService.logout().then(() => this.router.navigate(['/auth/sign-in']));

@@ -5,19 +5,19 @@ import { Category } from '../../../features/marketplace/home/home.component';
   selector: 'app-footer',
   imports: [],
   template: `<!-- ===== FOOTER ===== -->
-<footer class="bg-[#060f17] text-gray-400 pt-12 pb-6">
+<footer class="bg-footer text-gray-400 pt-12 pb-6">
   <div class="max-w-[1400px] mx-auto px-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-10">
 
       <!-- Brand column -->
       <div class="lg:col-span-2">
         <div class="flex items-center gap-2 mb-4">
-          <div class="w-9 h-9 bg-[#C8812A] rounded-lg flex items-center justify-center text-white font-bold text-lg">
+          <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white font-bold text-lg">
             T
           </div>
           <div class="leading-none">
             <span class="text-xl font-bold text-white">Tauru</span>
-            <span class="text-[#C8812A] font-bold text-xl">.</span>
+            <span class="text-accent font-bold text-xl">.</span>
             <div class="text-[10px] text-gray-500 tracking-widest uppercase">Market</div>
           </div>
         </div>
@@ -47,7 +47,7 @@ import { Category } from '../../../features/marketplace/home/home.component';
         <ul class="space-y-2.5 text-sm">
           @for (link of ['Home', 'About Us', 'Our Story', 'Careers', 'Blog', 'Contact Us']; track link) {
           <li>
-            <a href="#" class="hover:text-[#C8812A] transition-colors">{{ link }}</a>
+            <a href="#" class="hover:text-accent transition-colors">{{ link }}</a>
           </li>
           }
         </ul>
@@ -59,7 +59,7 @@ import { Category } from '../../../features/marketplace/home/home.component';
         <ul class="space-y-2.5 text-sm">
           @for (cat of categories.slice(1, 7); track cat.slug) {
           <li>
-            <a href="#" class="hover:text-[#C8812A] transition-colors">{{ cat.name }}</a>
+            <a href="#" class="hover:text-accent transition-colors">{{ cat.name }}</a>
           </li>
           }
         </ul>
@@ -71,7 +71,7 @@ import { Category } from '../../../features/marketplace/home/home.component';
         <ul class="space-y-2.5 text-sm">
           @for (link of tracks; track link) {
           <li>
-            <a href="#" class="hover:text-[#C8812A] transition-colors">{{ link }}</a>
+            <a href="#" class="hover:text-accent transition-colors">{{ link }}</a>
           </li>
           }
         </ul>

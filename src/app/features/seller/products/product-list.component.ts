@@ -5,10 +5,14 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { Product, ProductStatus } from '../../../core/models/product.model';
+import {
+  DataTableComponent,
+} from '../../../shared/components/data-table/data-table.component';
+import { TableEmptyDirective, TableHeadersDirective, TableRowDirective } from '../../../shared/directives';
 
 @Component({
   selector: 'app-product-list',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, DataTableComponent, TableHeadersDirective, TableRowDirective, TableEmptyDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -22,7 +26,7 @@ import { Product, ProductStatus } from '../../../core/models/product.model';
         <button
           type="button"
           (click)="router.navigate(['/seller/products/new'])"
-          class="flex items-center gap-2 bg-[#0B1D2E] text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-[#162a3d] transition-colors"
+          class="flex items-center gap-2 btn-primary px-4 py-2.5 text-sm"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -57,17 +61,67 @@ import { Product, ProductStatus } from '../../../core/models/product.model';
       }
 
       <!-- Table card -->
-      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <app-data-table
+        [rows]="products()"
+        [loading]="loading()"
+        [page]="page()"
+        [totalPages]="totalPages()"
+        [total]="total()"
+        itemLabel="productos"
+        (pageChange)="onPageChange($event)"
+      >
+        <ng-template tableHeaders>
+          <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-6 py-3">Nombre</th>
+          <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Tipo</th>
+          <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Raza</th>
+          <th class="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Precio</th>
+          <th class="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Stock</th>
+          <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Estado</th>
+          <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Creado</th>
+          <th class="px-4 py-3"></th>
+        </ng-template>
 
-        @if (loading()) {
-          <!-- Skeleton -->
-          <div class="p-6 space-y-3">
-            @for (_ of [1,2,3,4,5]; track $index) {
-              <div class="h-10 bg-gray-100 rounded-xl animate-pulse"></div>
-            }
-          </div>
-        } @else if (products().length === 0) {
-          <!-- Empty state -->
+        <ng-template tableRow let-product>
+          <td class="px-6 py-4 font-medium text-gray-900 max-w-[200px] truncate">{{ product.name }}</td>
+          <td class="px-4 py-4 text-gray-500">{{ product.productType === 'STRAW' ? 'Pajilla' : 'Insumo' }}</td>
+          <td class="px-4 py-4 text-gray-500 max-w-[120px] truncate">{{ product.breed }}</td>
+          <td class="px-4 py-4 text-gray-900 text-right font-medium">\${{ product.pricePerDose | number:'1.0-2' }}</td>
+          <td class="px-4 py-4 text-right" [class]="product.stockQuantity <= 5 ? 'text-orange-600 font-semibold' : 'text-gray-600'">
+            {{ product.stockQuantity }}
+          </td>
+          <td class="px-4 py-4">
+            <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + statusClass(product.status)">
+              {{ statusLabel(product.status) }}
+            </span>
+          </td>
+          <td class="px-4 py-4 text-gray-400 text-xs">{{ formatDate(product.createdAt) }}</td>
+          <td class="px-4 py-4">
+            <div class="flex items-center gap-2 justify-end">
+              <button
+                type="button"
+                (click)="router.navigate(['/seller/products', product.id, 'edit'])"
+                class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg transition-all"
+                title="Editar"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                (click)="confirmDelete.set(product.id)"
+                class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                title="Eliminar"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </ng-template>
+
+        <ng-template tableEmpty>
           <div class="py-16 flex flex-col items-center text-center px-6">
             <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
               <svg class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,103 +133,13 @@ import { Product, ProductStatus } from '../../../core/models/product.model';
             <button
               type="button"
               (click)="router.navigate(['/seller/products/new'])"
-              class="bg-[#0B1D2E] text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-[#162a3d] transition-colors"
+              class="btn-primary px-5 py-2.5 text-sm"
             >
               Crear producto
             </button>
           </div>
-        } @else {
-          <!-- Table -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-100">
-                  <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-6 py-3">Nombre</th>
-                  <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Tipo</th>
-                  <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Raza</th>
-                  <th class="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Precio</th>
-                  <th class="text-right text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Stock</th>
-                  <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Estado</th>
-                  <th class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Creado</th>
-                  <th class="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50">
-                @for (product of products(); track product.id) {
-                  <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 font-medium text-gray-900 max-w-[200px] truncate">{{ product.name }}</td>
-                    <td class="px-4 py-4 text-gray-500">{{ product.productType === 'STRAW' ? 'Pajilla' : 'Insumo' }}</td>
-                    <td class="px-4 py-4 text-gray-500 max-w-[120px] truncate">{{ product.breed }}</td>
-                    <td class="px-4 py-4 text-gray-900 text-right font-medium">\${{ product.pricePerDose | number:'1.0-2' }}</td>
-                    <td class="px-4 py-4 text-right" [class]="product.stockQuantity <= 5 ? 'text-orange-600 font-semibold' : 'text-gray-600'">
-                      {{ product.stockQuantity }}
-                    </td>
-                    <td class="px-4 py-4">
-                      <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + statusClass(product.status)">
-                        {{ statusLabel(product.status) }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-4 text-gray-400 text-xs">{{ formatDate(product.createdAt) }}</td>
-                    <td class="px-4 py-4">
-                      <div class="flex items-center gap-2 justify-end">
-                        <button
-                          type="button"
-                          (click)="router.navigate(['/seller/products', product.id, 'edit'])"
-                          class="p-1.5 text-gray-400 hover:text-[#0B1D2E] hover:bg-gray-100 rounded-lg transition-all"
-                          title="Editar"
-                        >
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          (click)="confirmDelete.set(product.id)"
-                          class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                          title="Eliminar"
-                        >
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          @if (totalPages() > 1) {
-            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-              <p class="text-sm text-gray-500">
-                Página <span class="font-medium text-gray-800">{{ page() }}</span> de
-                <span class="font-medium text-gray-800">{{ totalPages() }}</span>
-                &nbsp;·&nbsp; {{ total() }} productos
-              </p>
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  (click)="onPageChange(page() - 1)"
-                  [disabled]="page() === 1"
-                  class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  type="button"
-                  (click)="onPageChange(page() + 1)"
-                  [disabled]="page() === totalPages()"
-                  class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          }
-        }
-      </div>
+        </ng-template>
+      </app-data-table>
     </div>
 
     <!-- Delete confirmation modal -->
@@ -216,15 +180,15 @@ export default class ProductListComponent implements OnInit {
   protected router = inject(Router);
   private productService = inject(ProductService);
 
-  products      = signal<Product[]>([]);
-  total         = signal(0);
-  totalPages    = signal(0);
-  page          = signal(1);
-  loading       = signal(false);
+  products = signal<Product[]>([]);
+  total = signal(0);
+  totalPages = signal(0);
+  page = signal(1);
+  loading = signal(false);
   confirmDelete = signal<string | null>(null);
-  deleting      = signal(false);
-  icaError      = signal(false);
-  errorMsg      = signal<string | null>(null);
+  deleting = signal(false);
+  icaError = signal(false);
+  errorMsg = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadProducts();
@@ -286,22 +250,22 @@ export default class ProductListComponent implements OnInit {
 
   statusClass(status: ProductStatus): string {
     const map: Record<ProductStatus, string> = {
-      ACTIVE:             'bg-green-50 text-green-700',
-      DRAFT:              'bg-gray-100 text-gray-600',
+      ACTIVE: 'bg-green-50 text-green-700',
+      DRAFT: 'bg-gray-100 text-gray-600',
       PENDING_VALIDATION: 'bg-yellow-50 text-yellow-700',
-      SUSPENDED:          'bg-red-50 text-red-500',
-      OUT_OF_STOCK:       'bg-orange-50 text-orange-600',
+      SUSPENDED: 'bg-red-50 text-red-500',
+      OUT_OF_STOCK: 'bg-orange-50 text-orange-600',
     };
     return map[status] ?? 'bg-gray-100 text-gray-600';
   }
 
   statusLabel(status: ProductStatus): string {
     const map: Record<ProductStatus, string> = {
-      ACTIVE:             'Activo',
-      DRAFT:              'Borrador',
+      ACTIVE: 'Activo',
+      DRAFT: 'Borrador',
       PENDING_VALIDATION: 'En revisión',
-      SUSPENDED:          'Suspendido',
-      OUT_OF_STOCK:       'Sin stock',
+      SUSPENDED: 'Suspendido',
+      OUT_OF_STOCK: 'Sin stock',
     };
     return map[status] ?? status;
   }

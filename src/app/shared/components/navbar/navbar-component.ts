@@ -3,13 +3,14 @@ import { Router, RouterLink } from '@angular/router';
 import { Category } from '../../../features/marketplace/home/home.component';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserStore } from '../../../core/store/user.store';
+import { HasRoleDirective } from '../../directives/has-role.directive';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink],
+  imports: [RouterLink, HasRoleDirective],
   template: `
   <!-- ===== ANNOUNCEMENT BAR ===== -->
-<div class="bg-[#1A3D2A] text-white text-xs py-2 px-4">
+<div class="bg-dark text-white text-xs py-2 px-4">
   <div class="max-w-[1400px] mx-auto flex items-center justify-between">
     <div class="flex items-center gap-6">
       <span>📞 +1 (800) 123-4567</span>
@@ -17,7 +18,7 @@ import { UserStore } from '../../../core/store/user.store';
     </div>
     <span class="font-medium hidden md:inline">
       🚚 Free delivery on orders over $50 &nbsp;|&nbsp;
-      Use code: <span class="text-[#C8812A] font-bold">FRESH10</span>
+      Use code: <span class="text-accent font-bold">FRESH10</span>
     </span>
     <div class="flex items-center gap-4 text-gray-300">
       <span class="cursor-pointer hover:text-white transition-colors">English ▾</span>
@@ -27,19 +28,19 @@ import { UserStore } from '../../../core/store/user.store';
 </div>
 
 <!-- ===== HEADER ===== -->
-<header class="bg-[#0B1D2E] text-white py-3 sticky top-0 z-50 shadow-xl">
+<header class="bg-primary text-white py-3 sticky top-0 z-50 shadow-xl">
   <div class="max-w-[1400px] mx-auto px-4 flex items-center gap-5">
 
     <!-- Logo -->
     <a href="/" class="flex items-center gap-2 flex-shrink-0">
       <div
-        class="w-9 h-9 bg-[#C8812A] rounded-lg flex items-center justify-center font-bold text-white text-lg"
+        class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-lg"
       >
         T
       </div>
       <div class="leading-none">
         <span class="text-xl font-bold text-white">Tauru</span>
-        <span class="text-[#C8812A] font-bold text-xl">.</span>
+        <span class="text-accent font-bold text-xl">.</span>
         <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>
       </div>
     </a>
@@ -47,7 +48,7 @@ import { UserStore } from '../../../core/store/user.store';
     <!-- Search -->
     <div class="flex-1 flex rounded-lg overflow-hidden border border-white/10 max-w-2xl mx-4">
       <select
-        class="bg-[#C8812A] text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
+        class="bg-accent text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
       >
         <option>All Categories</option>
         @for (cat of categories.slice(1); track cat.slug) {
@@ -57,10 +58,10 @@ import { UserStore } from '../../../core/store/user.store';
       <input
         type="text"
         placeholder="Search for fresh groceries, products..."
-        class="flex-1 px-4 py-2.5 text-[#0B1D2E] text-sm outline-none min-w-0"
+        class="flex-1 px-4 py-2.5 text-primary text-sm outline-none min-w-0"
       />
       <button
-        class="bg-[#C8812A] hover:bg-[#b8721a] px-5 py-2.5 text-white transition-colors flex-shrink-0"
+        class="bg-accent hover:bg-accent-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -85,7 +86,7 @@ import { UserStore } from '../../../core/store/user.store';
       @if (!isAuthenticated()) {
         <a
           routerLink="/auth/sign-in"
-          class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors"
+          class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -94,13 +95,23 @@ import { UserStore } from '../../../core/store/user.store';
         </a>
       } @else {
         <div class="relative group">
-          <button class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-[#C8812A] transition-colors">
+          <button class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             <span class="text-[10px] max-w-[72px] truncate">{{ userName() }}</span>
           </button>
-          <div class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[140px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
+          <div class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[160px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
+            <a
+              *hasRole="['ADMIN', 'SELLER']"
+              routerLink="/admin/dashboard"
+              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              Dashboard
+            </a>
             <button
               (click)="logout()"
               class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -116,7 +127,7 @@ import { UserStore } from '../../../core/store/user.store';
 
       <!-- Cart -->
       <button
-        class="flex items-center gap-3 bg-[#C8812A] hover:bg-[#b8721a] px-4 py-2 rounded-lg transition-colors"
+        class="flex items-center gap-3 btn-accent px-4 py-2"
       >
         <div class="relative">
           <svg
@@ -135,7 +146,7 @@ import { UserStore } from '../../../core/store/user.store';
           </svg>
           @if (cartCount() > 0) {
             <span
-              class="absolute -top-2 -right-2 bg-[#0B1D2E] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
+              class="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
             >{{ cartCount() }}</span>
           }
         </div>
@@ -152,7 +163,7 @@ import { UserStore } from '../../../core/store/user.store';
 <!-- <nav class="bg-white border-b border-gray-200 shadow-sm">
   <div class="max-w-[1400px] mx-auto flex items-center">
     <div
-      class="flex items-center gap-2 bg-[#0B1D2E] text-white px-5 py-3.5 cursor-pointer hover:bg-[#162a3d] transition-colors flex-shrink-0 select-none"
+      class="flex items-center gap-2 bg-primary text-white px-5 py-3.5 cursor-pointer hover:bg-primary-dark transition-colors flex-shrink-0 select-none"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -169,16 +180,16 @@ import { UserStore } from '../../../core/store/user.store';
       @for (link of navLinks; track link; let first = $first) {
         <a
           href="#"
-          class="px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 border-transparent hover:border-[#C8812A] hover:text-[#C8812A]"
-          [class.text-[#C8812A]]="first"
-          [class.border-[#C8812A]]="first"
-          [class.text-[#0B1D2E]]="!first"
+          class="px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 border-transparent hover:border-accent hover:text-accent"
+          [class.text-accent]="first"
+          [class.border-accent]="first"
+          [class.text-primary]="!first"
         >
           {{ link }}
         </a>
       }
     </div>
-    <div class="ml-auto px-4 text-sm text-[#1A3D2A] font-medium flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap">
+    <div class="ml-auto px-4 text-sm text-secondary font-medium flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap">
       <span>🌱</span>
       <span>100% Organic Products</span>
     </div>

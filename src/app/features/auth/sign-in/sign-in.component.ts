@@ -20,15 +20,15 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
           <div class="flex border-b border-gray-100">
             <a
               routerLink="/auth/sign-in"
-              routerLinkActive="border-b-2 border-[#0B1D2E] text-[#0B1D2E] font-semibold"
+              routerLinkActive="border-b-2 border-primary text-primary font-semibold"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-[#0B1D2E] transition-colors uppercase tracking-widest"
+              class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
             >Login</a>
             <a
               routerLink="/auth/sign-up"
-              routerLinkActive="border-b-2 border-[#0B1D2E] text-[#0B1D2E] font-semibold"
+              routerLinkActive="border-b-2 border-primary text-primary font-semibold"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-[#0B1D2E] transition-colors uppercase tracking-widest"
+              class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
             >Register</a>
           </div>
         } @else {
@@ -37,13 +37,13 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
             <button
               type="button"
               (click)="backToCredentials()"
-              class="text-gray-400 hover:text-[#0B1D2E] transition-colors"
+              class="text-gray-400 hover:text-primary transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 class="text-sm font-semibold text-[#0B1D2E] uppercase tracking-widest">
+            <h2 class="text-sm font-semibold text-primary uppercase tracking-widest">
               {{ signInStep() === 'new_password' ? 'Set New Password' : 'Verify Your Identity' }}
             </h2>
           </div>
@@ -69,7 +69,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
                   type="email"
                   [formField]="signInForm.email"
                   placeholder="you@example.com"
-                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 @if (signInForm.email().touched() && signInForm.email().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -91,7 +91,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
                     [type]="showPassword() ? 'text' : 'password'"
                     [formField]="signInForm.password"
                     placeholder="••••••••"
-                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
                   <button type="button" (click)="showPassword.set(!showPassword())"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors" tabindex="-1">
@@ -121,7 +121,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
               <div class="mb-6">
                 <label class="flex items-center gap-2.5 cursor-pointer group">
                   <input type="checkbox" [formField]="signInForm.rememberMe"
-                    class="w-4 h-4 rounded border-gray-300 accent-[#0B1D2E] cursor-pointer" />
+                    class="w-4 h-4 rounded border-gray-300 accent-primary cursor-pointer" />
                   <span class="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Remember me</span>
                 </label>
               </div>
@@ -130,7 +130,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
               <button
                 type="submit"
                 [disabled]="signInForm().pending()"
-                class="w-full bg-[#0B1D2E] hover:bg-[#162a3d] active:bg-[#0a1825] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full btn-primary py-3 text-sm tracking-wide shadow-sm hover:shadow-md"
               >
                 @if (signInForm().pending()) {
                   <span class="flex items-center justify-center gap-2">
@@ -146,7 +146,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
               </button>
 
               <div class="mt-4 text-center">
-                <a href="#" class="text-sm text-[#C8812A] hover:text-[#b8721a] font-medium transition-colors hover:underline">
+                <a href="#" class="text-sm text-accent hover:text-accent-dark font-medium transition-colors hover:underline">
                   Lost your password?
                 </a>
               </div>
@@ -203,7 +203,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
                     [type]="showNewPassword() ? 'text' : 'password'"
                     [formField]="newPasswordForm.newPassword"
                     placeholder="••••••••"
-                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
                   <button type="button" (click)="showNewPassword.set(!showNewPassword())"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors" tabindex="-1">
@@ -239,7 +239,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
                     [type]="showConfirmPassword() ? 'text' : 'password'"
                     [formField]="newPasswordForm.confirmPassword"
                     placeholder="••••••••"
-                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                    class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
                   <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors" tabindex="-1">
@@ -268,7 +268,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
               <button
                 type="submit"
                 [disabled]="newPasswordForm().pending()"
-                class="w-full bg-[#0B1D2E] hover:bg-[#162a3d] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full btn-primary py-3 text-sm tracking-wide shadow-sm hover:shadow-md"
               >
                 @if (newPasswordForm().pending()) {
                   <span class="flex items-center justify-center gap-2">
@@ -310,7 +310,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
                   inputmode="numeric"
                   [formField]="mfaForm.code"
                   placeholder="000000"
-                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all text-center tracking-[0.5em] font-mono"
+                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-center tracking-[0.5em] font-mono"
                 />
                 @if (mfaForm.code().touched() && mfaForm.code().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -325,7 +325,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
               <button
                 type="submit"
                 [disabled]="mfaForm().pending()"
-                class="w-full bg-[#0B1D2E] hover:bg-[#162a3d] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full btn-primary py-3 text-sm tracking-wide shadow-sm hover:shadow-md"
               >
                 @if (mfaForm().pending()) {
                   <span class="flex items-center justify-center gap-2">
@@ -348,7 +348,7 @@ type SignInStep = 'credentials' | 'new_password' | 'mfa';
       @if (signInStep() === 'credentials') {
         <p class="text-center text-sm text-gray-400 mt-6">
           Don't have an account?
-          <a routerLink="/auth/sign-up" class="text-[#0B1D2E] font-semibold hover:text-[#C8812A] transition-colors ml-1">
+          <a routerLink="/auth/sign-up" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
             Register here
           </a>
         </p>

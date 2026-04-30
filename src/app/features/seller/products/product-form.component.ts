@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   inject,
@@ -75,9 +75,9 @@ interface ProductFormModel {
 
         <form (submit)="onSubmit(); $event.preventDefault()" class="space-y-6">
 
-          <!-- Section 1: Información básica -->
+          <!-- Section 1: InformaciÃ³n bÃ¡sica -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información básica</h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">InformaciÃ³n bÃ¡sica</h2>
 
             <!-- Tipo de producto -->
             <div>
@@ -91,7 +91,7 @@ interface ProductFormModel {
               } @else {
                 <select
                   [formField]="productForm.productType"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all bg-white"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
                 >
                   <option value="">Selecciona un tipo</option>
                   <option value="STRAW">Pajilla (semen bovino)</option>
@@ -117,7 +117,7 @@ interface ProductFormModel {
                 type="text"
                 [formField]="productForm.name"
                 placeholder="Ej. Pajilla Angus Premium"
-                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (productForm.name().touched() && productForm.name().errors().length) {
                 <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -129,21 +129,21 @@ interface ProductFormModel {
               }
             </div>
 
-            <!-- Descripción -->
+            <!-- DescripciÃ³n -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">DescripciÃ³n</label>
               <textarea
                 [formField]="productForm.description"
                 rows="3"
-                placeholder="Describe las características del producto..."
-                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all resize-none"
+                placeholder="Describe las caracterÃ­sticas del producto..."
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
               ></textarea>
             </div>
           </div>
 
-          <!-- Section 2: Información genética -->
+          <!-- Section 2: InformaciÃ³n genÃ©tica -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información genética</h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">InformaciÃ³n genÃ©tica</h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <!-- Raza -->
@@ -155,7 +155,7 @@ interface ProductFormModel {
                   type="text"
                   [formField]="productForm.breed"
                   placeholder="Ej. Angus, Holstein, Brahman"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 @if (productForm.breed().touched() && productForm.breed().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -174,7 +174,7 @@ interface ProductFormModel {
                 </label>
                 <select
                   [formField]="productForm.origin"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all bg-white"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
                 >
                   <option value="">Selecciona origen</option>
                   <option value="NATIONAL">Nacional</option>
@@ -195,7 +195,7 @@ interface ProductFormModel {
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Tipo de registro</label>
                 <select
                   [formField]="productForm.registrationType"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all bg-white"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
                 >
                   <option value="">Sin registro</option>
                   <option value="PURO">Puro Registro</option>
@@ -210,7 +210,7 @@ interface ProductFormModel {
                   type="text"
                   [formField]="productForm.bullName"
                   placeholder="Ej. Titan 7892"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
             </div>
@@ -218,7 +218,7 @@ interface ProductFormModel {
 
           <!-- Section 3: Regulatorio -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información regulatoria</h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">InformaciÃ³n regulatoria</h2>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -231,7 +231,7 @@ interface ProductFormModel {
                 type="text"
                 [formField]="productForm.invimaRegistration"
                 placeholder="Ej. INVIMA 2023M-0012345"
-                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (model().productType === 'SUPPLIES') {
                 <p class="text-gray-400 text-xs mt-1.5">Requerido para insumos veterinarios.</p>
@@ -263,7 +263,7 @@ interface ProductFormModel {
                   placeholder="0"
                
                   step="0.01"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 @if (productForm.pricePerDose().touched() && productForm.pricePerDose().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -286,7 +286,7 @@ interface ProductFormModel {
                   placeholder="0"
               
                   step="1"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 @if (productForm.stockQuantity().touched() && productForm.stockQuantity().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -309,10 +309,10 @@ interface ProductFormModel {
                 </svg>
               </div>
               <div>
-                <p class="font-semibold text-amber-800 text-sm">Validación ICA requerida</p>
+                <p class="font-semibold text-amber-800 text-sm">ValidaciÃ³n ICA requerida</p>
                 <p class="text-amber-600 text-sm mt-1">
-                  Tu cuenta no tiene una validación ICA activa. Contacta al administrador para
-                  habilitar la gestión de productos.
+                  Tu cuenta no tiene una validaciÃ³n ICA activa. Contacta al administrador para
+                  habilitar la gestiÃ³n de productos.
                 </p>
               </div>
             </div>
@@ -336,7 +336,7 @@ interface ProductFormModel {
             <button
               type="submit"
               [disabled]="saving()"
-              class="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-[#0B1D2E] rounded-xl hover:bg-[#162a3d] disabled:opacity-50 transition-colors"
+              class="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm"
             >
               @if (saving()) {
                 <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -480,7 +480,7 @@ export default class ProductFormComponent implements OnInit {
         if (status === 403) {
           this.icaError.set(true);
         } else {
-          this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
+          this.errorMsg.set('OcurriÃ³ un error al guardar. Intenta de nuevo.');
         }
       } finally {
         this.saving.set(false);
@@ -488,3 +488,4 @@ export default class ProductFormComponent implements OnInit {
     });
   }
 }
+

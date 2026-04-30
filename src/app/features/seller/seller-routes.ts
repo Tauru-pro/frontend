@@ -13,5 +13,6 @@ export default <Routes>[
     path: 'products/:id/edit',
     loadComponent: () => import('./products/product-form.component'),
   },
+  { path: 'settings', loadComponent: () => import('./settings/seller-settings.component') },
   { path: '', redirectTo: 'products', pathMatch: 'full' },
 ];

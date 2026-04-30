@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   inject,
@@ -21,10 +21,10 @@ import { UserStore } from '../../../core/store/user.store';
     <div class="min-h-screen bg-gray-50 flex items-center justify-center">
       @if (loading()) {
         <div class="text-center">
-          <div class="w-16 h-16 bg-[#C8812A] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <div class="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <span class="text-2xl font-bold text-white">T</span>
           </div>
-          <svg class="animate-spin w-8 h-8 text-[#C8812A] mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin w-8 h-8 text-accent mx-auto mb-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
@@ -41,7 +41,7 @@ import { UserStore } from '../../../core/store/user.store';
           <p class="text-sm text-gray-500 mb-6">{{ error() }}</p>
           <a
             routerLink="/auth/sign-in"
-            class="inline-block bg-[#0B1D2E] text-white text-sm font-medium px-6 py-2.5 rounded-xl hover:bg-[#162a3d] transition-colors"
+            class="inline-block btn-primary px-6 py-2.5 text-sm"
           >
             Back to Sign In
           </a>
@@ -90,3 +90,4 @@ export default class CallbackComponent implements OnInit, OnDestroy {
     else                        this.router.navigate(['/']);
   }
 }
+

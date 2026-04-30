@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+﻿import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive } from "@angular/router";
 import { form, FormField, submit, required, email, minLength, validate } from "@angular/forms/signals";
 import { AuthService } from "../../../core/auth/auth.service";
@@ -19,17 +19,17 @@ import { AuthService } from "../../../core/auth/auth.service";
         <div class="flex border-b border-gray-100">
           <a
             routerLink="/auth/sign-in"
-            routerLinkActive="border-b-2 border-[#0B1D2E] text-[#0B1D2E] font-semibold"
+            routerLinkActive="border-b-2 border-primary text-primary font-semibold"
             [routerLinkActiveOptions]="{ exact: true }"
-            class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-[#0B1D2E] transition-colors uppercase tracking-widest"
+            class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
           >
             Login
           </a>
           <a
             routerLink="/auth/sign-up"
-            routerLinkActive="border-b-2 border-[#0B1D2E] text-[#0B1D2E] font-semibold"
+            routerLinkActive="border-b-2 border-primary text-primary font-semibold"
             [routerLinkActiveOptions]="{ exact: true }"
-            class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-[#0B1D2E] transition-colors uppercase tracking-widest"
+            class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
           >
             Register
           </a>
@@ -55,7 +55,7 @@ import { AuthService } from "../../../core/auth/auth.service";
                 type="text"
                 [formField]="signUpForm.username"
                 placeholder="johndoe"
-                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (signUpForm.username().touched() && signUpForm.username().errors().length) {
                 <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -76,7 +76,7 @@ import { AuthService } from "../../../core/auth/auth.service";
                 type="email"
                 [formField]="signUpForm.email"
                 placeholder="you@example.com"
-                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (signUpForm.email().touched() && signUpForm.email().errors().length) {
                 <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -98,7 +98,7 @@ import { AuthService } from "../../../core/auth/auth.service";
                   [type]="showPassword() ? 'text' : 'password'"
                   [formField]="signUpForm.password"
                   placeholder="Min. 8 characters"
-                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 <button
                   type="button"
@@ -138,7 +138,7 @@ import { AuthService } from "../../../core/auth/auth.service";
                   [type]="showConfirmPassword() ? 'text' : 'password'"
                   [formField]="signUpForm.confirmPassword"
                   placeholder="Repeat your password"
-                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B1D2E]/10 focus:border-[#0B1D2E] transition-all"
+                  class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 <button
                   type="button"
@@ -172,7 +172,7 @@ import { AuthService } from "../../../core/auth/auth.service";
             <button
               type="submit"
               [disabled]="signUpForm().pending()"
-              class="w-full bg-[#0B1D2E] hover:bg-[#162a3d] active:bg-[#0a1825] text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full btn-primary py-3 text-sm tracking-wide shadow-sm hover:shadow-md"
             >
               @if (signUpForm().pending()) {
                 <span class="flex items-center justify-center gap-2">
@@ -190,9 +190,9 @@ import { AuthService } from "../../../core/auth/auth.service";
             <!-- Terms note -->
             <p class="text-center text-xs text-gray-400 mt-4 leading-relaxed">
               By registering you agree to our
-              <a href="#" class="text-[#0B1D2E] hover:text-[#C8812A] font-medium transition-colors">Terms of Service</a>
+              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Terms of Service</a>
               and
-              <a href="#" class="text-[#0B1D2E] hover:text-[#C8812A] font-medium transition-colors">Privacy Policy</a>
+              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Privacy Policy</a>
             </p>
           </form>
 
@@ -234,7 +234,7 @@ import { AuthService } from "../../../core/auth/auth.service";
       <!-- Login link -->
       <p class="text-center text-sm text-gray-400 mt-6">
         Already have an account?
-        <a routerLink="/auth/sign-in" class="text-[#0B1D2E] font-semibold hover:text-[#C8812A] transition-colors ml-1">
+        <a routerLink="/auth/sign-in" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
           Log in here
         </a>
       </p>
@@ -289,3 +289,4 @@ export default class SignUpComponent {
     });
   }
 }
+

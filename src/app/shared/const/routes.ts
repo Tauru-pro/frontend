@@ -1,8 +1,11 @@
 export enum RoutesApp {
-    root = '',
+    verifyEmail = 'verify-email',
+    dashboard = 'dashboard',
+    callback = 'callback',
+    sellers = 'sellers',
     signIn = 'sign-in',
     signUp = 'sign-up',
-    verifyEmail = 'verify-email',
-    callback = 'callback',
     admin = 'admin',
+    users = "users",
+    root = '',
 }
