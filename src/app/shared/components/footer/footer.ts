@@ -12,7 +12,7 @@ import { Category } from '../../../features/marketplace/home/home.component';
       <!-- Brand column -->
       <div class="lg:col-span-2">
         <div class="flex items-center gap-2 mb-4">
-          <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center text-white font-bold text-lg">
+          <div class="w-9 h-9 bg-secondary rounded-lg flex items-center justify-center text-white font-bold text-lg">
             T
           </div>
           <div class="leading-none">

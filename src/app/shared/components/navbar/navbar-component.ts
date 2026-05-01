@@ -34,7 +34,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
     <!-- Logo -->
     <a href="/" class="flex items-center gap-2 flex-shrink-0">
       <div
-        class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-lg"
+        class="w-9 h-9 bg-secondary rounded-lg flex items-center justify-center font-bold text-white text-lg"
       >
         T
       </div>
@@ -48,7 +48,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
     <!-- Search -->
     <div class="flex-1 flex rounded-lg overflow-hidden border border-white/10 max-w-2xl mx-4">
       <select
-        class="bg-accent text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
+        class="bg-secondary text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
       >
         <option>All Categories</option>
         @for (cat of categories.slice(1); track cat.slug) {
@@ -61,7 +61,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
         class="flex-1 px-4 py-2.5 text-primary text-sm outline-none min-w-0"
       />
       <button
-        class="bg-accent hover:bg-accent-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
+        class="bg-secondary hover:bg-secondary-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
 
       <!-- Cart -->
       <button
-        class="flex items-center gap-3 btn-accent px-4 py-2"
+        class="flex items-center gap-3 btn-secondary px-4 py-2"
       >
         <div class="relative">
           <svg
