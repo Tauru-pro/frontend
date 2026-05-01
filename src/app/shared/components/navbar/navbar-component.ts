@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Category } from '../../../features/marketplace/home/home.component';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserStore } from '../../../core/store/user.store';
+
 import { HasRoleDirective } from '../../directives/has-role.directive';
+import { CartStore } from '../../../core/store/cart.store';
 
 @Component({
   selector: 'app-navbar',
@@ -126,7 +128,7 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
       }
 
       <!-- Cart -->
-      <button
+      <a routerLink="/cart"
         class="flex items-center gap-3 btn-secondary px-4 py-2"
       >
         <div class="relative">
@@ -144,17 +146,17 @@ import { HasRoleDirective } from '../../directives/has-role.directive';
               d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
             />
           </svg>
-          @if (cartCount() > 0) {
+          @if (cartStore.count() > 0) {
             <span
               class="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
-            >{{ cartCount() }}</span>
+            >{{ cartStore.count() }}</span>
           }
         </div>
         <div class="text-white text-left hidden sm:block">
-          <div class="text-[10px] opacity-75">My Cart</div>
-          <div class="text-sm font-bold">$47.32</div>
+          <div class="text-[10px] opacity-75">Mi Carrito</div>
+          <div class="text-sm font-bold">{{ cartTotalDisplay() }}</div>
         </div>
-      </button>
+      </a>
     </div>
   </div>
 </header>
@@ -203,8 +205,9 @@ export class NavbarComponent {
   private authService = inject(AuthService);
   private userStore = inject(UserStore);
   private router = inject(Router);
+  cartStore = inject(CartStore);
+  cartTotalDisplay = computed(() => '$' + this.cartStore.total().toFixed(2));
 
-  cartCount = signal(2);
   // navLinks = ['Home', 'Shop', 'Deals', 'New Arrivals', 'About', 'Blog'];
 
   isAuthenticated = computed(() => this.authService.currentUser() !== null);

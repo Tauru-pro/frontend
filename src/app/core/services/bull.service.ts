@@ -28,6 +28,17 @@ export class BullService {
     return this.http.get<PaginatedBulls>(`${this.apiUrl}/me`, { params });
   }
 
+  getCatalogBulls(page = 1, limit = 12, breed?: string, minPrice?: number, maxPrice?: number): Observable<PaginatedBulls> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('status', 'ACTIVE');
+    if (breed) params = params.set('breed', breed);
+    if (minPrice != null) params = params.set('minPrice', minPrice.toString());
+    if (maxPrice != null) params = params.set('maxPrice', maxPrice.toString());
+    return this.http.get<PaginatedBulls>(this.apiUrl, { params });
+  }
+
   getBull(id: string): Observable<Bull> {
     return this.http.get<Bull>(`${this.apiUrl}/${id}`);
   }

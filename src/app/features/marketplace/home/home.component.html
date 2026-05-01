@@ -19,51 +19,55 @@
 
   <!-- Hero Banner -->
   <div class="flex-1 min-w-0">
-    <div class="bg-surface-muted rounded-2xl overflow-hidden relative flex items-center min-h-[300px] md:min-h-[340px]">
+    <div
+      class="bg-surface-muted rounded-2xl overflow-hidden relative flex items-center min-h-[260px] sm:min-h-[300px] md:min-h-[340px]">
       <!-- Left content -->
-      <div class="flex-1 p-8 md:p-12 z-10 relative">
+      <div class="flex-1 p-5 sm:p-8 md:p-12 z-10 relative">
         <span
-          class="inline-block bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-widest">
+          class="inline-block bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-widest">
           Genética Certificada
         </span>
-        <h1 class="text-3xl md:text-4xl font-bold text-primary leading-tight mb-3">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-primary leading-tight mb-2">
           Catálogo de<br />
           <span class="text-secondary">Semen Bovino</span>
         </h1>
-        <p class="text-gray-500 text-sm md:text-base mb-5 max-w-xs">
+        <p class="text-gray-500 text-xs sm:text-sm md:text-base mb-4 max-w-xs hidden sm:block">
           Las mejores genéticas del mundo para mejorar tu hato. Cadena de frío garantizada en cada pedido.
         </p>
-        <div class="flex items-baseline gap-2 mb-6">
-          <span class="text-gray-400 text-sm">Desde</span>
-          <span class="text-3xl font-bold text-secondary">$28.00</span>
-          <span class="text-gray-400 text-sm">/ dosis</span>
+        <div class="flex items-baseline gap-2 mb-4">
+          <span class="text-gray-400 text-xs sm:text-sm">Desde</span>
+          <span class="text-2xl sm:text-3xl font-bold text-secondary">$28.00</span>
+          <span class="text-gray-400 text-xs sm:text-sm">/ dosis</span>
         </div>
-        <div class="flex items-center gap-3 flex-wrap">
-          <button class="btn-primary px-7 py-3 text-sm shadow-lg">
+        <div class="flex items-center gap-2 flex-wrap">
+          <a routerLink="/catalog" class="btn-primary px-4 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-sm shadow-lg">
             Ver Catálogo
-          </button>
-          <button class="btn-primary-outline px-6 py-3 text-sm">
+          </a>
+          <a routerLink="/catalog"
+            class="btn-primary-outline px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm hidden sm:inline-flex">
             Ver Ofertas
-          </button>
+          </a>
         </div>
       </div>
 
-      <!-- Right illustration -->
-      <div class="w-64 md:w-80 flex-shrink-0 relative flex items-center justify-center self-stretch pr-6">
+      <!-- Right illustration — hidden on xs, visible from sm -->
+      <div class="hidden sm:flex w-52 md:w-80 flex-shrink-0 relative items-center justify-center self-stretch pr-6">
         <!-- Decorative circle -->
-        <div class="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 bg-secondary/10 rounded-full"></div>
+        <div class="absolute right-8 top-1/2 -translate-y-1/2 w-44 md:w-56 h-44 md:h-56 bg-secondary/10 rounded-full">
+        </div>
         <!-- Main emoji illustration -->
         <div class="relative z-10 text-center">
-          <div class="text-8xl md:text-9xl leading-none select-none">🐃</div>
-          <div class="text-5xl leading-none mt-1 select-none">🧬&nbsp;❄️</div>
+          <div class="text-7xl md:text-9xl leading-none select-none">🐃</div>
+          <div class="text-4xl md:text-5xl leading-none mt-1 select-none">🧬&nbsp;❄️</div>
         </div>
         <!-- Badge -->
-        <div class="absolute top-6 right-4 bg-secondary text-white rounded-2xl px-4 py-3 shadow-lg text-center">
-          <div class="text-xs opacity-80">Mejor Oferta</div>
-          <div class="text-xl font-bold">38% OFF</div>
+        <div
+          class="absolute top-4 right-2 md:top-6 md:right-4 bg-secondary text-white rounded-2xl px-3 md:px-4 py-2 md:py-3 shadow-lg text-center">
+          <div class="text-[10px] opacity-80">Mejor Oferta</div>
+          <div class="text-base md:text-xl font-bold">38% OFF</div>
         </div>
-        <!-- Cold chain badge -->
-        <div class="absolute bottom-6 left-0 bg-white rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
+        <!-- Cold chain badge — hidden on sm, visible from md -->
+        <div class="absolute bottom-4 left-0 bg-white rounded-xl px-3 py-2 shadow-lg hidden md:flex items-center gap-2">
           <span class="text-xl">❄️</span>
           <div>
             <div class="text-[10px] text-gray-400">Cadena de Frío</div>
@@ -98,19 +102,19 @@
       </button>
     </div>
     <!-- ── Featured Products ── -->
-    <section>
+    <section class="flex-1 min-w-0">
 
       <div class="flex items-center justify-between mb-5">
         <div>
           <h2 class="text-xl font-bold text-primary">Semen Destacado</h2>
           <p class="text-sm text-gray-400 mt-0.5">Genéticas seleccionadas con altos índices productivos</p>
         </div>
-        <a href="#" class="text-secondary hover:underline text-sm font-medium flex items-center gap-1">
+        <a routerLink="/catalog" class="text-secondary hover:underline text-sm font-medium flex items-center gap-1">
           Ver Todo <span>→</span>
         </a>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         @for (product of featuredProducts; track product.id) {
         <div
           class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden group">
@@ -156,8 +160,8 @@
 
 
   <!-- ── Deal of the Day ── -->
-  <section class="bg-gradient-to-r from-primary via-primary-dark to-dark rounded-2xl p-7 text-white">
-    <div class="flex flex-col lg:flex-row items-center gap-8">
+  <section class="bg-gradient-to-r from-primary via-primary-dark to-dark rounded-2xl p-5 sm:p-7 text-white">
+    <div class="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
 
       <!-- Deal info -->
       <div class="flex-1 w-full">
@@ -166,18 +170,19 @@
             🔥 Oferta del Día
           </span>
         </div>
-        <h2 class="text-2xl font-bold mb-2">{{ dealProduct.name }}</h2>
-        <p class="text-gray-400 text-sm mb-4">Dosis certificada · Alta fertilidad · Índices EPD top 1%</p>
-        <div class="flex items-center gap-3 mb-4 flex-wrap">
-          <span class="text-3xl font-bold text-secondary">${{ dealProduct.price.toFixed(2) }}</span>
-          <span class="text-gray-400 line-through text-lg">${{ dealProduct.originalPrice?.toFixed(2) }}</span>
-          <span class="bg-secondary text-white text-sm font-bold px-2 py-0.5 rounded-md">
+        <h2 class="text-lg sm:text-2xl font-bold mb-1.5">{{ dealProduct.name }}</h2>
+        <p class="text-gray-400 text-xs sm:text-sm mb-3">Dosis certificada · Alta fertilidad · Índices EPD top 1%</p>
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+          <span class="text-2xl sm:text-3xl font-bold text-secondary">${{ dealProduct.price.toFixed(2) }}</span>
+          <span class="text-gray-400 line-through text-sm sm:text-lg">${{ dealProduct.originalPrice?.toFixed(2)
+            }}</span>
+          <span class="bg-secondary text-white text-xs sm:text-sm font-bold px-2 py-0.5 rounded-md">
             {{ dealDiscount }}% OFF
           </span>
         </div>
 
         <!-- Stock bar -->
-        <div class="mb-5">
+        <div class="mb-4">
           <div class="flex justify-between text-xs text-gray-400 mb-1.5">
             <span>Vendidas: <strong class="text-white">142 dosis</strong></span>
             <span>Disponibles: <strong class="text-white">58 dosis</strong></span>
@@ -188,34 +193,36 @@
         </div>
 
         <!-- Countdown timer -->
-        <div class="mb-6">
+        <div class="mb-5">
           <p class="text-xs text-gray-400 mb-2 uppercase tracking-widest">Oferta Termina En</p>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 sm:gap-2">
             @for (unit of [
             { label: 'Hrs', value: hours() },
             { label: 'Min', value: minutes() },
             { label: 'Seg', value: seconds() }
             ]; track unit.label; let last = $last) {
-            <div class="bg-white/10 rounded-xl px-4 py-2.5 text-center min-w-[62px] border border-white/10">
-              <div class="text-2xl font-bold tabular-nums">{{ pad(unit.value) }}</div>
-              <div class="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">{{ unit.label }}</div>
+            <div
+              class="bg-white/10 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-center min-w-[52px] sm:min-w-[62px] border border-white/10">
+              <div class="text-xl sm:text-2xl font-bold tabular-nums">{{ pad(unit.value) }}</div>
+              <div class="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">{{ unit.label }}
+              </div>
             </div>
             @if (!last) {
-            <span class="text-2xl font-bold text-secondary select-none">:</span>
+            <span class="text-xl sm:text-2xl font-bold text-secondary select-none">:</span>
             }
             }
           </div>
         </div>
 
-        <button (click)="addDealToCart()" class="btn-secondary px-8 py-3 shadow-lg">
+        <button (click)="addDealToCart()" class="btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm shadow-lg">
           Agregar al Carrito →
         </button>
       </div>
 
-      <!-- Deal product image -->
-      <div class="flex-shrink-0 text-center lg:w-72">
-        <div class="bg-white/5 rounded-2xl p-8 border border-white/10 inline-block">
-          <div class="text-8xl select-none mb-3">{{ dealProduct.emoji }}</div>
+      <!-- Deal product image — hidden on mobile to save space -->
+      <div class="hidden sm:block flex-shrink-0 text-center lg:w-72">
+        <div class="bg-white/5 rounded-2xl p-6 sm:p-8 border border-white/10 inline-block">
+          <div class="text-7xl sm:text-8xl select-none mb-3">{{ dealProduct.emoji }}</div>
           <div class="text-sm text-gray-300 font-medium">Brahman Rojo Elite</div>
           <div class="flex justify-center items-center gap-0.5 mt-2 text-yellow-400 text-sm">
             @for (s of stars(dealProduct.rating); track $index) {
@@ -240,7 +247,7 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
       @for (product of bestSellers; track product.id) {
       <div
         class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group">
@@ -298,7 +305,7 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-8 gap-3">
       @for (product of popularProducts; track product.id) {
       <div
         class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden group text-center">
@@ -332,7 +339,7 @@
   </section>
 
   <!-- ── Value Propositions ── -->
-  <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
     @for (feature of [
     { icon: '❄️', title: 'Cadena de Frío', desc: 'Garantizada en cada envío' },
     { icon: '🧬', title: 'Genética Certificada', desc: 'Toros con EPD verificados' },

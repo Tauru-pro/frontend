@@ -1,0 +1,271 @@
+<div class="min-h-screen bg-surface flex flex-col lg:flex-row">
+
+  <!-- ══════════════════════════════════════════
+       LEFT COLUMN — Form
+  ══════════════════════════════════════════ -->
+  <div class="flex-1 px-6 py-10 lg:px-16 lg:py-14 flex flex-col max-w-2xl w-full mx-auto lg:mx-0 lg:max-w-none">
+
+    <!-- Logo -->
+    <!-- <a routerLink="/" class="flex items-center gap-2 mb-10 self-start">
+      <div class="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center font-bold text-white">T</div>
+      <div class="leading-none">
+        <span class="text-lg font-bold text-primary">Tauru</span>
+        <span class="text-accent font-bold text-lg">.</span>
+        <div class="text-[9px] text-gray-400 tracking-widest uppercase">Market</div>
+      </div>
+    </a> -->
+
+    <!-- Stepper -->
+    @if (currentStep() < 4) { <nav class="flex items-center gap-1.5 text-xs mb-10 flex-wrap">
+      <a routerLink="/carrito" class="text-secondary hover:underline">Carrito</a>
+      @for (step of [{n:1, label:'Información'},{n:2, label:'Envío'},{n:3, label:'Pago'}]; track step.n) {
+      <span class="text-gray-300">›</span>
+      <span [class]="currentStep() === step.n
+            ? 'font-bold text-primary'
+            : currentStep() > step.n
+              ? 'text-secondary hover:underline cursor-pointer'
+              : 'text-gray-400'">
+        {{ step.label }}
+      </span>
+      }
+      </nav>
+      }
+
+      <!-- ── STEP 1: Información ── -->
+      @if (currentStep() === 1) {
+      <h2 class="text-xl font-bold text-primary mb-6">Información de contacto</h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1.5">Nombre completo <span
+              class="text-red-400">*</span></label>
+          <input type="text" class="form-input" placeholder="Ej. Juan García" [value]="fullName()"
+            (input)="fullName.set($any($event.target).value)" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5">Correo electrónico <span
+                class="text-red-400">*</span></label>
+            <input type="email" class="form-input" placeholder="correo@ejemplo.com" [value]="email()"
+              (input)="email.set($any($event.target).value)" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5">Teléfono</label>
+            <input type="tel" class="form-input" placeholder="+57 300 000 0000" [value]="phone()"
+              (input)="phone.set($any($event.target).value)" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1.5">Ciudad <span
+              class="text-red-400">*</span></label>
+          <input type="text" class="form-input" placeholder="Ej. Bogotá" [value]="city()"
+            (input)="city.set($any($event.target).value)" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1.5">Dirección de entrega <span
+              class="text-red-400">*</span></label>
+          <input type="text" class="form-input" placeholder="Calle, número, barrio" [value]="address()"
+            (input)="address.set($any($event.target).value)" />
+        </div>
+      </div>
+      }
+
+      <!-- ── STEP 2: Envío ── -->
+      @if (currentStep() === 2) {
+      <!-- Contact summary -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6 divide-y divide-gray-50">
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <span class="text-gray-400 w-20 flex-shrink-0">Contacto</span>
+          <span class="text-gray-700 flex-1 mx-3 truncate">{{ email() }}</span>
+          <button (click)="currentStep.set(1)"
+            class="text-secondary text-xs hover:underline flex-shrink-0">Cambiar</button>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <span class="text-gray-400 w-20 flex-shrink-0">Enviar a</span>
+          <span class="text-gray-700 flex-1 mx-3 truncate">{{ address() }}, {{ city() }}</span>
+          <button (click)="currentStep.set(1)"
+            class="text-secondary text-xs hover:underline flex-shrink-0">Cambiar</button>
+        </div>
+      </div>
+
+      <h2 class="text-xl font-bold text-primary mb-4">Método de envío</h2>
+      <div class="space-y-3">
+        @for (opt of shippingOptions; track opt.id) {
+        <label class="flex items-center gap-4 p-4 bg-white rounded-xl border-2 cursor-pointer transition-colors"
+          [class]="shippingMethod() === opt.id ? 'border-secondary' : 'border-gray-100 hover:border-gray-200'">
+          <input type="radio" name="shipping" [value]="opt.id" class="hidden" [checked]="shippingMethod() === opt.id"
+            (change)="shippingMethod.set(opt.id)" />
+          <!-- Radio indicator -->
+          <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+            [class]="shippingMethod() === opt.id ? 'border-secondary' : 'border-gray-300'">
+            @if (shippingMethod() === opt.id) {
+            <div class="w-2 h-2 rounded-full bg-secondary"></div>
+            }
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-primary">{{ opt.label }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ opt.detail }}</p>
+          </div>
+          <span class="text-sm font-bold text-primary flex-shrink-0">
+            {{ opt.cost === 0 ? 'Gratis' : '$' + opt.cost.toFixed(2) }}
+          </span>
+        </label>
+        }
+      </div>
+      }
+
+      <!-- ── STEP 3: Pago / Revisión ── -->
+      @if (currentStep() === 3) {
+      <!-- Contact & shipping summary -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6 divide-y divide-gray-50">
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <span class="text-gray-400 w-20 flex-shrink-0">Contacto</span>
+          <span class="text-gray-700 flex-1 mx-3 truncate">{{ email() }}</span>
+          <button (click)="currentStep.set(1)"
+            class="text-secondary text-xs hover:underline flex-shrink-0">Cambiar</button>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <span class="text-gray-400 w-20 flex-shrink-0">Enviar a</span>
+          <span class="text-gray-700 flex-1 mx-3 truncate">{{ address() }}, {{ city() }}</span>
+          <button (click)="currentStep.set(1)"
+            class="text-secondary text-xs hover:underline flex-shrink-0">Cambiar</button>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <span class="text-gray-400 w-20 flex-shrink-0">Método</span>
+          <span class="text-gray-700 flex-1 mx-3">{{ selectedShippingOption().label }}</span>
+          <button (click)="currentStep.set(2)"
+            class="text-secondary text-xs hover:underline flex-shrink-0">Cambiar</button>
+        </div>
+      </div>
+
+      <h2 class="text-xl font-bold text-primary mb-4">Método de pago</h2>
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
+        <span class="text-3xl">🏦</span>
+        <p class="text-sm font-semibold text-primary mt-2">Transferencia Bancaria</p>
+        <p class="text-xs text-gray-400 mt-1">Recibirás los datos de pago por correo tras confirmar tu pedido.</p>
+      </div>
+      }
+
+      <!-- ── STEP 4: Confirmación ── -->
+      @if (currentStep() === 4) {
+      <div class="flex flex-col items-center justify-center py-10 text-center">
+        <div class="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-secondary" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-primary mb-2">¡Pedido confirmado!</h2>
+        <p class="text-gray-500 text-sm mb-1">Gracias, <strong>{{ fullName() }}</strong>. Hemos recibido tu pedido.</p>
+        <p class="text-gray-400 text-xs mb-8 max-w-sm">
+          Te enviaremos los datos de pago a <span class="font-medium text-primary">{{ email() }}</span> en los próximos
+          minutos.
+        </p>
+        <a routerLink="/" class="btn-primary px-8 py-3 text-sm">Volver al Inicio</a>
+      </div>
+      }
+
+      <!-- Error message -->
+      @if (stepError()) {
+      <p class="mt-4 text-xs text-red-500 flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ stepError() }}
+      </p>
+      }
+
+      <!-- Navigation buttons -->
+      @if (currentStep() < 4) { <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+        <button (click)="back()"
+          class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          {{ currentStep() === 1 ? 'Volver al Carrito' : 'Volver' }}
+        </button>
+
+        @if (currentStep() < 3) { <button (click)="next()" class="btn-primary px-8 py-2.5 text-sm">
+          Continuar →
+          </button>
+          } @else {
+          <button (click)="confirm()" class="btn-primary px-8 py-2.5 text-sm">
+            Confirmar Pedido
+          </button>
+          }
+  </div>
+  }
+</div>
+
+<!-- ══════════════════════════════════════════
+       RIGHT COLUMN — Order Summary
+  ══════════════════════════════════════════ -->
+<div class="lg:w-[420px] flex-shrink-0 bg-gray-50 border-l border-gray-200 px-6 py-10 lg:px-10 lg:py-14">
+
+  <!-- Items -->
+  <div class="space-y-4 mb-6">
+    @for (item of cartStore.items(); track item.bull.id + item.selectedStraw.id) {
+    <div class="flex items-center gap-3">
+      <!-- Thumbnail with quantity badge -->
+      <div class="relative flex-shrink-0">
+        <div
+          class="w-14 h-14 rounded-xl overflow-hidden bg-surface-muted border border-gray-100 flex items-center justify-center">
+          @if (coverUrl(item.bull.media); as url) {
+          <img [src]="url" [alt]="item.bull.name" class="w-full h-full object-cover" />
+          } @else {
+          <span class="text-2xl">🐂</span>
+          }
+        </div>
+        <span
+          class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+          {{ item.quantity }}
+        </span>
+      </div>
+      <!-- Details -->
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-primary leading-tight line-clamp-1">{{ item.bull.name }}</p>
+        <p class="text-xs text-gray-400">{{ strawLabel(item.selectedStraw.strawType) }}</p>
+      </div>
+      <!-- Price -->
+      <span class="text-sm font-bold text-primary flex-shrink-0">${{ itemTotal(item.selectedStraw.price, item.quantity)
+        }}</span>
+    </div>
+    }
+  </div>
+
+  <!-- Discount code -->
+  <!-- @if (currentStep() < 4) {
+      <div class="flex gap-2 mb-6">
+        <input type="text" placeholder="Código de descuento"
+          class="form-input flex-1 text-sm"
+          [value]="discountCode()"
+          (input)="discountCode.set($any($event.target).value)" />
+        <button class="btn-primary-outline px-4 py-2 text-sm flex-shrink-0">Aplicar</button>
+      </div>
+    } -->
+
+  <!-- Totals -->
+  <div class="space-y-2.5 text-sm border-t border-gray-200 pt-5">
+    <div class="flex justify-between text-gray-600">
+      <span>Subtotal</span>
+      <span class="font-semibold text-primary">${{ cartStore.total().toFixed(2) }}</span>
+    </div>
+    <div class="flex justify-between text-gray-600">
+      <span>Envío</span>
+      <span class="font-semibold text-primary">
+        {{ shippingCost() === 0 ? 'Gratis' : '$' + shippingCost().toFixed(2) }}
+      </span>
+    </div>
+  </div>
+
+  <div class="flex justify-between items-baseline border-t border-gray-200 mt-4 pt-4">
+    <span class="text-base font-bold text-primary">Total</span>
+    <div class="text-right">
+      <span class="text-xs text-gray-400 mr-1">USD</span>
+      <span class="text-2xl font-bold text-primary">${{ grandTotal().toFixed(2) }}</span>
+    </div>
+  </div>
+</div>
+</div>

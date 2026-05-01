@@ -7,5 +7,8 @@ export enum RoutesApp {
     signUp = 'sign-up',
     admin = 'admin',
     users = "users",
+    catalog = 'catalog',
+    cart = 'cart',
+    checkout = 'checkout',
     root = '',
 }
