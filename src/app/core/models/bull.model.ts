@@ -21,8 +21,8 @@ export interface BullStraw {
   id: string;
   strawType: StrawType;
   price: number;
-  stockQuantity: number;
   minOrderQuantity: number;
+  stockQuantity: number;
   status: StrawStatus;
   createdAt: string;
 }

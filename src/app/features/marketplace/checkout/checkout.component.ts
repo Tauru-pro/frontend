@@ -6,8 +6,10 @@ import {
   OnInit,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { CartStore } from '../../../core/store/cart.store';
 import { environment } from '../../../../environments/environment';
 import { BullMedia, StrawType } from '../../../core/models/bull.model';
@@ -38,11 +40,13 @@ const SHIPPING_OPTIONS: { id: ShippingMethod; label: string; detail: string; cos
 })
 export default class CheckoutComponent implements OnInit {
   private router = inject(Router);
+  private http = inject(HttpClient);
   cartStore = inject(CartStore);
 
   // Steps: 1=Información, 2=Envío, 3=Pago, 4=Confirmado
   currentStep = signal<1 | 2 | 3 | 4>(1);
   stepError = signal<string | null>(null);
+  submitting = signal(false);
 
   // Step 1 fields
   fullName = signal('');
@@ -95,9 +99,27 @@ export default class CheckoutComponent implements OnInit {
     }
   }
 
-  confirm(): void {
-    this.cartStore.clear();
-    this.currentStep.set(4);
+  async confirm(): Promise<void> {
+    this.stepError.set(null);
+    this.submitting.set(true);
+    const items = this.cartStore.items();
+    const dto = {
+      items: items.map((i) => ({ productId: i.selectedStraw.id, quantity: i.quantity })),
+      sellerId: items[0].bull.sellerId,
+      shippingDept: this.city(),
+      ...(this.shippingMethod() === 'pickup' ? {} : {}),
+    };
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/orders`, dto)
+      );
+      await this.cartStore.clear();
+      this.currentStep.set(4);
+    } catch {
+      this.stepError.set('No se pudo crear la orden. Por favor intenta de nuevo.');
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
   coverUrl(media: BullMedia[]): string | null {

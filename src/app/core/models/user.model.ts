@@ -1,3 +1,5 @@
+import { City } from "./location.model";
+
 export type UserRole = 'ADMIN' | 'SELLER' | 'BUYER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 export type SellerStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
@@ -17,7 +19,7 @@ export interface BuyerProfile {
   userId: string;
   fullName: string;
   phone?: string;
-  city?: string;
+  city?: City;
   herdSize?: string;
   buyerType?: string;
   whatsapp?: string;
@@ -29,7 +31,7 @@ export interface SellerProfile {
   bussinesName: string;
   contactPhone?: string;
   logoKey: string;
-  city?: string;
+  city?: City;
   address?: string;
   status?: SellerStatus;
 }
@@ -55,7 +57,7 @@ export interface UpdateUserDto {
 export interface UpdateSellerProfileDto {
   bussinesName?: string;
   contactPhone?: string;
-  city?: string;
+  cityId?: string;
   address?: string;
   logoKey?: string;
 }

@@ -10,5 +10,8 @@ export enum RoutesApp {
     catalog = 'catalog',
     cart = 'cart',
     checkout = 'checkout',
+    pickupPoints = 'pickup-points',
+    shippingRates = 'shipping-rates',
+    breeds = 'breeds',
     root = '',
 }

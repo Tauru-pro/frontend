@@ -18,18 +18,19 @@ import { SellerService } from '../../../core/services/seller.service';
 import { UpdateSellerProfileDto } from '../../../core/models/user.model';
 import { UserStore } from '../../../core/store/user.store';
 import { environment } from '../../../../environments/environment';
+import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
 
 interface SettingsFormModel {
   bussinesName: string;
   contactPhone: string;
-  city: string;
+  cityId: string;
   address: string;
 }
 
 @Component({
   selector: 'app-seller-settings',
   standalone: true,
-  imports: [FormField],
+  imports: [FormField, LocationSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
@@ -144,7 +145,13 @@ interface SettingsFormModel {
                 </p>
               }
             </div>
-
+         <!-- Departamento y Municipio -->
+            <app-location-select
+              [initialStateId]="initialStateId()"
+              [initialCityId]="initialCityId()"
+              [showErrors]="showLocationErrors()"
+              (selectionChange)="onLocationChange($event)"
+            />
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <!-- TelÃ©fono de contacto -->
               <div>
@@ -156,20 +163,7 @@ interface SettingsFormModel {
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
-
-              <!-- Ciudad -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Ciudad</label>
-                <input
-                  type="text"
-                  [formField]="settingsForm.city"
-                  placeholder="Ej. Bogotá"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                />
-              </div>
-            </div>
-
-            <!-- DirecciÃ³n -->
+            <!-- Dirección -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">Dirección</label>
               <input
@@ -179,6 +173,10 @@ interface SettingsFormModel {
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
             </div>
+          
+            </div>
+
+           
           </div>
 
           <!-- Error genÃ©rico -->
@@ -226,20 +224,26 @@ export default class SellerSettingsComponent implements OnInit {
   private sellerService = inject(SellerService);
   private userStore = inject(UserStore);
 
-  loading = signal(false);
-  saving = signal(false);
-  uploading = signal(false);
-  isDragging = signal(false);
-  logoKey = signal('');
+
+  initialStateId = signal<string | null>(null);
+  initialCityId = signal<string | null>(null);
+  selectedCityId = signal<string | null>(null);
   logoPreview = signal<string | null>(null);
   uploadError = signal<string | null>(null);
-  errorMsg = signal<string | null>(null);
   successMsg = signal<string | null>(null);
+  errorMsg = signal<string | null>(null);
+  showLocationErrors = signal(false);
+
+  isDragging = signal(false);
+  uploading = signal(false);
+  loading = signal(false);
+  saving = signal(false);
+  logoKey = signal('');
 
   model = signal<SettingsFormModel>({
     bussinesName: '',
     contactPhone: '',
-    city: '',
+    cityId: '',
     address: '',
   });
 
@@ -262,10 +266,12 @@ export default class SellerSettingsComponent implements OnInit {
 
   private populateForm(profile: ReturnType<typeof this.userStore.user>): void {
     if (!profile) return;
+    this.initialStateId.set(profile.sellerProfile?.city?.state?.id!)
+    this.initialCityId.set(profile.sellerProfile?.city?.id!)
     this.model.set({
       bussinesName: profile.sellerProfile?.bussinesName ?? '',
       contactPhone: profile.sellerProfile?.contactPhone ?? '',
-      city: profile.sellerProfile?.city ?? '',
+      cityId: profile.sellerProfile?.city?.id ?? '',
       address: profile.sellerProfile?.address ?? '',
     });
     this.logoKey.set(profile.sellerProfile?.logoKey ?? '');
@@ -276,6 +282,10 @@ export default class SellerSettingsComponent implements OnInit {
 
   private logoUrl(key: string): string {
     return `${environment.cdn}/${key}`;
+  }
+
+  onLocationChange(selection: LocationSelection | null): void {
+    this.selectedCityId.set(selection?.cityId ?? null);
   }
 
   onFileSelected(event: Event): void {
@@ -342,7 +352,7 @@ export default class SellerSettingsComponent implements OnInit {
         const dto: UpdateSellerProfileDto = {
           bussinesName: values.bussinesName,
           contactPhone: values.contactPhone || undefined,
-          city: values.city || undefined,
+          cityId: this.selectedCityId()!,
           address: values.address || undefined
         };
         const updated = await firstValueFrom(this.sellerService.updateMyProfile(dto));

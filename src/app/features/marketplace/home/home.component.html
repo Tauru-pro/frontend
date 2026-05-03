@@ -4,7 +4,7 @@
   <!-- Sidebar -->
   <aside class="w-56 flex-shrink-0 hidden lg:block">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      @for (cat of categories; track cat.slug; let i = $index) {
+      @for (cat of categories(); track cat.slug; let i = $index) {
       <a href="#"
         class="flex items-center gap-3 px-4 py-3 text-sm border-b border-gray-50 last:border-0 transition-colors group"
         [class.bg-surface-muted]="i === 0" [class.text-secondary]="i === 0" [class.font-semibold]="i === 0"

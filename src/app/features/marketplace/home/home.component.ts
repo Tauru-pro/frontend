@@ -1,6 +1,7 @@
 import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, inject, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { BreedService } from '../../../core/services/breed.service';
 
 export interface Product {
   id: number;
@@ -28,6 +29,7 @@ export interface Category {
 })
 export default class HomeComponent implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
+  private breedService = inject(BreedService);
   private timerInterval: ReturnType<typeof setInterval> | null = null;
 
   hours = signal(10);
@@ -35,18 +37,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
   seconds = signal(30);
   cartCount = signal(2);
 
-  categories: Category[] = [
-    { name: 'All Categories',       icon: '🏪', slug: 'all' },
-    { name: 'Semen de Toro',        icon: '🧬', slug: 'bull-semen' },
-    { name: 'Insumos de IA',        icon: '💉', slug: 'ia-supplies' },
-    { name: 'Nitrógeno Líquido',    icon: '❄️', slug: 'nitrogen' },
-    { name: 'Equipos de IA',        icon: '🔬', slug: 'equipment' },
-    { name: 'Genética Importada',   icon: '🌎', slug: 'imported' },
-    { name: 'Razas Criollas',       icon: '🐂', slug: 'creole' },
-    { name: 'Reproductores Brahman',icon: '🐃', slug: 'brahman' },
-    { name: 'Suplementos',          icon: '💊', slug: 'supplements' },
-    { name: 'Certificados',         icon: '📋', slug: 'certificates' },
-  ];
+  categories = signal<Category[]>([]);
 
   featuredProducts: Product[] = [
     { id: 1, name: 'Angus "Blackcap Exc. 1A"',    price: 45.00, originalPrice: 60.00, emoji: '🧬', badge: 'Top Gen.', rating: 4.8, reviews: 214 },
@@ -92,6 +83,18 @@ export default class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.breedService.getAll().subscribe({
+      next: (breeds) => {
+        this.categories.set(
+          breeds.map((b) => ({
+            name: b.name,
+            icon: b.purpose === 'MILK' ? '🐄' : '🐂',
+            slug: b.id,
+          }))
+        );
+      },
+    });
+
     if (isPlatformBrowser(this.platformId)) {
       this.timerInterval = setInterval(() => {
         const s = this.seconds();
@@ -121,7 +124,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
     return value.toString().padStart(2, '0');
   }
 
-  addToCart(product: Product) {
+  addToCart(_product: Product) {
     this.cartCount.update((c) => c + 1);
   }
 
