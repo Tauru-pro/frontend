@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BullService } from '../../../core/services/bull.service';
-import { CartStore } from '../../../core/store/cart.store';
+import { BullSelected, CartStore } from '../../../core/store/cart.store';
 import { Bull, BullMedia, BullStraw, StrawType } from '../../../core/models/bull.model';
 import { environment } from '../../../../environments/environment';
 
@@ -107,7 +107,13 @@ export default class BullDetailComponent implements OnInit {
     const straw = this.selectedStraw();
     const bull = this.bull();
     if (!straw || !bull) return;
-    this.cartStore.addItem(bull, straw);
+    const newBull: BullSelected = {
+      id: bull.id,
+      name: bull.name,
+      s3key: bull.media.find((m) => m.isCover && m.mediaType === 'image')!.s3Key,
+      breed: bull.breed.name
+    }
+    this.cartStore.addItem(newBull, straw);
     this.addedToCart.set(true);
     setTimeout(() => this.addedToCart.set(false), 2000);
   }

@@ -34,7 +34,7 @@ export interface SelectOption {
           (blur)="close()"
           [disabled]="_disabled() || _loading()"
           [placeholder]="_loading() ? 'Cargando...' : placeholder"
-          class="w-full border rounded-xl px-3.5 py-2.5 pr-9 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+          class="w-full bg-white border rounded-xl px-3.5 py-2.5 pr-9 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
           [class.border-gray-200]="!showValidationError()"
           [class.focus:ring-primary]="!showValidationError()"
           [class.focus:ring-primary\/10]="!showValidationError()"

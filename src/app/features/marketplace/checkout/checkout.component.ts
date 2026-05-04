@@ -6,15 +6,16 @@ import {
   OnInit,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CartStore } from '../../../core/store/cart.store';
-import { environment } from '../../../../environments/environment';
-import { BullMedia, StrawType } from '../../../core/models/bull.model';
-
-type ShippingMethod = 'standard' | 'express' | 'pickup';
+import { PickupPointService } from '../../../core/services/pickup-point.service';
+import { PickupPoint } from '../../../core/models/pickup-point.model';
+import { StrawType } from '../../../core/models/bull.model';
+import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
+import { S3fileUrlPipe } from '../../../shared/pipes/s3fileUrl-pipe';
+import { OrderService } from '../../../core/services/order.service';
 
 const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
@@ -22,56 +23,53 @@ const STRAW_LABELS: Record<StrawType, string> = {
   SEXADO_FEMALE: 'Sexado ♀',
 };
 
-const SHIPPING_OPTIONS: { id: ShippingMethod; label: string; detail: string; cost: number }[] = [
-  { id: 'standard', label: 'Envío Estándar', detail: '5–8 días hábiles · Cadena de frío básica', cost: 15 },
-  { id: 'express', label: 'Envío Express', detail: '1–3 días hábiles · Cadena de frío garantizada', cost: 30 },
-  { id: 'pickup', label: 'Recogida en Punto', detail: 'Retira en nuestro centro de distribución', cost: 0 },
-];
-
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  host: {
-    class: 'w-full'
-  },
-  imports: [RouterLink, FormsModule],
+  host: { class: 'w-full' },
+  imports: [RouterLink, FormsModule, S3fileUrlPipe, LocationSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './checkout.component.html',
 })
 export default class CheckoutComponent implements OnInit {
   private router = inject(Router);
-  private http = inject(HttpClient);
+  private orderService = inject(OrderService);
+  private pickupPointService = inject(PickupPointService);
   cartStore = inject(CartStore);
 
-  // Steps: 1=Información, 2=Envío, 3=Pago, 4=Confirmado
-  currentStep = signal<1 | 2 | 3 | 4>(1);
+  currentStep = signal<1 | 2>(1);
   stepError = signal<string | null>(null);
   submitting = signal(false);
 
-  // Step 1 fields
-  fullName = signal('');
-  email = signal('');
-  phone = signal('');
-  city = signal('');
-  address = signal('');
+  // Step 1 — contact info
+  buyerFullName = signal('');
+  buyerEmail = signal('');
+  buyerPhone = signal('');
+  buyerCity = signal('');
+  buyerAddress = signal('');
 
-  // Step 2
-  shippingMethod = signal<ShippingMethod>('standard');
+  initialStateId = signal<string | null>(null);
+  initialCityId = signal<string | null>(null);
+  selectedCityId = signal<string | null>(null);
+  showLocationErrors = signal(false);
 
-  // Discount (decorative)
-  discountCode = signal('');
+  // Step 2 — pickup point
+  pickupPoints = signal<PickupPoint[]>([]);
+  pickupPointsLoading = signal(false);
+  selectedPickupPointId = signal<string | null>(null);
+  notes = signal('');
 
-  readonly shippingOptions = SHIPPING_OPTIONS;
+  shippingCost = signal<number | null>(null);
+  shippingCostLoading = signal(false);
 
-  shippingCost = computed(
-    () => SHIPPING_OPTIONS.find((o) => o.id === this.shippingMethod())?.cost ?? 15
+  selectedPickupPoint = computed(() =>
+    this.pickupPoints().find((p) => p.id === this.selectedPickupPointId()) ?? null
   );
 
-  grandTotal = computed(() => this.cartStore.total() + this.shippingCost());
-
-  selectedShippingOption = computed(
-    () => SHIPPING_OPTIONS.find((o) => o.id === this.shippingMethod())!
-  );
+  grandTotal = computed(() => {
+    const cost = this.shippingCost();
+    return cost !== null ? this.cartStore.total() + cost : this.cartStore.total();
+  });
 
   ngOnInit(): void {
     if (this.cartStore.items().length === 0) {
@@ -82,12 +80,17 @@ export default class CheckoutComponent implements OnInit {
   next(): void {
     this.stepError.set(null);
     if (this.currentStep() === 1) {
-      if (!this.fullName().trim() || !this.email().trim() || !this.city().trim() || !this.address().trim()) {
-        this.stepError.set('Por favor completa todos los campos requeridos.');
+      if (!this.buyerFullName().trim() || !this.buyerEmail().trim()) {
+        this.stepError.set('Por favor completa los campos requeridos.');
+        return;
+      }
+      if (!this.selectedCityId()) {
+        this.showLocationErrors.set(true);
+        this.stepError.set('Por favor selecciona tu departamento y municipio.');
         return;
       }
     }
-    this.currentStep.update((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3 | 4) : s));
+    this.currentStep.set(2);
   }
 
   back(): void {
@@ -95,37 +98,71 @@ export default class CheckoutComponent implements OnInit {
     if (this.currentStep() === 1) {
       this.router.navigate(['/carrito']);
     } else {
-      this.currentStep.update((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : s));
+      this.currentStep.set(1);
     }
   }
 
+  onLocationChange(selection: LocationSelection | null): void {
+    this.selectedCityId.set(selection?.cityId ?? null);
+    this.buyerCity.set(selection?.cityId ?? '');
+
+    const stateId = selection?.stateId ?? null;
+    this.pickupPoints.set([]);
+    this.selectedPickupPointId.set(null);
+    this.shippingCost.set(null);
+
+    if (stateId) {
+      this.pickupPointsLoading.set(true);
+      this.pickupPointService.getByDepartment(stateId).subscribe({
+        next: (points) => {
+          this.pickupPoints.set(points);
+          this.pickupPointsLoading.set(false);
+        },
+        error: () => this.pickupPointsLoading.set(false),
+      });
+    }
+  }
+
+  selectPickupPoint(id: string): void {
+    this.selectedPickupPointId.set(id);
+    this.stepError.set(null);
+    this.shippingCost.set(null);
+    this.shippingCostLoading.set(true);
+    this.orderService.getShippingEstimate(id).subscribe({
+      next: (res) => {
+        this.shippingCost.set(res.totalShipping);
+        this.shippingCostLoading.set(false);
+      },
+      error: () => this.shippingCostLoading.set(false),
+    });
+  }
+
   async confirm(): Promise<void> {
+    if (!this.selectedPickupPointId()) {
+      this.stepError.set('Por favor selecciona un punto de recogida.');
+      return;
+    }
     this.stepError.set(null);
     this.submitting.set(true);
-    const items = this.cartStore.items();
-    const dto = {
-      items: items.map((i) => ({ productId: i.selectedStraw.id, quantity: i.quantity })),
-      sellerId: items[0].bull.sellerId,
-      shippingDept: this.city(),
-      ...(this.shippingMethod() === 'pickup' ? {} : {}),
-    };
     try {
-      await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/orders`, dto)
+      const order = await firstValueFrom(
+        this.orderService.checkoutFromCart({
+          buyerFullName: this.buyerFullName(),
+          buyerEmail: this.buyerEmail(),
+          buyerPhone: this.buyerPhone() || undefined,
+          buyerCity: this.buyerCity() || undefined,
+          buyerAddress: this.buyerAddress() || undefined,
+          pickupPointId: this.selectedPickupPointId()!,
+          notes: this.notes() || undefined,
+        })
       );
       await this.cartStore.clear();
-      this.currentStep.set(4);
+      window.location.href = order.paymentUrl;
     } catch {
       this.stepError.set('No se pudo crear la orden. Por favor intenta de nuevo.');
     } finally {
       this.submitting.set(false);
     }
-  }
-
-  coverUrl(media: BullMedia[]): string | null {
-    const cover = media.find((m) => m.isCover && m.mediaType === 'image')
-      ?? media.find((m) => m.mediaType === 'image');
-    return cover ? `${environment.cdn}/${cover.s3Key}` : null;
   }
 
   strawLabel(type: StrawType): string {

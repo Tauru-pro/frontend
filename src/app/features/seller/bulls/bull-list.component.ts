@@ -76,7 +76,7 @@ import { environment } from '../../../../environments/environment';
 
         <!-- Breed -->
         <ng-template tableCell="breed" let-bull>
-          <span class="text-gray-500 max-w-[120px] truncate block">{{ bull.breed }}</span>
+          <span class="text-gray-500 max-w-[120px] truncate block">{{ bull.breed.name }}</span>
         </ng-template>
 
         <!-- Origin -->

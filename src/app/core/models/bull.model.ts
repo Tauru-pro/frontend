@@ -1,3 +1,4 @@
+import { Breed } from './breed.model';
 import { PaginatedResponse } from './product.model';
 
 export type BullOrigin = 'NATIONAL' | 'IMPORTED';
@@ -31,7 +32,8 @@ export interface Bull {
   id: string;
   sellerId: string;
   name: string;
-  breed: string;
+  breedId: string;
+  breed: Breed
   origin: BullOrigin;
   registrationType: BullRegistrationType | null;
   code: string | null;
@@ -46,7 +48,7 @@ export interface Bull {
 
 export interface CreateBullDto {
   name: string;
-  breed: string;
+  breedId: string;
   origin: BullOrigin;
   registrationType?: BullRegistrationType;
   code?: string;

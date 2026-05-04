@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Bull, BullStraw, StrawType } from '../../../core/models/bull.model';
-import { CartStore } from '../../../core/store/cart.store';
+import { BullSelected, CartStore } from '../../../core/store/cart.store';
 import { environment } from '../../../../environments/environment';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -48,7 +48,7 @@ const STRAW_LABELS: Record<StrawType, string> = {
         <!-- Name & breed -->
         <div>
           <h3 class="text-sm font-bold text-primary leading-tight line-clamp-2 mb-0.5">{{ bull().name }}</h3>
-          <p class="text-xs text-gray-400">{{ bull().breed }}</p>
+          <p class="text-xs text-gray-400">{{ bull().breed.name }}</p>
         </div>
 
         <!-- Straw selector (only when ≥2 active straws) -->
@@ -126,6 +126,12 @@ export class BullCardComponent implements OnInit {
   addToCart(): void {
     const straw = this.selectedStraw();
     if (!straw) return;
-    this.cartStore.addItem(this.bull(), straw);
+    const bull: BullSelected = {
+      id: this.bull().id,
+      name: this.bull().name,
+      s3key: this.bull().media.find((m) => m.isCover && m.mediaType === 'image')!.s3Key,
+      breed: this.bull().breed.name
+    }
+    this.cartStore.addItem(bull, straw);
   }
 }

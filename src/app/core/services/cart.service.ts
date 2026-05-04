@@ -5,7 +5,9 @@ import { environment } from '../../../environments/environment';
 import {
   AddCartItemDto,
   CartResponse,
+  CheckoutFromCartDto,
   MergeCartDto,
+  OrderResponse,
   UpdateCartItemDto,
 } from '../models/cart.model';
 
@@ -41,4 +43,6 @@ export class CartService {
   mergeCart(dto: MergeCartDto): Observable<CartResponse> {
     return this.http.post<CartResponse>(`${this.apiUrl}/merge`, dto);
   }
+
+
 }

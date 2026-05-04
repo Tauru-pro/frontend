@@ -38,6 +38,7 @@ export interface LocationSelection {
       />
       <app-search-select
         label="Municipio"
+       
         [required]="true"
         errorMessage="El municipio es requerido"
         [options]="cityOptions()"

@@ -64,11 +64,9 @@
           <!-- Image -->
           <div
             class="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-surface-muted flex items-center justify-center">
-            @if (coverUrl(item.bull.media); as url) {
-            <img [src]="url" [alt]="item.bull.name" class="w-full h-full object-cover" />
-            } @else {
-            <span class="text-3xl">🐂</span>
-            }
+
+            <img [src]="item.bull.s3key | appS3fileUrl" [alt]="item.bull.name" class="w-full h-full object-cover" />
+
           </div>
           <!-- Details -->
           <div class="min-w-0">

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
 import { environment } from '../../../../environments/environment';
 import { BullMedia, StrawType } from '../../../core/models/bull.model';
+import { S3fileUrlPipe } from '../../../shared/pipes/s3fileUrl-pipe';
 
 const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
@@ -16,7 +17,7 @@ const STRAW_LABELS: Record<StrawType, string> = {
   host: {
     class: 'w-full'
   },
-  imports: [RouterLink],
+  imports: [RouterLink, S3fileUrlPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.component.html',
 })

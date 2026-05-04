@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/product.model';
 import { PickupPoint, CreatePickupPointDto, UpdatePickupPointDto } from '../models/pickup-point.model';
@@ -15,6 +15,12 @@ export class PickupPointService {
       .set('page', page.toString())
       .set('limit', limit.toString());
     return this.http.get<PaginatedResponse<PickupPoint>>(this.apiUrl, { params });
+  }
+
+  getByDepartment(departmentId: string): Observable<PickupPoint[]> {
+    const params = new HttpParams().set('stateId', departmentId);
+    return this.http.get<PickupPoint[]>(`${this.apiUrl}/by-department`, { params })
+      .pipe(map((response: any) => response.data));
   }
 
   getOne(id: string): Observable<PickupPoint> {

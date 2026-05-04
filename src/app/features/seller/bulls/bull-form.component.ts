@@ -10,7 +10,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -35,20 +34,15 @@ import {
 } from '../../../core/models/bull.model';
 import { MimeType } from '../../../core/models/upload.model';
 import { environment } from '../../../../environments/environment';
+import { SearchSelectComponent, SelectOption } from '../../../shared/components/search-select/search-select.component';
+import { BreedService } from '../../../core/services/breed.service';
 
 interface BullFormModel {
   name: string;
-  breed: string;
+  breedId: string;
   origin: BullOrigin | '';
   code: string;
   description: string;
-}
-
-interface StrawFormModel {
-  strawType: StrawType | '';
-  price: number;
-  stockQuantity: number;
-  minOrderQuantity: number;
 }
 
 interface PendingFile {
@@ -63,7 +57,7 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
 
 @Component({
   selector: 'app-bull-form',
-  imports: [RouterLink, FormField, DecimalPipe],
+  imports: [RouterLink, FormField, DecimalPipe, SearchSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-3xl mx-auto space-y-6">
@@ -201,28 +195,29 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
               <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información genética</h2>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <!-- Raza -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <!-- Código genético -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Raza <span class="text-red-400">*</span>
-                  </label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Numero de registro</label>
                   <input
                     type="text"
-                    [formField]="bullForm.breed"
-                    placeholder="Ej. Brahman, Angus, Holstein"
+                    [formField]="bullForm.code"
+                    placeholder="Ej. BRH-2023-001"
                     class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
-                  @if (bullForm.breed().touched() && bullForm.breed().errors().length) {
-                    <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                      <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                      </svg>
-                      {{ bullForm.breed().errors()[0].message }}
-                    </p>
-                  }
                 </div>
-
+                <!-- Raza -->
+               <app-search-select
+                label="Raza"
+                [required]="true"
+                placeholder="Buscar raza"
+                errorMessage="La raza es requerida"
+                [options]="breedsOptions()"
+                [value]="selectedBreedId()"
+                [loading]="breedLoading()"
+                [showError]="showSelectErrors()"
+                (valueChange)="onBreedSelected($event)"
+              />
                 <!-- Origen -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -244,19 +239,6 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                       {{ bullForm.origin().errors()[0].message }}
                     </p>
                   }
-                </div>
-
-            
-
-                <!-- Código genético -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Código genético</label>
-                  <input
-                    type="text"
-                    [formField]="bullForm.code"
-                    placeholder="Ej. BRH-2023-001"
-                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                  />
                 </div>
               </div>
             </div>
@@ -762,7 +744,7 @@ export default class BullFormComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private bullService = inject(BullService);
-
+  private breedService = inject(BreedService);
   currentStep = signal(1);
   isEditMode = signal(false);
   bullId = signal<string | null>(null);
@@ -797,9 +779,14 @@ export default class BullFormComponent implements OnInit, OnDestroy {
   existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image'));
   existingVideo = computed(() => this.existingMedia().find(m => m.mediaType === 'video') ?? null);
 
+  selectedBreedId = signal<string | null>(null);
+  breedsOptions = signal<SelectOption[]>([]);
+  showSelectErrors = signal(false);
+  breedLoading = signal(false);
+
   model = signal<BullFormModel>({
     name: '',
-    breed: '',
+    breedId: '',
     origin: '',
     code: '',
     description: '',
@@ -808,8 +795,7 @@ export default class BullFormComponent implements OnInit, OnDestroy {
   bullForm = form(this.model, (s) => {
     required(s.name, { message: 'El nombre es requerido' });
     minLength(s.name, 2, { message: 'El nombre debe tener al menos 2 caracteres' });
-    required(s.breed, { message: 'La raza es requerida' });
-    minLength(s.breed, 2, { message: 'La raza debe tener al menos 2 caracteres' });
+    required(s.breedId, { message: 'La raza es requerida' });
     validate(s.origin, ({ value }) =>
       !(value() as string)
         ? { kind: 'required', message: 'El origen es requerido' }
@@ -819,6 +805,7 @@ export default class BullFormComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    this.loadBreeds()
     if (id) {
       this.isEditMode.set(true);
       this.bullId.set(id);
@@ -832,23 +819,46 @@ export default class BullFormComponent implements OnInit, OnDestroy {
     if (video) URL.revokeObjectURL(video.preview);
   }
 
+  onBreedSelected(id: string | null): void {
+    console.log(id);
+
+    this.selectedBreedId.set(id);
+    this.model.update(m => ({ ...m, breedId: id ?? '' }));
+    console.log(this.model());
+
+  }
+
+  private loadBreeds(): void {
+    this.breedLoading.set(true);
+    this.breedService.getAll().subscribe({
+      next: (breeds) => {
+        this.breedsOptions.set(breeds.map((s) => ({ id: s.id, label: s.name })));
+        this.breedLoading.set(false);
+      },
+      error: () => this.breedLoading.set(false),
+    });
+  }
+
   getMediaUrl(key: string): string {
     return `${environment.cdn}/${key}`;
   }
 
   async goToStep2(): Promise<void> {
     this.errorMsg.set(null);
+    console.log('hola', this.model());
+
     submit(this.bullForm, async () => {
       this.savingStep1.set(true);
       try {
         const values = this.model();
         const dto: CreateBullDto | UpdateBullDto = {
           name: values.name,
-          breed: values.breed,
+          breedId: this.selectedBreedId()!,
           origin: values.origin as BullOrigin,
           code: values.code || undefined,
           description: values.description || undefined,
         };
+        console.log(dto);
 
         if (this.isEditMode() && this.bullId()) {
           await firstValueFrom(this.bullService.updateBull(this.bullId()!, dto));
@@ -1064,11 +1074,12 @@ export default class BullFormComponent implements OnInit, OnDestroy {
       next: (bull) => {
         this.model.set({
           name: bull.name,
-          breed: bull.breed,
+          breedId: bull.breedId,
           origin: bull.origin,
           code: bull.code ?? '',
           description: bull.description ?? '',
         });
+        this.selectedBreedId.set(bull.breedId);
         this.straws.set(bull.straws ?? []);
         this.existingMedia.set(bull.media ?? []);
         this.loading.set(false);

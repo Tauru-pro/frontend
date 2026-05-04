@@ -8,23 +8,25 @@ import {
   patchState,
 } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
-import { Bull, BullMedia, BullStraw, StrawType } from '../models/bull.model';
+import { StrawType } from '../models/bull.model';
+import { CartItemResponse } from '../models/cart.model';
 import { CartService } from '../services/cart.service';
-
+export interface BullSelected {
+  id: string;
+  sellerId?: string;
+  name: string;
+  breed?: string;
+  s3key: string;
+}
+export interface SelectedStraw {
+  id: string;
+  strawType: StrawType;
+  price: number;
+  minOrderQuantity: number;
+}
 export interface CartItem {
-  bull: {
-    id: string;
-    sellerId: string;
-    name: string;
-    breed: string;
-    media: BullMedia[];
-  };
-  selectedStraw: {
-    id: string;
-    strawType: StrawType;
-    price: number;
-    minOrderQuantity: number;
-  };
+  bull: BullSelected;
+  selectedStraw: SelectedStraw;
   quantity: number;
 }
 
@@ -32,6 +34,14 @@ interface CartState {
   items: CartItem[];
   loading: boolean;
   error: string | null;
+}
+
+function mapResponseToCartItem(item: CartItemResponse): CartItem {
+  return {
+    bull: item.bull,
+    selectedStraw: item.selectedStraw,
+    quantity: item.quantity,
+  };
 }
 
 export const CartStore = signalStore(
@@ -49,14 +59,15 @@ export const CartStore = signalStore(
       async loadCart(): Promise<void> {
         patchState(store, { loading: true, error: null });
         try {
-          await firstValueFrom(cartService.getCart());
-          patchState(store, { loading: false });
+          const response = await firstValueFrom(cartService.getCart());
+          const items = response.items.map(mapResponseToCartItem);
+          patchState(store, { items, loading: false });
         } catch {
-          patchState(store, { loading: false });
+          patchState(store, { loading: false, error: 'No se pudo cargar el carrito.' });
         }
       },
 
-      async addItem(bull: Bull, straw: BullStraw, qty = 1): Promise<void> {
+      async addItem(bull: BullSelected, straw: SelectedStraw, qty = 1): Promise<void> {
         const effectiveQty = Math.max(qty, straw.minOrderQuantity);
         const current = store.items();
         const idx = current.findIndex(
