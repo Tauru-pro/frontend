@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api/v1',
+  apiUrl: 'https://brackend.onrender.com/api/v1',
   cdn: 'https://d29jd8kr1el63j.cloudfront.net',
   cognito: {
     userPoolId: 'us-east-1_MkSNYVlii',
