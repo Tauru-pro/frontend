@@ -56,7 +56,7 @@ import { firstValueFrom } from 'rxjs';
             [class.bg-orange-50]="item.purpose === 'MEAT'"
             [class.text-orange-700]="item.purpose === 'MEAT'"
           >
-            {{ item.purpose === 'MILK' ? '🐄 Leche' : '🐂 Carne' }}
+            {{ item.purpose === 'MILK' ? 'Leche' : 'Carne' }}
           </span>
         </ng-template>
 

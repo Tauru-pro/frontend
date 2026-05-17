@@ -40,30 +40,30 @@ export default class HomeComponent implements OnInit, OnDestroy {
   categories = signal<Category[]>([]);
 
   featuredProducts: Product[] = [
-    { id: 1, name: 'Angus "Blackcap Exc. 1A"',    price: 45.00, originalPrice: 60.00, emoji: '🧬', badge: 'Top Gen.', rating: 4.8, reviews: 214 },
-    { id: 2, name: 'Brahman "BR Excellence 908"',  price: 38.00,                      emoji: '🐂', badge: 'Oferta',   rating: 4.6, reviews: 128 },
-    { id: 3, name: 'Simmental "SIM Master 1247"',  price: 52.00, originalPrice: 70.00, emoji: '🧬', badge: 'Importado',rating: 4.9, reviews: 97  },
-    { id: 4, name: 'Holstein "HOL Supreme 440"',   price: 28.00,                      emoji: '🐄',                   rating: 4.5, reviews: 183 },
-    { id: 5, name: 'Gyr Puro "Campeão 22"',        price: 65.00, originalPrice: 80.00, emoji: '🐃', badge: 'Brasil',  rating: 4.7, reviews: 76  },
-    { id: 6, name: 'Brangus "K-Force 109"',        price: 42.00,                      emoji: '🧬', badge: 'Nuevo',   rating: 4.4, reviews: 52  },
+    { id: 1, name: 'Angus "Blackcap Exc. 1A"', price: 45.00, originalPrice: 60.00, emoji: '🧬', badge: 'Top Gen.', rating: 4.8, reviews: 214 },
+    { id: 2, name: 'Brahman "BR Excellence 908"', price: 38.00, emoji: '🐂', badge: 'Oferta', rating: 4.6, reviews: 128 },
+    { id: 3, name: 'Simmental "SIM Master 1247"', price: 52.00, originalPrice: 70.00, emoji: '🧬', badge: 'Importado', rating: 4.9, reviews: 97 },
+    { id: 4, name: 'Holstein "HOL Supreme 440"', price: 28.00, emoji: '🐄', rating: 4.5, reviews: 183 },
+    { id: 5, name: 'Gyr Puro "Campeão 22"', price: 65.00, originalPrice: 80.00, emoji: '🐃', badge: 'Brasil', rating: 4.7, reviews: 76 },
+    { id: 6, name: 'Brangus "K-Force 109"', price: 42.00, emoji: '🧬', badge: 'Nuevo', rating: 4.4, reviews: 52 },
   ];
 
   bestSellers: Product[] = [
-    { id: 7,  name: 'Contenedor Nitrógeno 35L',    price: 520.00, originalPrice: 650.00, emoji: '❄️', badge: '20% Off', rating: 4.8, reviews: 342 },
-    { id: 8,  name: 'Kit Pistola IA Profesional',  price: 89.00,                         emoji: '💉', badge: 'Nuevo',   rating: 4.5, reviews: 156 },
-    { id: 9,  name: 'Cebu Brahman "BH-209 Elite"', price: 75.00, originalPrice: 95.00,   emoji: '🧬', badge: 'Hot',     rating: 4.7, reviews: 428 },
-    { id: 10, name: 'Guantes Rectales x100 unid.', price: 18.99,                         emoji: '🧤',                  rating: 4.6, reviews: 267 },
+    { id: 7, name: 'Contenedor Nitrógeno 35L', price: 520.00, originalPrice: 650.00, emoji: '❄️', badge: '20% Off', rating: 4.8, reviews: 342 },
+    { id: 8, name: 'Kit Pistola IA Profesional', price: 89.00, emoji: '💉', badge: 'Nuevo', rating: 4.5, reviews: 156 },
+    { id: 9, name: 'Cebu Brahman "BH-209 Elite"', price: 75.00, originalPrice: 95.00, emoji: '🧬', badge: 'Hot', rating: 4.7, reviews: 428 },
+    { id: 10, name: 'Guantes Rectales x100 unid.', price: 18.99, emoji: '🧤', rating: 4.6, reviews: 267 },
   ];
 
   popularProducts: Product[] = [
-    { id: 11, name: 'Catéteres IA x25',             price: 12.50, originalPrice: 16.00, emoji: '💉', badge: 'Oferta',   rating: 4.3, reviews: 97  },
-    { id: 12, name: 'Vainas 0.5ml x200',            price: 22.00,                       emoji: '🧪', badge: 'Nuevo',    rating: 4.8, reviews: 184 },
-    { id: 13, name: 'Angus "Force 309"',             price: 55.00, originalPrice: 70.00, emoji: '🧬', badge: 'Best',     rating: 4.7, reviews: 312 },
-    { id: 14, name: 'Termo Transporte 3L',           price: 180.00,                      emoji: '❄️',                   rating: 4.2, reviews: 76  },
-    { id: 15, name: 'Brahman "Top Star 22"',         price: 48.00, originalPrice: 62.00, emoji: '🐃', badge: 'Oferta',   rating: 4.6, reviews: 241 },
-    { id: 16, name: 'Descongelador Digital',         price: 145.00,originalPrice:180.00, emoji: '🔬',                   rating: 4.4, reviews: 158 },
-    { id: 17, name: 'Gyr "BH-Rei 07"',              price: 72.00,                       emoji: '🧬', badge: 'Import.',  rating: 4.5, reviews: 89  },
-    { id: 18, name: 'Nitrógeno Líquido 10L',         price: 35.00, originalPrice: 45.00, emoji: '❄️', badge: 'Oferta',   rating: 4.3, reviews: 113 },
+    { id: 11, name: 'Catéteres IA x25', price: 12.50, originalPrice: 16.00, emoji: '💉', badge: 'Oferta', rating: 4.3, reviews: 97 },
+    { id: 12, name: 'Vainas 0.5ml x200', price: 22.00, emoji: '🧪', badge: 'Nuevo', rating: 4.8, reviews: 184 },
+    { id: 13, name: 'Angus "Force 309"', price: 55.00, originalPrice: 70.00, emoji: '🧬', badge: 'Best', rating: 4.7, reviews: 312 },
+    { id: 14, name: 'Termo Transporte 3L', price: 180.00, emoji: '❄️', rating: 4.2, reviews: 76 },
+    { id: 15, name: 'Brahman "Top Star 22"', price: 48.00, originalPrice: 62.00, emoji: '🐃', badge: 'Oferta', rating: 4.6, reviews: 241 },
+    { id: 16, name: 'Descongelador Digital', price: 145.00, originalPrice: 180.00, emoji: '🔬', rating: 4.4, reviews: 158 },
+    { id: 17, name: 'Gyr "BH-Rei 07"', price: 72.00, emoji: '🧬', badge: 'Import.', rating: 4.5, reviews: 89 },
+    { id: 18, name: 'Nitrógeno Líquido 10L', price: 35.00, originalPrice: 45.00, emoji: '❄️', badge: 'Oferta', rating: 4.3, reviews: 113 },
   ];
 
   dealProduct: Product = {
@@ -88,7 +88,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
         this.categories.set(
           breeds.map((b) => ({
             name: b.name,
-            icon: b.purpose === 'MILK' ? '🐄' : '🐂',
+            icon: '',
             slug: b.id,
           }))
         );

@@ -14,6 +14,7 @@ export default <Routes>[
   { path: RoutesApp.breeds, loadComponent: () => import('./breeds/breeds.component') },
   { path: `${RoutesApp.breeds}/new`, loadComponent: () => import('./breeds/breed-form.component') },
   { path: `${RoutesApp.breeds}/:id/edit`, loadComponent: () => import('./breeds/breed-form.component') },
+  { path: RoutesApp.settings, loadComponent: () => import('./settings/marketplace-settings.component') },
   { path: RoutesApp.dashboard, loadComponent: () => import('./dashboard/dashboard.component') },
   { path: '', redirectTo: RoutesApp.dashboard, pathMatch: 'full' },
 ];

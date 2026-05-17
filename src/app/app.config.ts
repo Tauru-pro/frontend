@@ -46,12 +46,15 @@ export const appConfig: ApplicationConfig = {
         const authService = inject(AuthService);
         const userStore = inject(UserStore);
 
-        // Fire-and-forget: load session on every app start so all routes —
-        // protected and non-protected — have access to user state reactively.
-        authService.loadCurrentUser().then(user => {
-          if (user) userStore.loadUser();
+        // Return the Promise so Angular blocks the router until both
+        // the Cognito session check and /auth/me have resolved, preventing
+        // the race condition where guards read userStore.user() before it's populated.
+        return authService.loadCurrentUser().then(user => {
+          if (user) return userStore.loadUser();
+          return;
         });
       }
+      return;
     }),
   ],
 };

@@ -9,7 +9,6 @@
         class="flex items-center gap-3 px-4 py-3 text-sm border-b border-gray-50 last:border-0 transition-colors group"
         [class.bg-surface-muted]="i === 0" [class.text-secondary]="i === 0" [class.font-semibold]="i === 0"
         [class.text-gray-700]="i !== 0" [class.hover:bg-surface-muted]="i !== 0" [class.hover:text-secondary]="i !== 0">
-        <span class="text-base w-6 flex-shrink-0 text-center">{{ cat.icon }}</span>
         <span class="flex-1 leading-tight">{{ cat.name }}</span>
         <span class="text-gray-300 group-hover:text-accent transition-colors text-xs">›</span>
       </a>
@@ -357,27 +356,3 @@
   </section>
 
 </div>
-
-<!-- ===== NEWSLETTER ===== -->
-<!-- <section class="bg-primary py-16">
-  <div class="max-w-[1400px] mx-auto px-4 flex flex-col lg:flex-row items-center justify-between gap-10">
-    <div class="lg:flex-1">
-      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-2">Newsletter</p>
-      <h2 class="text-3xl font-bold text-white mb-2">Mejora tu hato, lote a lote</h2>
-      <p class="text-gray-400">
-        Suscríbete y recibe <span class="text-accent font-semibold">10% de descuento</span> en tu primer pedido,
-        nuevos ingresos de semen y ofertas exclusivas cada semana.
-      </p>
-    </div>
-    <div class="lg:flex-1 w-full max-w-lg">
-      <div class="flex">
-        <input type="email" placeholder="Ingresa tu correo electrónico..."
-          class="flex-1 px-5 py-3.5 rounded-l-xl text-primary text-sm outline-none border-2 border-transparent focus:border-accent transition-colors" />
-        <button class="btn-accent px-6 py-3.5 rounded-r-xl whitespace-nowrap text-sm">
-          Suscribirme
-        </button>
-      </div>
-      <p class="text-gray-600 text-xs mt-2">Sin spam. Cancela cuando quieras.</p>
-    </div>
-  </div>
-</section> -->

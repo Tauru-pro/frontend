@@ -13,5 +13,6 @@ export enum RoutesApp {
     pickupPoints = 'pickup-points',
     shippingRates = 'shipping-rates',
     breeds = 'breeds',
+    settings = 'settings',
     root = '',
 }

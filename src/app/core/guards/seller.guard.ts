@@ -15,6 +15,8 @@ export const sellerGuard: CanActivateFn = async () => {
   const user = await authService.loadCurrentUser();
   if (!user) return router.createUrlTree(['/auth/sign-in']);
 
+  if (!userStore.user()) await userStore.loadUser();
+
   if (userStore.user()?.role !== 'SELLER') return router.createUrlTree(['/']);
 
   return true;
