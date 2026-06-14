@@ -64,7 +64,7 @@ interface UserFormModel {
 
           <!-- InformaciÃ³n personal -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">InformaciÃ³n personal</h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información personal</h2>
 
             <!-- Nombre completo -->
             <div>
@@ -74,7 +74,7 @@ interface UserFormModel {
               <input
                 type="text"
                 [formField]="userForm.fullName"
-                placeholder="Ej. Carlos RodrÃ­guez"
+                placeholder="Ej. Carlos Rodríguez"
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (userForm.fullName().touched() && userForm.fullName().errors().length) {
@@ -91,7 +91,7 @@ interface UserFormModel {
       
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Correo electrÃ³nico <span class="text-red-400">*</span>
+                  Correo electrónico <span class="text-red-400">*</span>
                 </label>
                 <input
                   type="email"

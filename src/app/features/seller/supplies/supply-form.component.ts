@@ -1,8 +1,7 @@
-﻿import {
+import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   ElementRef,
   inject,
   OnDestroy,
@@ -21,22 +20,25 @@ import {
   validate,
 } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import { ProductService } from '../../../core/services/product.service';
+import { SupplyService } from '../../../core/services/supply.service';
 import {
-  CreateProductDto,
-  ProductMedia,
-  ProductType,
-  UpdateProductDto,
-} from '../../../core/models/product.model';
+  CreateSupplyDto,
+  DiscountType,
+  SupplyMedia,
+  UpdateSupplyDto,
+} from '../../../core/models/supply.model';
 import { MimeType } from '../../../core/models/upload.model';
 import { environment } from '../../../../environments/environment';
 
-interface ProductFormModel {
-  productType: ProductType;
+interface SupplyFormModel {
   name: string;
   description: string;
   price: number;
   stockQuantity: number;
+  discountType: DiscountType | '';
+  discountValue: number;
+  discountLabel: string;
+  discountExpiresAt: string;
 }
 
 interface PendingFile {
@@ -47,19 +49,17 @@ interface PendingFile {
 }
 
 const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
 
 @Component({
-  selector: 'app-product-form',
+  selector: 'app-supply-form',
   imports: [RouterLink, FormField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-3xl mx-auto space-y-6">
 
-      <!-- Page header -->
       <div class="flex items-center gap-4">
         <a
-          routerLink="/seller/products"
+          routerLink="/seller/supplies"
           class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,10 +68,10 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
         </a>
         <div>
           <h1 class="text-xl font-bold text-gray-900">
-            {{ isEditMode() ? 'Editar producto' : 'Nuevo producto' }}
+            {{ isEditMode() ? 'Editar insumo' : 'Nuevo insumo' }}
           </h1>
           <p class="text-sm text-gray-500 mt-0.5">
-            {{ isEditMode() ? 'Modifica los datos de tu producto' : 'Completa los datos para publicar tu producto' }}
+            {{ isEditMode() ? 'Modifica los datos del insumo' : 'Completa los datos para publicar tu insumo' }}
           </p>
         </div>
       </div>
@@ -87,26 +87,20 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
               </svg>
-            } @else {
-              1
-            }
+            } @else { 1 }
           </div>
           <span class="text-sm font-medium" [class]="currentStep() >= 1 ? 'text-gray-800' : 'text-gray-400'">
             Información básica
           </span>
         </div>
-
         <div class="flex-1 mx-4 h-px transition-all" [class]="currentStep() > 1 ? 'bg-primary' : 'bg-gray-200'"></div>
-
         <div class="flex items-center gap-2">
           <div
             class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
             [class]="currentStep() >= 2 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'"
-          >
-            2
-          </div>
+          >2</div>
           <span class="text-sm font-medium" [class]="currentStep() >= 2 ? 'text-gray-800' : 'text-gray-400'">
-            Archivos
+            Imágenes
           </span>
         </div>
       </div>
@@ -118,44 +112,41 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
           }
         </div>
       } @else {
-
         <form (submit)="onSubmit(); $event.preventDefault()" class="space-y-6">
 
-          <!-- ===== STEP 1: Información básica ===== -->
+          <!-- ===== STEP 1 ===== -->
           @if (currentStep() === 1) {
 
+            <!-- Información básica -->
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
               <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información básica</h2>
 
-
-              <!-- Nombre -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                  Nombre del producto <span class="text-red-400">*</span>
+                  Nombre del insumo <span class="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
-                  [formField]="productForm.name"
+                  [formField]="supplyForm.name"
                   placeholder="Ej. Pistola de transferencia de embriones"
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
-                @if (productForm.name().touched() && productForm.name().errors().length) {
+                @if (supplyForm.name().touched() && supplyForm.name().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
                     <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                     </svg>
-                    {{ productForm.name().errors()[0].message }}
+                    {{ supplyForm.name().errors()[0].message }}
                   </p>
                 }
               </div>
 
-              <!-- Descripción -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
                 <textarea
-                  [formField]="productForm.description"
+                  [formField]="supplyForm.description"
                   rows="3"
-                  placeholder="Describe las características del producto..."
+                  placeholder="Describe las características del insumo..."
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
                 ></textarea>
               </div>
@@ -164,7 +155,6 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
             <!-- Precio y stock -->
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
               <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Precio y stock</h2>
-
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -172,48 +162,90 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                   </label>
                   <input
                     type="number"
-                    [formField]="productForm.price"
+                    [formField]="supplyForm.price"
                     placeholder="0"
                     step="0.01"
                     class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
-                  @if (productForm.price().touched() && productForm.price().errors().length) {
-                    <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                      <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                      </svg>
-                      {{ productForm.price().errors()[0].message }}
-                    </p>
+                  @if (supplyForm.price().touched() && supplyForm.price().errors().length) {
+                    <p class="text-red-400 text-xs mt-1.5">{{ supplyForm.price().errors()[0].message }}</p>
                   }
                 </div>
-
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Cantidad en stock <span class="text-red-400">*</span>
-                  </label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Cantidad en stock</label>
                   <input
                     type="number"
-                    [formField]="productForm.stockQuantity"
+                    [formField]="supplyForm.stockQuantity"
                     placeholder="0"
                     step="1"
                     class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
-                  @if (productForm.stockQuantity().touched() && productForm.stockQuantity().errors().length) {
-                    <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                      <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                      </svg>
-                      {{ productForm.stockQuantity().errors()[0].message }}
-                    </p>
-                  }
                 </div>
               </div>
             </div>
 
-            <!-- Step 1 actions -->
+            <!-- Descuento (opcional) -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Descuento</h2>
+                <span class="text-xs text-gray-400">Opcional</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Tipo de descuento</label>
+                  <select
+                    [formField]="supplyForm.discountType"
+                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
+                  >
+                    <option value="">Sin descuento</option>
+                    <option value="PERCENTAGE">Porcentaje (%)</option>
+                    <option value="FIXED_AMOUNT">Monto fijo ($)</option>
+                  </select>
+                </div>
+
+                @if (hasDiscount()) {
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                      Valor del descuento <span class="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      [formField]="supplyForm.discountValue"
+                      placeholder="0"
+                      step="0.01"
+                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                    />
+                  </div>
+                }
+              </div>
+
+              @if (hasDiscount()) {
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Etiqueta del descuento</label>
+                    <input
+                      type="text"
+                      [formField]="supplyForm.discountLabel"
+                      placeholder="Ej. Oferta de temporada"
+                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Vence el</label>
+                    <input
+                      type="datetime-local"
+                      [formField]="supplyForm.discountExpiresAt"
+                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+
             <div class="flex gap-3 justify-end pb-6">
               <a
-                routerLink="/seller/products"
+                routerLink="/seller/supplies"
                 class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Cancelar
@@ -231,10 +263,9 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
             </div>
           }
 
-          <!-- ===== STEP 2: Archivos ===== -->
+          <!-- ===== STEP 2 ===== -->
           @if (currentStep() === 2) {
 
-            <!-- Imágenes -->
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
               <div class="flex items-center justify-between">
                 <div>
@@ -248,7 +279,6 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                 }
               </div>
 
-              <!-- Existing images (edit mode) -->
               @if (existingImages().length > 0) {
                 <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   @for (media of existingImages(); track media.id) {
@@ -256,7 +286,7 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                       <img
                         [src]="getMediaUrl(media.s3Key)"
                         class="w-full h-full object-cover rounded-xl"
-                        alt="Imagen del producto"
+                        alt="Imagen del insumo"
                       />
                       @if (media.isCover) {
                         <span class="absolute top-1 left-1 bg-primary text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
@@ -292,16 +322,11 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                 </div>
               }
 
-              <!-- Pending image previews -->
               @if (pendingImages().length > 0) {
                 <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   @for (img of pendingImages(); track img.preview; let i = $index) {
                     <div class="relative aspect-square group">
-                      <img
-                        [src]="img.preview"
-                        class="w-full h-full object-cover rounded-xl"
-                        alt="Vista previa"
-                      />
+                      <img [src]="img.preview" class="w-full h-full object-cover rounded-xl" alt="Vista previa"/>
                       @if (i === 0 && existingImages().length === 0) {
                         <span class="absolute top-1 left-1 bg-primary/80 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
                           Portada
@@ -321,7 +346,6 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                 </div>
               }
 
-              <!-- Image drop zone -->
               <div
                 class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
                 (dragover)="$event.preventDefault()"
@@ -346,88 +370,10 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
               />
             </div>
 
-            <!-- Video (solo STRAW) -->
-            @if (!isSupplies()) {
-              <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
-                <div>
-                  <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Video</h2>
-                  <p class="text-xs text-gray-400 mt-0.5">MP4 o WebM · Máximo 1 video</p>
-                </div>
-
-                <!-- Existing video (edit mode) -->
-                @if (existingVideo()) {
-                  <div class="relative rounded-xl overflow-hidden bg-gray-900">
-                    <video
-                      [src]="getMediaUrl(existingVideo()!.s3Key)"
-                      class="w-full max-h-52 object-contain"
-                      controls
-                    ></video>
-                    <button
-                      type="button"
-                      (click)="deleteExistingMedia(existingVideo()!.id)"
-                      class="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-lg flex items-center justify-center text-white hover:bg-red-500 transition-colors"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                    </button>
-                  </div>
-                }
-
-                <!-- Pending video preview -->
-                @if (pendingVideo()) {
-                  <div class="relative rounded-xl overflow-hidden bg-gray-900">
-                    <video
-                      [src]="pendingVideo()!.preview"
-                      class="w-full max-h-52 object-contain"
-                      controls
-                    ></video>
-                    <button
-                      type="button"
-                      (click)="removeVideo()"
-                      class="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-lg flex items-center justify-center text-white hover:bg-red-500 transition-colors"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                    </button>
-                    <span class="absolute bottom-2 left-2 text-xs text-white/70">{{ pendingVideo()!.file.name }}</span>
-                  </div>
-                }
-
-                <!-- Video drop zone -->
-                @if (!pendingVideo() && !existingVideo()) {
-                  <div
-                    class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
-                    (dragover)="$event.preventDefault()"
-                    (drop)="onVideoDrop($event)"
-                    (click)="openVideoPicker()"
-                  >
-                    <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.069A1 1 0 0121 8.88v6.24a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                    </svg>
-                    <p class="text-sm text-gray-500">
-                      <span class="font-medium text-primary">Haz clic para subir</span> o arrastra el video aquí
-                    </p>
-                    <p class="text-xs text-gray-400 mt-1">MP4 o WebM</p>
-                  </div>
-                }
-
-                <input
-                  #videoInput
-                  type="file"
-                  accept="video/mp4,video/webm"
-                  class="hidden"
-                  (change)="onVideoSelected($event)"
-                />
-              </div>
-            }
-
-            <!-- Upload progress -->
             @if (saving() && uploadProgress() > 0) {
               <div class="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
                 <div class="flex items-center justify-between text-sm">
-                  <span class="text-gray-600 font-medium">Subiendo archivos...</span>
+                  <span class="text-gray-600 font-medium">Subiendo imágenes...</span>
                   <span class="text-primary font-semibold">{{ uploadProgress() }}%</span>
                 </div>
                 <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -439,14 +385,12 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
               </div>
             }
 
-            <!-- Generic error -->
             @if (errorMsg()) {
               <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
                 {{ errorMsg() }}
               </div>
             }
 
-            <!-- Step 2 actions -->
             <div class="flex gap-3 justify-between pb-6">
               <button
                 type="button"
@@ -468,9 +412,9 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  {{ uploadProgress() > 0 ? 'Subiendo archivos...' : 'Guardando...' }}
+                  {{ uploadProgress() > 0 ? 'Subiendo imágenes...' : 'Guardando...' }}
                 } @else {
-                  {{ isEditMode() ? 'Guardar cambios' : 'Crear producto' }}
+                  {{ isEditMode() ? 'Guardar cambios' : 'Crear insumo' }}
                 }
               </button>
             </div>
@@ -481,49 +425,44 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
     </div>
   `,
 })
-export default class ProductFormComponent implements OnInit, OnDestroy {
+export default class SupplyFormComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private productService = inject(ProductService);
+  private supplyService = inject(SupplyService);
 
   currentStep = signal(1);
   isEditMode = signal(false);
-  productId = signal<string | null>(null);
+  supplyId = signal<string | null>(null);
   loading = signal(false);
   saving = signal(false);
-
   errorMsg = signal<string | null>(null);
   uploadProgress = signal(0);
   pendingImages = signal<PendingFile[]>([]);
-  pendingVideo = signal<PendingFile | null>(null);
-  existingMedia = signal<ProductMedia[]>([]);
+  existingMedia = signal<SupplyMedia[]>([]);
 
   imageInputRef = viewChild<ElementRef<HTMLInputElement>>('imageInput');
-  videoInputRef = viewChild<ElementRef<HTMLInputElement>>('videoInput');
 
-  isSupplies = computed(() => this.model().productType === 'SUPPLIES');
   existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image'));
-  existingVideo = computed(() => this.existingMedia().find(m => m.mediaType === 'video') ?? null);
+  hasDiscount = computed(() => this.model().discountType !== '');
 
-  private readonly _clearVideoOnSupplies = effect(() => {
-    if (this.isSupplies()) this.removeVideo();
-  });
-
-  model = signal<ProductFormModel>({
-    productType: 'SUPPLIES',
+  model = signal<SupplyFormModel>({
     name: '',
     description: '',
     price: 0,
     stockQuantity: 0,
+    discountType: '',
+    discountValue: 0,
+    discountLabel: '',
+    discountExpiresAt: '',
   });
 
-  productForm = form(this.model, (s) => {
+  supplyForm = form(this.model, (s) => {
     required(s.name, { message: 'El nombre es requerido' });
     minLength(s.name, 3, { message: 'El nombre debe tener al menos 3 caracteres' });
     required(s.price, { message: 'El precio es requerido' });
     validate(s.price, ({ value }) =>
-      (value() as number) <= 0
-        ? { kind: 'min', message: 'El precio debe ser mayor a 0' }
+      (value() as number) < 0
+        ? { kind: 'min', message: 'El precio no puede ser negativo' }
         : undefined,
     );
     validate(s.stockQuantity, ({ value }) =>
@@ -531,22 +470,19 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
         ? { kind: 'min', message: 'El stock no puede ser negativo' }
         : undefined,
     );
-
   });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode.set(true);
-      this.productId.set(id);
+      this.supplyId.set(id);
       this.loadForEdit(id);
     }
   }
 
   ngOnDestroy(): void {
     this.pendingImages().forEach(f => URL.revokeObjectURL(f.preview));
-    const video = this.pendingVideo();
-    if (video) URL.revokeObjectURL(video.preview);
   }
 
   getMediaUrl(key: string): string {
@@ -554,7 +490,7 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
   }
 
   goToStep2(): void {
-    submit(this.productForm, async () => {
+    submit(this.supplyForm, async () => {
       this.currentStep.set(2);
     });
   }
@@ -563,20 +499,10 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
     this.imageInputRef()?.nativeElement.click();
   }
 
-  openVideoPicker(): void {
-    this.videoInputRef()?.nativeElement.click();
-  }
-
   onImagesSelected(event: Event): void {
     const files = (event.target as HTMLInputElement).files;
     if (!files) return;
     this.addImageFiles(Array.from(files));
-    (event.target as HTMLInputElement).value = '';
-  }
-
-  onVideoSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.addVideoFile(file);
     (event.target as HTMLInputElement).value = '';
   }
 
@@ -588,14 +514,6 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
     this.addImageFiles(files);
   }
 
-  onVideoDrop(event: DragEvent): void {
-    event.preventDefault();
-    const file = Array.from(event.dataTransfer?.files ?? []).find(f =>
-      VIDEO_MIME_TYPES.includes(f.type as MimeType),
-    );
-    if (file) this.addVideoFile(file);
-  }
-
   removeImage(index: number): void {
     const files = [...this.pendingImages()];
     URL.revokeObjectURL(files[index].preview);
@@ -603,68 +521,70 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
     this.pendingImages.set(files);
   }
 
-  removeVideo(): void {
-    const video = this.pendingVideo();
-    if (video) URL.revokeObjectURL(video.preview);
-    this.pendingVideo.set(null);
-  }
-
   deleteExistingMedia(mediaId: string): void {
-    const id = this.productId();
+    const id = this.supplyId();
     if (!id) return;
-    this.productService.deleteMedia(id, mediaId).subscribe(() => {
+    this.supplyService.deleteMedia(id, mediaId).subscribe(() => {
       this.existingMedia.update(media => media.filter(m => m.id !== mediaId));
     });
   }
 
   setCover(mediaId: string): void {
-    const id = this.productId();
+    const id = this.supplyId();
     if (!id) return;
-    this.productService.setCoverImage(id, mediaId).subscribe(() => {
+    this.supplyService.setCoverImage(id, mediaId).subscribe(() => {
       this.existingMedia.update(media => media.map(m => ({ ...m, isCover: m.id === mediaId })));
     });
   }
 
   onSubmit(): void {
     if (this.currentStep() !== 2) return;
-
     this.errorMsg.set(null);
-    submit(this.productForm, async () => {
+    submit(this.supplyForm, async () => {
       this.saving.set(true);
       this.uploadProgress.set(0);
       try {
         const values = this.model();
-        let productId: string;
+        const discountType = values.discountType as DiscountType | '';
+        let supplyId: string;
 
         if (this.isEditMode()) {
-          const dto: UpdateProductDto = {
+          const dto: UpdateSupplyDto = {
             name: values.name,
             description: values.description || undefined,
             price: Number(values.price),
             stockQuantity: Number(values.stockQuantity),
+            discountType: discountType || undefined,
+            discountValue: discountType && values.discountValue ? Number(values.discountValue) : undefined,
+            discountLabel: discountType && values.discountLabel ? values.discountLabel : undefined,
+            discountExpiresAt: discountType && values.discountExpiresAt ? new Date(values.discountExpiresAt).toISOString() : undefined,
           };
-          await firstValueFrom(this.productService.updateProduct(this.productId()!, dto));
-          productId = this.productId()!;
+          await firstValueFrom(this.supplyService.updateSupply(this.supplyId()!, dto));
+          supplyId = this.supplyId()!;
         } else {
-          const dto: CreateProductDto = {
-            productType: 'SUPPLIES',
+          const dto: CreateSupplyDto = {
             name: values.name,
-            description: values.description || undefined,
             price: Number(values.price),
+            description: values.description || undefined,
             stockQuantity: Number(values.stockQuantity),
+            discountType: discountType || undefined,
+            discountValue: discountType && values.discountValue ? Number(values.discountValue) : undefined,
+            discountLabel: discountType && values.discountLabel ? values.discountLabel : undefined,
+            discountExpiresAt: discountType && values.discountExpiresAt ? new Date(values.discountExpiresAt).toISOString() : undefined,
           };
-          const product = await firstValueFrom(this.productService.createProduct(dto));
-          productId = product.id;
+          const supply = await firstValueFrom(this.supplyService.createSupply(dto));
+          supplyId = supply.id;
         }
 
-        await this.uploadFiles(productId);
-        this.router.navigate(['/seller/products']);
+        await this.uploadFiles(supplyId);
+        this.router.navigate(['/seller/supplies']);
       } catch (err) {
         const status = (err as HttpErrorResponse)?.status;
-        if (status === 403) {
-
-          this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
-        }
+        this.errorMsg.set(
+          status === 403
+            ? 'No tienes permisos para realizar esta acción.'
+            : 'Ocurrió un error al guardar. Intenta de nuevo.',
+        );
       } finally {
         this.saving.set(false);
       }
@@ -673,20 +593,26 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
 
   private loadForEdit(id: string): void {
     this.loading.set(true);
-    this.productService.getProduct(id).subscribe({
-      next: (product) => {
+    this.supplyService.getSupply(id).subscribe({
+      next: (supply) => {
+        const expiresAt = supply.discountExpiresAt
+          ? new Date(supply.discountExpiresAt).toISOString().slice(0, 16)
+          : '';
         this.model.set({
-          productType: product.productType,
-          name: product.name,
-          description: product.description ?? '',
-          price: product.price,
-          stockQuantity: product.stockQuantity,
+          name: supply.name,
+          description: supply.description ?? '',
+          price: supply.price,
+          stockQuantity: supply.stockQuantity,
+          discountType: supply.discountType ?? '',
+          discountValue: supply.discountValue ?? 0,
+          discountLabel: supply.discountLabel ?? '',
+          discountExpiresAt: expiresAt,
         });
-        this.existingMedia.set(product.media ?? []);
+        this.existingMedia.set(supply.media ?? []);
         this.loading.set(false);
       },
       error: () => {
-        this.errorMsg.set('No se pudo cargar el producto. Intenta de nuevo.');
+        this.errorMsg.set('No se pudo cargar el insumo. Intenta de nuevo.');
         this.loading.set(false);
       },
     });
@@ -704,29 +630,14 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
     this.pendingImages.update(curr => [...curr, ...valid]);
   }
 
-  private addVideoFile(file: File): void {
-    if (!VIDEO_MIME_TYPES.includes(file.type as MimeType)) return;
-    const current = this.pendingVideo();
-    if (current) URL.revokeObjectURL(current.preview);
-    this.pendingVideo.set({
-      file,
-      preview: URL.createObjectURL(file),
-      mediaType: 'video',
-      mimeType: file.type as MimeType,
-    });
-  }
+  private async uploadFiles(supplyId: string): Promise<void> {
+    const files = this.pendingImages();
+    if (files.length === 0) return;
 
-  private async uploadFiles(productId: string): Promise<void> {
-    const allFiles: PendingFile[] = [
-      ...this.pendingImages(),
-      ...(!this.isSupplies() && this.pendingVideo() ? [this.pendingVideo()!] : []),
-    ];
-    if (allFiles.length === 0) return;
-
-    for (let i = 0; i < allFiles.length; i++) {
-      const pending = allFiles[i];
+    for (let i = 0; i < files.length; i++) {
+      const pending = files[i];
       const { uploadUrl, s3Key } = await firstValueFrom(
-        this.productService.requestPresignedUrl(productId, {
+        this.supplyService.requestPresignedUrl(supplyId, {
           mediaType: pending.mediaType,
           mimeType: pending.mimeType,
         }),
@@ -738,15 +649,15 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
       });
       if (!response.ok) throw new Error(`No se pudo subir ${pending.file.name}`);
       await firstValueFrom(
-        this.productService.confirmMediaUpload(productId, {
+        this.supplyService.confirmMediaUpload(supplyId, {
           s3Key,
           mediaType: pending.mediaType,
           mimeType: pending.mimeType,
           sortOrder: i + 1,
-          isCover: i === 0 && pending.mediaType === 'image' && this.existingImages().length === 0,
+          isCover: i === 0 && this.existingImages().length === 0,
         }),
       );
-      this.uploadProgress.set(Math.round(((i + 1) / allFiles.length) * 100));
+      this.uploadProgress.set(Math.round(((i + 1) / files.length) * 100));
     }
   }
 }
