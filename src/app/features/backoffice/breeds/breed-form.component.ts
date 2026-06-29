@@ -5,7 +5,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -14,7 +13,6 @@ import {
   required,
   validate,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
 import { BreedService } from '../../../core/services/breed.service';
 import { BreedPurpose, CreateBreedDto } from '../../../core/models/breed.model';
 
@@ -196,15 +194,14 @@ export default class BreedFormComponent implements OnInit {
         };
 
         if (this.isEdit()) {
-          await firstValueFrom(this.service.update(this.breedId()!, dto));
+          await this.service.update(this.breedId()!, dto);
         } else {
-          await firstValueFrom(this.service.create(dto));
+          await this.service.create(dto);
         }
 
         this.router.navigate(['/admin/breeds']);
       } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        if (status === 409) {
+        if (err instanceof Error && err.message === 'DUPLICATE_NAME') {
           this.errorMsg.set('Ya existe una raza con ese nombre.');
         } else {
           this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');

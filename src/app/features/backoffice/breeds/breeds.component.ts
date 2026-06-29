@@ -9,7 +9,6 @@ import {
   TableColumn,
 } from '../../../shared/components/data-table/data-table.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-breeds',
@@ -131,7 +130,7 @@ export default class BreedsComponent implements OnInit {
   async onDelete(item: Breed): Promise<void> {
     if (!confirm(`¿Eliminar la raza "${item.name}"?`)) return;
     try {
-      await firstValueFrom(this.service.delete(item.id));
+      await this.service.delete(item.id);
       this.load();
     } catch {
       this.errorMsg.set('No se pudo eliminar la raza. Intenta de nuevo.');
