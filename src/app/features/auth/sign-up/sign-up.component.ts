@@ -46,23 +46,23 @@ import { AuthService } from "../../../core/auth/auth.service";
               </div>
             }
 
-            <!-- Username -->
+            <!-- Full name -->
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Username <span class="text-red-400">*</span>
+                Full name <span class="text-red-400">*</span>
               </label>
               <input
                 type="text"
-                [formField]="signUpForm.username"
-                placeholder="johndoe"
+                [formField]="signUpForm.fullName"
+                placeholder="John Doe"
                 class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
-              @if (signUpForm.username().touched() && signUpForm.username().errors().length) {
+              @if (signUpForm.fullName().touched() && signUpForm.fullName().errors().length) {
                 <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
                   <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                   </svg>
-                  {{ signUpForm.username().errors()[0].message }}
+                  {{ signUpForm.fullName().errors()[0].message }}
                 </p>
               }
             </div>
@@ -250,15 +250,15 @@ export default class SignUpComponent {
   errorMessage = signal<string | null>(null);
 
   model = signal({
-    username: '',
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
 
   signUpForm = form(this.model, (s) => {
-    required(s.username, { message: 'Username is required' });
-    minLength(s.username, 3, { message: 'Username must be at least 3 characters' });
+    required(s.fullName, { message: 'Full name is required' });
+    minLength(s.fullName, 2, { message: 'Full name must be at least 2 characters' });
     required(s.email, { message: 'Email is required' });
     email(s.email, { message: 'Please enter a valid email address' });
     required(s.password, { message: 'Password is required' });
@@ -280,8 +280,8 @@ export default class SignUpComponent {
     this.errorMessage.set(null);
     submit(this.signUpForm, async () => {
       try {
-        const { username, email, password } = this.model();
-        await this.authService.register(username, email, password);
+        const { fullName, email, password } = this.model();
+        await this.authService.register(fullName, email, password);
         this.router.navigate(['/auth/verify-email']);
       } catch (err) {
         this.errorMessage.set(this.authService.getErrorMessage(err));

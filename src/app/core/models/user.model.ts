@@ -1,20 +1,20 @@
 import { City } from "./location.model";
 
-export type UserRole = 'ADMIN' | 'SELLER' | 'BUYER';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'SELLER' | 'CUSTOMER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 export type SellerStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 export interface UserProfile {
   id: string;
   email: string;
+  fullName?: string;
   role: UserRole;
   status: UserStatus;
   createdAt?: string;
-  oauthProviders: OauthProvider[];
   sellerProfile?: SellerProfile;
-  buyerProfile?: BuyerProfile;
+  customerProfile?: CustomerProfile;
 }
 
-export interface BuyerProfile {
+export interface CustomerProfile {
   id: string;
   userId: string;
   fullName: string;
@@ -36,15 +36,10 @@ export interface SellerProfile {
   status?: SellerStatus;
 }
 
-export interface OauthProvider {
-  provider: string;
-  providerUserId: string;
-}
-
 export interface CreateUserDto {
   email: string;
   fullName: string;
-  role: UserRole;
+  role: 'SELLER' | 'SUPER_ADMIN';
 }
 
 export interface UpdateUserDto {

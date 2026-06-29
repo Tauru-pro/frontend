@@ -211,10 +211,11 @@ export class NavbarComponent {
   // navLinks = ['Home', 'Shop', 'Deals', 'New Arrivals', 'About', 'Blog'];
 
   isAuthenticated = computed(() => this.authService.currentUser() !== null);
-  userName = computed(() => this.userStore.user()?.buyerProfile?.fullName ?? 'User');
-  dashboardRoute = computed(() =>
-    this.userStore.user()?.role === 'ADMIN' ? '/admin/dashboard' : '/seller'
-  );
+  userName = computed(() => this.userStore.user()?.fullName ?? 'User');
+  dashboardRoute = computed(() => {
+    const role = this.userStore.user()?.role;
+    return role === 'ADMIN' || role === 'SUPER_ADMIN' ? '/admin/dashboard' : '/seller';
+  });
 
   categories: Category[] = [
     { name: 'All Categories', icon: '🏪', slug: 'all' },

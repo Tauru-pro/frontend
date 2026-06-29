@@ -9,8 +9,7 @@
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { getCurrentUser } from 'aws-amplify/auth';
-import { Hub } from 'aws-amplify/utils';
+import { SupabaseClientService } from '../../../core/auth/supabase-client';
 import { UserStore } from '../../../core/store/user.store';
 
 @Component({
@@ -54,40 +53,45 @@ export default class CallbackComponent implements OnInit, OnDestroy {
   private router     = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private userStore  = inject(UserStore);
+  private supabase   = inject(SupabaseClientService).client;
 
   loading = signal(true);
   error = signal<string | null>(null);
 
-  private unsubscribeHub?: () => void;
+  private unsubscribe?: () => void;
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.unsubscribeHub = Hub.listen('auth', async ({ payload }) => {
-      if (payload.event === 'signInWithRedirect') {
-        await this.navigateByRole();
-      } else if (payload.event === 'signInWithRedirect_failure') {
-        this.loading.set(false);
-        this.error.set('Sign in with Google failed. Please try again.');
+    const { data: subscription } = this.supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        this.navigateByRole();
       }
     });
+    this.unsubscribe = () => subscription.subscription.unsubscribe();
 
-    // Amplify may have already processed the code before this component mounted
-    getCurrentUser()
-      .then(() => this.navigateByRole())
-      .catch(() => { /* Hub listener will handle the pending code exchange */ });
+    // The session may already be established (detectSessionInUrl) by the
+    // time this component mounts, so check directly as well.
+    this.supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        this.loading.set(false);
+        this.error.set('Sign in with Google failed. Please try again.');
+      } else if (data.session) {
+        this.navigateByRole();
+      }
+    });
   }
 
   ngOnDestroy() {
-    this.unsubscribeHub?.();
+    this.unsubscribe?.();
   }
 
   private async navigateByRole(): Promise<void> {
     if (!this.userStore.user()) await this.userStore.loadUser();
     const role = this.userStore.user()?.role;
-    if (role === 'ADMIN')       this.router.navigate(['/admin']);
-    else if (role === 'SELLER') this.router.navigate(['/seller/products']);
-    else                        this.router.navigate(['/']);
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN') this.router.navigate(['/admin']);
+    else if (role === 'SELLER')                     this.router.navigate(['/seller/products']);
+    else                                             this.router.navigate(['/']);
   }
 }
 

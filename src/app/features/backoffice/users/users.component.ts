@@ -115,21 +115,19 @@ export default class UsersComponent implements OnInit {
     this.loadUsers();
   }
 
-  loadUsers(): void {
+  async loadUsers(): Promise<void> {
     this.loading.set(true);
     this.errorMsg.set(null);
-    this.userService.getUsers(this.page(), 10).subscribe({
-      next: (res) => {
-        this.users.set(res.data);
-        this.total.set(res.total);
-        this.totalPages.set(res.totalPages);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.errorMsg.set('No se pudo cargar los usuarios. Intenta de nuevo.');
-      },
-    });
+    try {
+      const res = await this.userService.getUsers(this.page(), 10);
+      this.users.set(res.data);
+      this.total.set(res.total);
+      this.totalPages.set(res.totalPages);
+    } catch {
+      this.errorMsg.set('No se pudo cargar los usuarios. Intenta de nuevo.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   onPageChange(p: number): void {
@@ -138,27 +136,29 @@ export default class UsersComponent implements OnInit {
   }
 
   userInitial(user: UserProfile): string {
-    return (user.buyerProfile?.fullName?.[0] ?? user.email[0]).toUpperCase();
+    return (user.fullName?.[0] ?? user.email[0]).toUpperCase();
   }
 
   userName(user: UserProfile): string {
-    return user.buyerProfile?.fullName ?? '—';
+    return user.fullName ?? '—';
   }
 
   roleClass(role: UserRole): string {
     const map: Record<UserRole, string> = {
+      SUPER_ADMIN: 'bg-amber-50 text-amber-700',
       ADMIN: 'bg-purple-50 text-purple-700',
       SELLER: 'bg-blue-50 text-blue-700',
-      BUYER: 'bg-gray-100 text-gray-600',
+      CUSTOMER: 'bg-gray-100 text-gray-600',
     };
     return map[role] ?? 'bg-gray-100 text-gray-600';
   }
 
   roleLabel(role: UserRole): string {
     const map: Record<UserRole, string> = {
+      SUPER_ADMIN: 'Super Admin',
       ADMIN: 'Admin',
       SELLER: 'Vendedor',
-      BUYER: 'Comprador',
+      CUSTOMER: 'Comprador',
     };
     return map[role] ?? role;
   }

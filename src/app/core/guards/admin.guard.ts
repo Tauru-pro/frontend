@@ -17,7 +17,8 @@ export const adminGuard: CanActivateFn = async () => {
 
   if (!userStore.user()) await userStore.loadUser();
 
-  if (userStore.user()?.role !== 'ADMIN') return router.createUrlTree(['/']);
+  const role = userStore.user()?.role;
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return router.createUrlTree(['/']);
 
   return true;
 };

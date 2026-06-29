@@ -5,7 +5,6 @@
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -15,14 +14,15 @@ import {
   minLength,
   validate,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
 import { UserService } from '../../../core/services/user.service';
-import { CreateUserDto, UpdateUserDto, UserRole, UserStatus } from '../../../core/models/user.model';
+import { CreateUserDto } from '../../../core/models/user.model';
+
+type CreatableRole = CreateUserDto['role'];
 
 interface UserFormModel {
   fullName: string;
   email: string;
-  role: UserRole | '';
+  role: CreatableRole | '';
 }
 
 @Component({
@@ -125,9 +125,8 @@ interface UserFormModel {
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
                 >
                   <option value="">Selecciona un rol</option>
-                  <option value="ADMIN">Admin</option>
                   <option value="SELLER">Vendedor</option>
-                  <option value="BUYER">Comprador</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
                 @if (userForm.role().touched() && userForm.role().errors().length) {
                   <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
@@ -233,17 +232,16 @@ export default class UserFormComponent implements OnInit {
         const dto: CreateUserDto = {
           email: values.email,
           fullName: values.fullName,
-          role: values.role as UserRole
+          role: values.role as CreatableRole,
         };
-        await firstValueFrom(this.userService.createUser(dto));
+        await this.userService.createUser(dto);
 
         this.router.navigate(['/admin/users']);
       } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        if (status === 409) {
-          this.errorMsg.set('Ya existe un usuario con ese correo electrÃ³nico.');
+        if (err instanceof Error && err.message === 'EMAIL_EXISTS') {
+          this.errorMsg.set('Ya existe un usuario con ese correo electrónico.');
         } else {
-          this.errorMsg.set('OcurriÃ³ un error al guardar. Intenta de nuevo.');
+          this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
         }
       } finally {
         this.saving.set(false);

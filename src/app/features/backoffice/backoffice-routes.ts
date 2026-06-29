@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
 import { RoutesApp } from '../../shared/const/routes';
+import { superAdminGuard } from '../../core/guards/super-admin.guard';
 export default <Routes>[
-  { path: RoutesApp.users, loadComponent: () => import('./users/users.component') },
-  { path: `${RoutesApp.users}/new`, loadComponent: () => import('./users/user-form.component') },
-  { path: `${RoutesApp.users}/:id/edit`, loadComponent: () => import('./users/user-form.component') },
+  { path: RoutesApp.users, canActivate: [superAdminGuard], loadComponent: () => import('./users/users.component') },
+  { path: `${RoutesApp.users}/new`, canActivate: [superAdminGuard], loadComponent: () => import('./users/user-form.component') },
+  { path: `${RoutesApp.users}/:id/edit`, canActivate: [superAdminGuard], loadComponent: () => import('./users/user-form.component') },
   { path: RoutesApp.sellers, loadComponent: () => import('./sellers/sellers.component') },
   { path: RoutesApp.pickupPoints, loadComponent: () => import('./pickup-points/pickup-points.component') },
   { path: `${RoutesApp.pickupPoints}/new`, loadComponent: () => import('./pickup-points/pickup-point-form.component') },
