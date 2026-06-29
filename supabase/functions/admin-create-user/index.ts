@@ -9,6 +9,16 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const ALLOWED_ROLES = new Set(['SELLER', 'SUPER_ADMIN']);
 
+// supabase.functions.invoke() from a browser sends a CORS preflight
+// (OPTIONS) before the real POST, since it carries an Authorization header.
+// Edge Functions don't add CORS headers automatically — without these, the
+// browser blocks the request before it ever reaches this code.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 function decodeJwtClaims(token: string): Record<string, unknown> {
   const payload = token.split('.')[1] ?? '';
   const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
@@ -16,14 +26,24 @@ function decodeJwtClaims(token: string): Record<string, unknown> {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'METHOD_NOT_ALLOWED' }), { status: 405 });
+    return new Response(JSON.stringify({ error: 'METHOD_NOT_ALLOWED' }), {
+      status: 405,
+      headers: corsHeaders,
+    });
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
   const token = authHeader.replace(/^Bearer\s+/i, '');
   if (!token) {
-    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), { status: 401 });
+    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: corsHeaders,
+    });
   }
 
   // Edge Functions verify the JWT signature/expiry before this code runs
@@ -31,7 +51,10 @@ Deno.serve(async (req) => {
   // the role claim itself was set server-side by custom_access_token_hook.
   const claims = decodeJwtClaims(token);
   if (claims['user_role'] !== 'SUPER_ADMIN') {
-    return new Response(JSON.stringify({ error: 'FORBIDDEN' }), { status: 403 });
+    return new Response(JSON.stringify({ error: 'FORBIDDEN' }), {
+      status: 403,
+      headers: corsHeaders,
+    });
   }
 
   const body = (await req.json().catch(() => null)) as
@@ -39,7 +62,10 @@ Deno.serve(async (req) => {
     | null;
 
   if (!body?.email || !body.role || !ALLOWED_ROLES.has(body.role)) {
-    return new Response(JSON.stringify({ error: 'INVALID_BODY' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'INVALID_BODY' }), {
+      status: 400,
+      headers: corsHeaders,
+    });
   }
 
   const adminClient = createClient(
@@ -56,7 +82,7 @@ Deno.serve(async (req) => {
     const alreadyExists = inviteError.message?.toLowerCase().includes('already registered');
     return new Response(
       JSON.stringify({ error: alreadyExists ? 'EMAIL_EXISTS' : inviteError.message }),
-      { status: alreadyExists ? 409 : 400 }
+      { status: alreadyExists ? 409 : 400, headers: corsHeaders }
     );
   }
 
@@ -69,11 +95,14 @@ Deno.serve(async (req) => {
     .eq('id', invited.user.id);
 
   if (updateError) {
-    return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: updateError.message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 
   return new Response(JSON.stringify({ id: invited.user.id }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
