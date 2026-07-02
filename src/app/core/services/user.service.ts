@@ -1,10 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/product.model';
 import { CreateUserDto, SellerProfile, UserProfile } from '../models/user.model';
-import { RoutesApp } from '../../shared/const/routes';
 import { SupabaseClientService } from '../auth/supabase-client';
 
 interface ProfileRow {
@@ -27,9 +23,33 @@ function mapProfileRow(row: ProfileRow): UserProfile {
   };
 }
 
+interface SellerProfileWithOwnerRow {
+  id: string;
+  user_id: string;
+  business_name: string | null;
+  contact_phone: string | null;
+  logo_key: string | null;
+  address: string | null;
+  status: SellerProfile['status'];
+  profiles: { email: string; created_at: string } | null;
+}
+
+function mapSellerProfileWithOwnerRow(row: SellerProfileWithOwnerRow): SellerProfile {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    bussinesName: row.business_name ?? '',
+    contactPhone: row.contact_phone ?? undefined,
+    logoKey: row.logo_key ?? '',
+    address: row.address ?? undefined,
+    status: row.status,
+    email: row.profiles?.email,
+    createdAt: row.profiles?.created_at,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private http = inject(HttpClient);
   private supabase = inject(SupabaseClientService).client;
 
   async getUsers(page = 1, limit = 10): Promise<PaginatedResponse<UserProfile>> {
@@ -52,14 +72,24 @@ export class UserService {
     };
   }
 
-  // Sellers are still managed by the legacy backend (out of scope for the
-  // Supabase auth migration), so this keeps hitting environment.apiUrl.
-  getSellers(page = 1, limit = 10): Observable<PaginatedResponse<SellerProfile>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-    const url = `${environment.apiUrl}/${RoutesApp.admin}/${RoutesApp.sellers}`;
-    return this.http.get<PaginatedResponse<SellerProfile>>(url, { params });
+  async getSellers(page = 1, limit = 10): Promise<PaginatedResponse<SellerProfile>> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    const { data, error, count } = await this.supabase
+      .from('seller_profiles')
+      .select('*, profiles!inner(email, created_at)', { count: 'exact' })
+      .order('business_name', { ascending: true })
+      .range(from, to);
+    if (error) throw error;
+
+    const total = count ?? 0;
+    return {
+      data: (data as unknown as SellerProfileWithOwnerRow[]).map(mapSellerProfileWithOwnerRow),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async createUser(dto: CreateUserDto): Promise<void> {

@@ -1,23 +1,60 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { from, map, Observable } from 'rxjs';
 import { City, State } from '../models/location.model';
+import { SupabaseClientService } from '../auth/supabase-client';
+
+interface StateRow {
+  id: string;
+  name: string;
+  country_id: string;
+}
+
+interface CityRow {
+  id: string;
+  name: string;
+  // Supabase returns embedded relations as arrays even for !inner (single-match) joins.
+  states: { id: string; name: string }[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class LocationService {
-  private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/locations`;
+  private supabase = inject(SupabaseClientService).client;
 
-  getStates(name?: string): Observable<State[]> {
-    let params = new HttpParams();
-    if (name) params = params.set('name', name);
-    return this.http.get<State[]>(`${this.base}/states`, { params });
+  getStates(countryName = 'Colombia'): Observable<State[]> {
+    const query = this.supabase
+      .from('states')
+      .select('id, name, country_id, countries!inner(name)')
+      .eq('countries.name', countryName)
+      .order('name', { ascending: true });
+
+    return from(query).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return (data as StateRow[]).map((row) => ({
+          id: row.id,
+          name: row.name,
+          countryId: row.country_id,
+        }));
+      }),
+    );
   }
 
-  getCities(stateId: string, name?: string): Observable<City[]> {
-    let params = new HttpParams();
-    if (name) params = params.set('name', name);
-    return this.http.get<City[]>(`${this.base}/states/${stateId}/cities`, { params });
+  getCities(stateName: string): Observable<City[]> {
+    const query = this.supabase
+      .from('cities')
+      .select('id, name, states!inner(id, name)')
+      .eq('states.name', stateName)
+      .order('name', { ascending: true });
+
+    return from(query).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return (data as CityRow[]).map((row) => ({
+          id: row.id,
+          name: row.name,
+          state: row.states[0] ?? { id: '', name: '' },
+        }));
+      }),
+    );
   }
 }

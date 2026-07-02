@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserService } from '../../../core/services/user.service';
-import { SellerProfile, SellerStatus, UserProfile } from '../../../core/models/user.model';
+import { SellerProfile, SellerStatus } from '../../../core/models/user.model';
 import {
   DataTableComponent,
   TableEmptyDirective,
@@ -60,8 +60,8 @@ import {
         </ng-template>
 
         <ng-template tableCell="status" let-s>
-          <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + sellerStatusClass(s.sellerProfile?.status)">
-            {{ sellerStatusLabel(s?.status) }}
+          <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + sellerStatusClass(s.status)">
+            {{ sellerStatusLabel(s.status) }}
           </span>
         </ng-template>
 
@@ -88,7 +88,7 @@ export default class SellersComponent implements OnInit {
   protected router = inject(Router);
   private userService = inject(UserService);
 
-  readonly columns: TableColumn<UserProfile>[] = [
+  readonly columns: TableColumn<SellerProfile>[] = [
     { key: 'seller', label: 'Vendedor', headerClass: 'px-6 py-3', cellClass: 'px-6 py-4' },
     { key: 'city', label: 'Ciudad' },
     { key: 'phone', label: 'Teléfono' },
@@ -107,21 +107,19 @@ export default class SellersComponent implements OnInit {
     this.loadSellers();
   }
 
-  loadSellers(): void {
+  async loadSellers(): Promise<void> {
     this.loading.set(true);
     this.errorMsg.set(null);
-    this.userService.getSellers(this.page(), 10).subscribe({
-      next: (res) => {
-        this.sellers.set(res.data);
-        this.total.set(res.total);
-        this.totalPages.set(res.totalPages);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.errorMsg.set('No se pudo cargar los vendedores. Intenta de nuevo.');
-      },
-    });
+    try {
+      const res = await this.userService.getSellers(this.page(), 10);
+      this.sellers.set(res.data);
+      this.total.set(res.total);
+      this.totalPages.set(res.totalPages);
+    } catch {
+      this.errorMsg.set('No se pudo cargar los vendedores. Intenta de nuevo.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   onPageChange(p: number): void {

@@ -29,11 +29,16 @@ export interface SellerProfile {
   id: string;
   userId: string;
   bussinesName: string;
+  description?: string;
+  country?: string;
+  businessHours?: string;
   contactPhone?: string;
   logoKey: string;
   city?: City;
   address?: string;
   status?: SellerStatus;
+  email?: string;
+  createdAt?: string;
 }
 
 export interface CreateUserDto {
@@ -51,6 +56,9 @@ export interface UpdateUserDto {
 
 export interface UpdateSellerProfileDto {
   bussinesName?: string;
+  description?: string;
+  country?: string;
+  businessHours?: string;
   contactPhone?: string;
   cityId?: string;
   address?: string;

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { BranchService } from '../../../core/services/branch.service';
 import { Branch, BranchStatus } from '../../../core/models/branch.model';
 import {
@@ -227,7 +226,7 @@ export default class BranchListComponent implements OnInit {
     this.settingMain.set(id);
     this.errorMsg.set(null);
     try {
-      await firstValueFrom(this.branchService.setMain(id));
+      await this.branchService.setMain(id);
       this.branches.update(list =>
         list.map(b => ({ ...b, isMain: b.id === id })),
       );
@@ -247,7 +246,7 @@ export default class BranchListComponent implements OnInit {
     if (!id) return;
     this.deleting.set(true);
     try {
-      await firstValueFrom(this.branchService.deleteBranch(id));
+      await this.branchService.deleteBranch(id);
       this.confirmDelete.set(null);
       this.branches.update(list => list.filter(b => b.id !== id));
       this.total.update(n => n - 1);

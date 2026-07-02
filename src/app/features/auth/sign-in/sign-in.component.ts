@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/cor
 import { Router, RouterLink, RouterLinkActive } from "@angular/router";
 import { form, FormField, submit, required, email, minLength } from "@angular/forms/signals";
 import { AuthService } from "../../../core/auth/auth.service";
+import { navigateByRole } from "../../../core/auth/navigate-by-role";
 import { UserStore } from "../../../core/store/user.store";
 
 @Component({
@@ -194,7 +195,7 @@ export default class SignInComponent {
       const { email, password } = this.model();
       try {
         await this.authService.login(email, password);
-        this.navigateByRole();
+        navigateByRole(this.router, this.userStore.user()?.role);
       } catch (err) {
         if (this.authService.isEmailNotConfirmedError(err)) {
           this.authService.pendingEmail.set(email);
@@ -206,10 +207,4 @@ export default class SignInComponent {
     });
   }
 
-  private navigateByRole(): void {
-    const role = this.userStore.user()?.role;
-    if (role === 'SUPER_ADMIN' || role === 'ADMIN') this.router.navigate(['/admin']);
-    else if (role === 'SELLER') this.router.navigate(['/seller/products']);
-    else this.router.navigate(['/']);
-  }
 }

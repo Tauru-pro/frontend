@@ -73,9 +73,16 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
+  // Without redirectTo, the invite email's link sends the user to the
+  // project's default site_url (the public home page) with no chance to
+  // set a password. origin is the real frontend origin here since this is
+  // a genuine cross-origin fetch from the browser (supabase.functions.invoke).
+  const origin = req.headers.get('origin');
+  const redirectTo = origin ? `${origin}/auth/set-password` : undefined;
+
   const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
     body.email,
-    { data: { full_name: body.fullName, role: body.role } }
+    { data: { full_name: body.fullName, role: body.role }, redirectTo }
   );
 
   if (inviteError) {

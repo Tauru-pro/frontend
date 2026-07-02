@@ -10,6 +10,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { SupabaseClientService } from '../../../core/auth/supabase-client';
+import { navigateByRole } from '../../../core/auth/navigate-by-role';
 import { UserStore } from '../../../core/store/user.store';
 
 @Component({
@@ -88,10 +89,7 @@ export default class CallbackComponent implements OnInit, OnDestroy {
 
   private async navigateByRole(): Promise<void> {
     if (!this.userStore.user()) await this.userStore.loadUser();
-    const role = this.userStore.user()?.role;
-    if (role === 'SUPER_ADMIN' || role === 'ADMIN') this.router.navigate(['/admin']);
-    else if (role === 'SELLER')                     this.router.navigate(['/seller/products']);
-    else                                             this.router.navigate(['/']);
+    navigateByRole(this.router, this.userStore.user()?.role);
   }
 }
 

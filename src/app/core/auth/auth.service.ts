@@ -69,6 +69,14 @@ export class AuthService {
     if (error) throw error;
   }
 
+  // Used after an invite/recovery link establishes a session with no
+  // password set yet (see features/auth/set-password).
+  async setPassword(password: string) {
+    const { data, error } = await this.supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return data;
+  }
+
   async logout() {
     await this.supabase.auth.signOut();
     this.currentUser.set(null);

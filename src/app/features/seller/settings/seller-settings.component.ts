@@ -5,7 +5,6 @@
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   form,
   FormField,
@@ -15,13 +14,16 @@ import {
 } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { SellerService } from '../../../core/services/seller.service';
-import { UpdateSellerProfileDto } from '../../../core/models/user.model';
+import { SellerProfile, UpdateSellerProfileDto } from '../../../core/models/user.model';
 import { UserStore } from '../../../core/store/user.store';
 import { environment } from '../../../../environments/environment';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
 
 interface SettingsFormModel {
   bussinesName: string;
+  description: string;
+  country: string;
+  businessHours: string;
   contactPhone: string;
   cityId: string;
   address: string;
@@ -145,6 +147,41 @@ interface SettingsFormModel {
                 </p>
               }
             </div>
+
+            <!-- Descripción -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
+              <textarea
+                [formField]="settingsForm.description"
+                rows="3"
+                placeholder="Cuéntale a los compradores sobre tu ganadería o central genética"
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+              ></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <!-- País -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">País</label>
+                <input
+                  type="text"
+                  [formField]="settingsForm.country"
+                  placeholder="Colombia"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+
+              <!-- Horario operativo -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Horario operativo</label>
+                <input
+                  type="text"
+                  [formField]="settingsForm.businessHours"
+                  placeholder="Lun-Vie 8am-5pm"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
          <!-- Departamento y Municipio -->
             <app-location-select
               [initialStateId]="initialStateId()"
@@ -242,6 +279,9 @@ export default class SellerSettingsComponent implements OnInit {
 
   model = signal<SettingsFormModel>({
     bussinesName: '',
+    description: '',
+    country: 'Colombia',
+    businessHours: '',
     contactPhone: '',
     cityId: '',
     address: '',
@@ -257,26 +297,33 @@ export default class SellerSettingsComponent implements OnInit {
   }
 
   private async loadProfile(): Promise<void> {
-    const cached = this.userStore.user();
-    if (cached) {
-      this.populateForm(cached);
-      return;
+    this.loading.set(true);
+    try {
+      const profile = await this.sellerService.getMyProfile();
+      this.populateForm(profile);
+    } catch {
+      this.errorMsg.set('No se pudo cargar tu perfil. Intenta de nuevo.');
+    } finally {
+      this.loading.set(false);
     }
   }
 
-  private populateForm(profile: ReturnType<typeof this.userStore.user>): void {
+  private populateForm(profile: SellerProfile | null): void {
     if (!profile) return;
-    this.initialStateId.set(profile.sellerProfile?.city?.state?.id!)
-    this.initialCityId.set(profile.sellerProfile?.city?.id!)
+    this.initialStateId.set(profile.city?.state?.id ?? null);
+    this.initialCityId.set(profile.city?.id ?? null);
     this.model.set({
-      bussinesName: profile.sellerProfile?.bussinesName ?? '',
-      contactPhone: profile.sellerProfile?.contactPhone ?? '',
-      cityId: profile.sellerProfile?.city?.id ?? '',
-      address: profile.sellerProfile?.address ?? '',
+      bussinesName: profile.bussinesName ?? '',
+      description: profile.description ?? '',
+      country: profile.country ?? 'Colombia',
+      businessHours: profile.businessHours ?? '',
+      contactPhone: profile.contactPhone ?? '',
+      cityId: profile.city?.id ?? '',
+      address: profile.address ?? '',
     });
-    this.logoKey.set(profile.sellerProfile?.logoKey ?? '');
-    if (profile.sellerProfile?.logoKey) {
-      this.logoPreview.set(this.logoUrl(profile.sellerProfile?.logoKey));
+    this.logoKey.set(profile.logoKey ?? '');
+    if (profile.logoKey) {
+      this.logoPreview.set(this.logoUrl(profile.logoKey));
     }
   }
 
@@ -336,9 +383,7 @@ export default class SellerSettingsComponent implements OnInit {
       this.uploading.set(false);
       throw new Error(`No se pudo subir ${file.name}`);
     }
-    await firstValueFrom(
-      this.sellerService.confirm(s3Key),
-    );
+    await this.sellerService.confirm(s3Key);
     this.uploading.set(false);
   }
 
@@ -351,20 +396,18 @@ export default class SellerSettingsComponent implements OnInit {
         const values = this.model();
         const dto: UpdateSellerProfileDto = {
           bussinesName: values.bussinesName,
+          description: values.description || undefined,
+          country: values.country || undefined,
+          businessHours: values.businessHours || undefined,
           contactPhone: values.contactPhone || undefined,
           cityId: this.selectedCityId()!,
           address: values.address || undefined
         };
-        const updated = await firstValueFrom(this.sellerService.updateMyProfile(dto));
+        const updated = await this.sellerService.updateMyProfile(dto);
         this.userStore.patchSellerProfile(updated);
         this.successMsg.set('Cambios guardados correctamente.');
-      } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        this.errorMsg.set(
-          status === 404
-            ? 'No se encontrÃ³ el perfil. Contacta al administrador.'
-            : 'OcurriÃ³ un error al guardar. Intenta de nuevo.',
-        );
+      } catch {
+        this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
       } finally {
         this.saving.set(false);
       }

@@ -5,7 +5,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -14,7 +13,6 @@ import {
   required,
   minLength,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
 import { BranchService } from '../../../core/services/branch.service';
 import { CreateBranchDto, UpdateBranchDto } from '../../../core/models/branch.model';
 import {
@@ -26,6 +24,9 @@ interface BranchFormModel {
   name: string;
   address: string;
   phone: string;
+  latitude: string;
+  longitude: string;
+  businessHours: string;
 }
 
 @Component({
@@ -127,6 +128,41 @@ interface BranchFormModel {
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
             </div>
+
+            <!-- Horario operativo -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Horario operativo</label>
+              <input
+                type="text"
+                [formField]="branchForm.businessHours"
+                placeholder="Lun-Vie 8am-5pm"
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+              />
+            </div>
+
+            <!-- Coordenadas GPS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Latitud</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  [formField]="branchForm.latitude"
+                  placeholder="4.710989"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Longitud</label>
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  [formField]="branchForm.longitude"
+                  placeholder="-74.072090"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
           </div>
 
           @if (locationError()) {
@@ -190,6 +226,9 @@ export default class BranchFormComponent implements OnInit {
     name: '',
     address: '',
     phone: '',
+    latitude: '',
+    longitude: '',
+    businessHours: '',
   });
 
   branchForm = form(this.model, (s) => {
@@ -232,28 +271,35 @@ export default class BranchFormComponent implements OnInit {
       this.saving.set(true);
       try {
         const values = this.model();
+        const latitude = values.latitude.trim() ? Number(values.latitude) : undefined;
+        const longitude = values.longitude.trim() ? Number(values.longitude) : undefined;
         if (this.isEditMode()) {
           const dto: UpdateBranchDto = {
             name: values.name,
             address: values.address,
             phone: values.phone || undefined,
             cityId: this.selectedCityId() ?? undefined,
+            latitude,
+            longitude,
+            businessHours: values.businessHours || undefined,
           };
-          await firstValueFrom(this.branchService.updateBranch(this.branchId()!, dto));
+          await this.branchService.updateBranch(this.branchId()!, dto);
         } else {
           const dto: CreateBranchDto = {
             name: values.name,
             address: values.address,
             cityId: this.selectedCityId()!,
             phone: values.phone || undefined,
+            latitude,
+            longitude,
+            businessHours: values.businessHours || undefined,
           };
-          await firstValueFrom(this.branchService.createBranch(dto));
+          await this.branchService.createBranch(dto);
         }
         this.router.navigate(['/seller/branches']);
       } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
         this.errorMsg.set(
-          status === 409
+          err instanceof Error && err.message === 'DUPLICATE_NAME'
             ? 'Ya existe una sucursal con ese nombre.'
             : 'Ocurrió un error al guardar. Intenta de nuevo.',
         );
@@ -274,6 +320,9 @@ export default class BranchFormComponent implements OnInit {
           name: branch.name,
           address: branch.address,
           phone: branch.phone ?? '',
+          latitude: branch.latitude !== undefined ? String(branch.latitude) : '',
+          longitude: branch.longitude !== undefined ? String(branch.longitude) : '',
+          businessHours: branch.businessHours ?? '',
         });
         this.loading.set(false);
       },

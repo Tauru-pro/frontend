@@ -67,6 +67,7 @@ export class LocationSelectComponent implements OnInit {
 
   selectedStateId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
+  private selectedStateName = signal<string | null>(null);
 
   stateOptions = computed<SelectOption[]>(() =>
     this.states().map((s) => ({ id: s.id, label: s.name }))
@@ -93,7 +94,14 @@ export class LocationSelectComponent implements OnInit {
     this.selectedCityId.set(null);
     this.cities.set([]);
     this.emit();
-    if (stateId) this.loadCities(stateId);
+
+    if (stateId) {
+      const stateName = this.states().find((s) => s.id === stateId)?.name ?? null;
+      this.selectedStateName.set(stateName);
+      if (stateName) this.loadCities(stateName);
+    } else {
+      this.selectedStateName.set(null);
+    }
   }
 
   onCityChange(cityId: string | null): void {
@@ -111,7 +119,8 @@ export class LocationSelectComponent implements OnInit {
           const match = states.find((s) => s.id === this.initialStateId);
           if (match) {
             this.selectedStateId.set(match.id);
-            this.loadCities(match.id);
+            this.selectedStateName.set(match.name);
+            this.loadCities(match.name);
           }
         }
       },
@@ -119,9 +128,9 @@ export class LocationSelectComponent implements OnInit {
     });
   }
 
-  private loadCities(stateId: string): void {
+  private loadCities(stateName: string): void {
     this.citiesLoading.set(true);
-    this.locationService.getCities(stateId).subscribe({
+    this.locationService.getCities(stateName).subscribe({
       next: (cities) => {
         this.cities.set(cities);
         this.citiesLoading.set(false);

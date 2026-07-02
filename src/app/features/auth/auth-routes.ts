@@ -5,6 +5,7 @@ export default <Routes>[
     { path: RoutesApp.signIn, loadComponent: () => import('./sign-in/sign-in.component') },
     { path: RoutesApp.signUp, loadComponent: () => import('./sign-up/sign-up.component') },
     { path: RoutesApp.verifyEmail, loadComponent: () => import('./verify-email/verify-email.component') },
+    { path: RoutesApp.setPassword, loadComponent: () => import('./set-password/set-password.component') },
     { path: RoutesApp.callback, loadComponent: () => import('./callback/callback.component') },
     { path: '', redirectTo: RoutesApp.signIn, pathMatch: 'full' },
 ]

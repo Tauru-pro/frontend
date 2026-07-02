@@ -4,7 +4,7 @@
 //
 // Run with: npm run seed:super-admin
 // Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-// SEED_SUPER_ADMIN_EMAIL (SEED_SUPER_ADMIN_FULL_NAME is optional).
+// SEED_SUPER_ADMIN_EMAIL (SEED_SUPER_ADMIN_FULL_NAME, SEED_FRONTEND_URL are optional).
 import { createClient } from '@supabase/supabase-js';
 
 async function main() {
@@ -12,6 +12,7 @@ async function main() {
   const serviceRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
   const email = process.env['SEED_SUPER_ADMIN_EMAIL'];
   const fullName = process.env['SEED_SUPER_ADMIN_FULL_NAME'] ?? 'Super Admin';
+  const frontendUrl = process.env['SEED_FRONTEND_URL'] ?? 'http://localhost:4200';
 
   if (!supabaseUrl || !serviceRoleKey || !email) {
     console.error(
@@ -22,8 +23,11 @@ async function main() {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  // Without redirectTo, the invite email sends the user to site_url (the
+  // public home page) with no chance to set a password.
   const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, role: 'SUPER_ADMIN' },
+    redirectTo: `${frontendUrl}/auth/set-password`,
   });
 
   if (inviteError) {
