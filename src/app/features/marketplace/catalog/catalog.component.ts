@@ -48,12 +48,8 @@ export default class CatalogComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    const breed = this.selectedBreed() || undefined;
-    const min = this.minPrice() ?? undefined;
-    const max = this.maxPrice() ?? undefined;
-
     this.bullService
-      .getCatalogBulls(this.currentPage(), this.limit, breed, min, max)
+      .getCatalogBulls(this.currentPage(), this.limit)
       .subscribe({
         next: (res) => {
           this.bulls.set(res.data);

@@ -79,8 +79,6 @@ Cada registro asociado a la actividad comercial de una ganadería o tienda debe 
 
 - **RF-009 Registro de Pajillas (Material Genético):** Alta de semen de toros reproductores. Requiere metadatos técnicos específicos de la industria pecuaria:
   - Nombre, Slug (URL amigable), Código SKU único.
-  - Nombre del Toro (Padre), Raza (Llave foránea al maestro global).
-  - Centro genético de origen.
   - Precio, Descripción, Estado.
   - Inventario inicial asignado a una Sucursal específica.
   - **Documentación PDF:** Certificado de registro genealógico, árbol genealógico (pedigrí), y/o reporte de evaluación andrológica/parámetros C.A.S.A. (Semen de alta calidad).

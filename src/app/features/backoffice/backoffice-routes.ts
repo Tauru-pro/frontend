@@ -15,6 +15,7 @@ export default <Routes>[
   { path: RoutesApp.breeds, canActivate: [superAdminGuard], loadComponent: () => import('./breeds/breeds.component') },
   { path: `${RoutesApp.breeds}/new`, canActivate: [superAdminGuard], loadComponent: () => import('./breeds/breed-form.component') },
   { path: `${RoutesApp.breeds}/:id/edit`, canActivate: [superAdminGuard], loadComponent: () => import('./breeds/breed-form.component') },
+  { path: 'products', canActivate: [superAdminGuard], loadComponent: () => import('./products/products.component') },
   { path: RoutesApp.settings, loadComponent: () => import('./settings/marketplace-settings.component') },
   { path: RoutesApp.dashboard, loadComponent: () => import('./dashboard/dashboard.component') },
   { path: '', redirectTo: RoutesApp.dashboard, pathMatch: 'full' },

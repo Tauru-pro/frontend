@@ -1,35 +1,48 @@
-import { Bull } from "./bull.model";
-
 export type ProductType = 'STRAW' | 'SUPPLIES';
-export type ProductOrigin = 'NATIONAL' | 'IMPORTED';
-export type RegistrationType = 'PURO' | 'COMERCIAL';
-export type ProductStatus = 'DRAFT' | 'PENDING_VALIDATION' | 'ACTIVE' | 'SUSPENDED' | 'OUT_OF_STOCK';
+export type StrawType = 'SEXADO_MALE' | 'SEXADO_FEMALE' | 'CONVENTIONAL';
+export type ProductStatus =
+  | 'DRAFT'
+  | 'PENDING_VALIDATION'
+  | 'ACTIVE'
+  | 'REJECTED'
+  | 'CHANGES_REQUESTED'
+  | 'OUT_OF_STOCK'
+  | 'SUSPENDED';
 
 export interface ProductMedia {
   id: string;
-  mediaType: 'image' | 'video';
-  s3Key: string;
-  s3Bucket: string;
-  mimeType: string;
+  entityType: 'bull' | 'product';
+  entityId: string;
+  mediaType: 'image' | 'video' | 'document';
+  storagePath: string;
+  mimeType: string | null;
   sortOrder: number | null;
   isCover: boolean;
   createdAt: string;
 }
 
+export interface ProductBull {
+  id: string;
+  name: string;
+}
+
 export interface Product {
   id: string;
-  sellerId: string;
+  tenantId: string;
   productType: ProductType;
   name: string;
+  slug: string | null;
   description: string | null;
   price: number;
-  bull: Bull
+  bullId: string | null;
+  bull: ProductBull | null;
+  strawType: StrawType | null;
+  minOrderQuantity: number;
   stockQuantity: number;
-  stockReserved: number;
   status: ProductStatus;
+  validationNotes: string | null;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
   media: ProductMedia[];
 }
 
@@ -46,7 +59,10 @@ export interface CreateProductDto {
   name: string;
   description?: string;
   price: number;
-  stockQuantity: number;
+  bullId?: string;
+  strawType?: StrawType;
+  minOrderQuantity?: number;
+  stockQuantity?: number;
 }
 
 export type UpdateProductDto = Partial<Omit<CreateProductDto, 'productType'>>;

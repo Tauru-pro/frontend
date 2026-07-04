@@ -9,7 +9,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -19,32 +18,20 @@ import {
   minLength,
   validate,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
-import { SupplyService } from '../../../core/services/supply.service';
-import {
-  CreateSupplyDto,
-  DiscountType,
-  SupplyMedia,
-  UpdateSupplyDto,
-} from '../../../core/models/supply.model';
+import { ProductService } from '../../../core/services/product.service';
+import { ProductMedia } from '../../../core/models/product.model';
 import { MimeType } from '../../../core/models/upload.model';
-import { environment } from '../../../../environments/environment';
 
 interface SupplyFormModel {
   name: string;
   description: string;
   price: number;
   stockQuantity: number;
-  discountType: DiscountType | '';
-  discountValue: number;
-  discountLabel: string;
-  discountExpiresAt: string;
 }
 
 interface PendingFile {
   file: File;
   preview: string;
-  mediaType: 'image' | 'video';
   mimeType: MimeType;
 }
 
@@ -114,10 +101,8 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
       } @else {
         <form (submit)="onSubmit(); $event.preventDefault()" class="space-y-6">
 
-          <!-- ===== STEP 1 ===== -->
           @if (currentStep() === 1) {
 
-            <!-- Información básica -->
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
               <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Información básica</h2>
 
@@ -132,12 +117,7 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                   class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 @if (supplyForm.name().touched() && supplyForm.name().errors().length) {
-                  <p class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                    <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    {{ supplyForm.name().errors()[0].message }}
-                  </p>
+                  <p class="text-red-400 text-xs mt-1.5">{{ supplyForm.name().errors()[0].message }}</p>
                 }
               </div>
 
@@ -152,7 +132,6 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
               </div>
             </div>
 
-            <!-- Precio y stock -->
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
               <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Precio y stock</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -164,7 +143,6 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                     type="number"
                     [formField]="supplyForm.price"
                     placeholder="0"
-                    step="0.01"
                     class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
                   @if (supplyForm.price().touched() && supplyForm.price().errors().length) {
@@ -177,70 +155,10 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                     type="number"
                     [formField]="supplyForm.stockQuantity"
                     placeholder="0"
-                    step="1"
                     class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                   />
                 </div>
               </div>
-            </div>
-
-            <!-- Descuento (opcional) -->
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-              <div class="flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Descuento</h2>
-                <span class="text-xs text-gray-400">Opcional</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Tipo de descuento</label>
-                  <select
-                    [formField]="supplyForm.discountType"
-                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
-                  >
-                    <option value="">Sin descuento</option>
-                    <option value="PERCENTAGE">Porcentaje (%)</option>
-                    <option value="FIXED_AMOUNT">Monto fijo ($)</option>
-                  </select>
-                </div>
-
-                @if (hasDiscount()) {
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                      Valor del descuento <span class="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      [formField]="supplyForm.discountValue"
-                      placeholder="0"
-                      step="0.01"
-                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                    />
-                  </div>
-                }
-              </div>
-
-              @if (hasDiscount()) {
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Etiqueta del descuento</label>
-                    <input
-                      type="text"
-                      [formField]="supplyForm.discountLabel"
-                      placeholder="Ej. Oferta de temporada"
-                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Vence el</label>
-                    <input
-                      type="datetime-local"
-                      [formField]="supplyForm.discountExpiresAt"
-                      class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              }
             </div>
 
             <div class="flex gap-3 justify-end pb-6">
@@ -252,25 +170,33 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
               </a>
               <button
                 type="button"
+                [disabled]="savingStep1()"
                 (click)="goToStep2()"
-                class="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm"
+                class="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-60"
               >
-                Siguiente
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
+                @if (savingStep1()) {
+                  <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Guardando...
+                } @else {
+                  Siguiente
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                }
               </button>
             </div>
           }
 
-          <!-- ===== STEP 2 ===== -->
           @if (currentStep() === 2) {
 
             <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Imágenes</h2>
-                  <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP o AVIF</p>
+                  <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP o AVIF · Máximo 3 imágenes</p>
                 </div>
                 @if (existingImages().length + pendingImages().length > 0) {
                   <span class="text-xs text-gray-400">
@@ -284,7 +210,7 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                   @for (media of existingImages(); track media.id) {
                     <div class="relative aspect-square group">
                       <img
-                        [src]="getMediaUrl(media.s3Key)"
+                        [src]="getMediaUrl(media.storagePath)"
                         class="w-full h-full object-cover rounded-xl"
                         alt="Imagen del insumo"
                       />
@@ -346,28 +272,30 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                 </div>
               }
 
-              <div
-                class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
-                (dragover)="$event.preventDefault()"
-                (drop)="onImageDrop($event)"
-                (click)="openImagePicker()"
-              >
-                <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                <p class="text-sm text-gray-500">
-                  <span class="font-medium text-primary">Haz clic para subir</span> o arrastra tus imágenes aquí
-                </p>
-                <p class="text-xs text-gray-400 mt-1">Puedes seleccionar varias imágenes a la vez</p>
-              </div>
-              <input
-                #imageInput
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                multiple
-                class="hidden"
-                (change)="onImagesSelected($event)"
-              />
+              @if (totalImages() < 3) {
+                <div
+                  class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  (dragover)="$event.preventDefault()"
+                  (drop)="onImageDrop($event)"
+                  (click)="openImagePicker()"
+                >
+                  <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-medium text-primary">Haz clic para subir</span> o arrastra tus imágenes aquí
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1">{{ 3 - totalImages() }} imagen(es) restante(s)</p>
+                </div>
+                <input
+                  #imageInput
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
+                  class="hidden"
+                  (change)="onImagesSelected($event)"
+                />
+              }
             </div>
 
             @if (saving() && uploadProgress() > 0) {
@@ -405,7 +333,7 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
               <button
                 type="submit"
                 [disabled]="saving()"
-                class="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm"
+                class="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-60"
               >
                 @if (saving()) {
                   <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -428,32 +356,29 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
 export default class SupplyFormComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private supplyService = inject(SupplyService);
+  private productService = inject(ProductService);
 
   currentStep = signal(1);
   isEditMode = signal(false);
   supplyId = signal<string | null>(null);
   loading = signal(false);
   saving = signal(false);
+  savingStep1 = signal(false);
   errorMsg = signal<string | null>(null);
   uploadProgress = signal(0);
   pendingImages = signal<PendingFile[]>([]);
-  existingMedia = signal<SupplyMedia[]>([]);
+  existingMedia = signal<ProductMedia[]>([]);
 
   imageInputRef = viewChild<ElementRef<HTMLInputElement>>('imageInput');
 
   existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image'));
-  hasDiscount = computed(() => this.model().discountType !== '');
+  totalImages = computed(() => this.existingImages().length + this.pendingImages().length);
 
   model = signal<SupplyFormModel>({
     name: '',
     description: '',
     price: 0,
     stockQuantity: 0,
-    discountType: '',
-    discountValue: 0,
-    discountLabel: '',
-    discountExpiresAt: '',
   });
 
   supplyForm = form(this.model, (s) => {
@@ -485,13 +410,39 @@ export default class SupplyFormComponent implements OnInit, OnDestroy {
     this.pendingImages().forEach(f => URL.revokeObjectURL(f.preview));
   }
 
-  getMediaUrl(key: string): string {
-    return `${environment.cdn}/${key}`;
+  getMediaUrl(storagePath: string): string {
+    return this.productService.getMediaPublicUrl(storagePath);
   }
 
   goToStep2(): void {
     submit(this.supplyForm, async () => {
-      this.currentStep.set(2);
+      this.savingStep1.set(true);
+      try {
+        const values = this.model();
+        if (this.isEditMode() && this.supplyId()) {
+          await this.productService.updateProduct(this.supplyId()!, {
+            name: values.name,
+            description: values.description || undefined,
+            price: Number(values.price),
+            stockQuantity: Number(values.stockQuantity),
+          });
+        } else if (!this.supplyId()) {
+          const product = await this.productService.createProduct({
+            productType: 'SUPPLIES',
+            name: values.name,
+            description: values.description || undefined,
+            price: Number(values.price),
+            stockQuantity: Number(values.stockQuantity),
+          });
+          this.supplyId.set(product.id);
+          this.isEditMode.set(true);
+        }
+        this.currentStep.set(2);
+      } catch {
+        this.errorMsg.set('No se pudo guardar la información. Intenta de nuevo.');
+      } finally {
+        this.savingStep1.set(false);
+      }
     });
   }
 
@@ -521,94 +472,54 @@ export default class SupplyFormComponent implements OnInit, OnDestroy {
     this.pendingImages.set(files);
   }
 
-  deleteExistingMedia(mediaId: string): void {
-    const id = this.supplyId();
-    if (!id) return;
-    this.supplyService.deleteMedia(id, mediaId).subscribe(() => {
+  async deleteExistingMedia(mediaId: string): Promise<void> {
+    try {
+      await this.productService.deleteMedia(mediaId);
       this.existingMedia.update(media => media.filter(m => m.id !== mediaId));
-    });
+    } catch {
+      this.errorMsg.set('No se pudo eliminar la imagen. Intenta de nuevo.');
+    }
   }
 
-  setCover(mediaId: string): void {
+  async setCover(mediaId: string): Promise<void> {
     const id = this.supplyId();
     if (!id) return;
-    this.supplyService.setCoverImage(id, mediaId).subscribe(() => {
+    try {
+      await this.productService.setCoverImage(id, mediaId);
       this.existingMedia.update(media => media.map(m => ({ ...m, isCover: m.id === mediaId })));
-    });
+    } catch {
+      this.errorMsg.set('No se pudo establecer la portada. Intenta de nuevo.');
+    }
   }
 
   onSubmit(): void {
     if (this.currentStep() !== 2) return;
     this.errorMsg.set(null);
-    submit(this.supplyForm, async () => {
-      this.saving.set(true);
-      this.uploadProgress.set(0);
-      try {
-        const values = this.model();
-        const discountType = values.discountType as DiscountType | '';
-        let supplyId: string;
-
-        if (this.isEditMode()) {
-          const dto: UpdateSupplyDto = {
-            name: values.name,
-            description: values.description || undefined,
-            price: Number(values.price),
-            stockQuantity: Number(values.stockQuantity),
-            discountType: discountType || undefined,
-            discountValue: discountType && values.discountValue ? Number(values.discountValue) : undefined,
-            discountLabel: discountType && values.discountLabel ? values.discountLabel : undefined,
-            discountExpiresAt: discountType && values.discountExpiresAt ? new Date(values.discountExpiresAt).toISOString() : undefined,
-          };
-          await firstValueFrom(this.supplyService.updateSupply(this.supplyId()!, dto));
-          supplyId = this.supplyId()!;
-        } else {
-          const dto: CreateSupplyDto = {
-            name: values.name,
-            price: Number(values.price),
-            description: values.description || undefined,
-            stockQuantity: Number(values.stockQuantity),
-            discountType: discountType || undefined,
-            discountValue: discountType && values.discountValue ? Number(values.discountValue) : undefined,
-            discountLabel: discountType && values.discountLabel ? values.discountLabel : undefined,
-            discountExpiresAt: discountType && values.discountExpiresAt ? new Date(values.discountExpiresAt).toISOString() : undefined,
-          };
-          const supply = await firstValueFrom(this.supplyService.createSupply(dto));
-          supplyId = supply.id;
-        }
-
-        await this.uploadFiles(supplyId);
-        this.router.navigate(['/seller/supplies']);
-      } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        this.errorMsg.set(
-          status === 403
-            ? 'No tienes permisos para realizar esta acción.'
-            : 'Ocurrió un error al guardar. Intenta de nuevo.',
-        );
-      } finally {
-        this.saving.set(false);
-      }
-    });
+    this.saving.set(true);
+    this.uploadProgress.set(0);
+    const id = this.supplyId();
+    if (!id) {
+      this.errorMsg.set('Ocurrió un error inesperado. Vuelve al paso 1.');
+      this.saving.set(false);
+      return;
+    }
+    this.uploadFiles(id)
+      .then(() => this.router.navigate(['/seller/supplies']))
+      .catch(() => this.errorMsg.set('Ocurrió un error al subir las imágenes. Intenta de nuevo.'))
+      .finally(() => this.saving.set(false));
   }
 
   private loadForEdit(id: string): void {
     this.loading.set(true);
-    this.supplyService.getSupply(id).subscribe({
-      next: (supply) => {
-        const expiresAt = supply.discountExpiresAt
-          ? new Date(supply.discountExpiresAt).toISOString().slice(0, 16)
-          : '';
+    this.productService.getProduct(id).subscribe({
+      next: (product) => {
         this.model.set({
-          name: supply.name,
-          description: supply.description ?? '',
-          price: supply.price,
-          stockQuantity: supply.stockQuantity,
-          discountType: supply.discountType ?? '',
-          discountValue: supply.discountValue ?? 0,
-          discountLabel: supply.discountLabel ?? '',
-          discountExpiresAt: expiresAt,
+          name: product.name,
+          description: product.description ?? '',
+          price: product.price,
+          stockQuantity: product.stockQuantity,
         });
-        this.existingMedia.set(supply.media ?? []);
+        this.existingMedia.set(product.media ?? []);
         this.loading.set(false);
       },
       error: () => {
@@ -619,12 +530,13 @@ export default class SupplyFormComponent implements OnInit, OnDestroy {
   }
 
   private addImageFiles(files: File[]): void {
+    const remaining = 3 - this.totalImages();
     const valid = files
       .filter(f => IMAGE_MIME_TYPES.includes(f.type as MimeType))
+      .slice(0, remaining)
       .map<PendingFile>(f => ({
         file: f,
         preview: URL.createObjectURL(f),
-        mediaType: 'image',
         mimeType: f.type as MimeType,
       }));
     this.pendingImages.update(curr => [...curr, ...valid]);
@@ -633,29 +545,13 @@ export default class SupplyFormComponent implements OnInit, OnDestroy {
   private async uploadFiles(supplyId: string): Promise<void> {
     const files = this.pendingImages();
     if (files.length === 0) return;
-
     for (let i = 0; i < files.length; i++) {
       const pending = files[i];
-      const { uploadUrl, s3Key } = await firstValueFrom(
-        this.supplyService.requestPresignedUrl(supplyId, {
-          mediaType: pending.mediaType,
-          mimeType: pending.mimeType,
-        }),
-      );
-      const response = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: pending.file,
-        headers: { 'Content-Type': pending.mimeType },
-      });
-      if (!response.ok) throw new Error(`No se pudo subir ${pending.file.name}`);
-      await firstValueFrom(
-        this.supplyService.confirmMediaUpload(supplyId, {
-          s3Key,
-          mediaType: pending.mediaType,
-          mimeType: pending.mimeType,
-          sortOrder: i + 1,
-          isCover: i === 0 && this.existingImages().length === 0,
-        }),
+      await this.productService.uploadProductMedia(
+        supplyId,
+        pending.file,
+        'image',
+        i === 0 && this.existingImages().length === 0,
       );
       this.uploadProgress.set(Math.round(((i + 1) / files.length) * 100));
     }

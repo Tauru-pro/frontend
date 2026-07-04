@@ -1,8 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
-import { environment } from '../../../../environments/environment';
-import { BullMedia, StrawType } from '../../../core/models/bull.model';
+import { StrawType } from '../../../core/models/bull.model';
 import { S3fileUrlPipe } from '../../../shared/pipes/s3fileUrl-pipe';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -27,12 +26,6 @@ export default class CartComponent {
   shipping = 15.00;
 
   grandTotal = computed(() => this.cartStore.total() + (this.cartStore.count() > 0 ? this.shipping : 0));
-
-  coverUrl(media: BullMedia[]): string | null {
-    const cover = media.find((m) => m.isCover && m.mediaType === 'image')
-      ?? media.find((m) => m.mediaType === 'image');
-    return cover ? `${environment.cdn}/${cover.s3Key}` : null;
-  }
 
   strawLabel(type: StrawType): string {
     return STRAW_LABELS[type];

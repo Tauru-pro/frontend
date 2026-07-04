@@ -1,22 +1,13 @@
 import {
   Component,
   input,
-  signal,
   computed,
-  OnInit,
   inject,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Bull, BullStraw, StrawType } from '../../../core/models/bull.model';
-import { BullSelected, CartStore } from '../../../core/store/cart.store';
-import { environment } from '../../../../environments/environment';
-
-const STRAW_LABELS: Record<StrawType, string> = {
-  CONVENTIONAL: 'Convencional',
-  SEXADO_MALE: 'Sexado ♂',
-  SEXADO_FEMALE: 'Sexado ♀',
-};
+import { Bull } from '../../../core/models/bull.model';
+import { BullService } from '../../../core/services/bull.service';
 
 @Component({
   selector: 'app-bull-card',
@@ -51,87 +42,26 @@ const STRAW_LABELS: Record<StrawType, string> = {
           <p class="text-xs text-gray-400">{{ bull().breed.name }}</p>
         </div>
 
-        <!-- Straw selector (only when ≥2 active straws) -->
-        @if (activeStraws().length >= 2) {
-          <div class="flex flex-wrap gap-1.5">
-            @for (straw of activeStraws(); track straw.id) {
-              <button
-                (click)="selectedStraw.set(straw)"
-                class="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors"
-                [class]="selectedStraw()?.id === straw.id
-                  ? 'bg-primary text-white border-primary'
-                  : 'border-gray-200 text-gray-500 hover:border-primary hover:text-primary'">
-                {{ strawLabel(straw.strawType) }}
-              </button>
-            }
-          </div>
-        } @else if (activeStraws().length === 1) {
-          <p class="text-[10px] text-gray-400 font-medium">{{ strawLabel(activeStraws()[0].strawType) }}</p>
-        }
-
-        <!-- Price -->
-        <div class="mt-auto pt-2">
-          @if (selectedStraw()) {
-            <span class="text-xl font-bold text-secondary">$ {{ selectedStraw()!.price.toFixed(2)}}</span>
-            <span class="text-xs text-gray-400 ml-1">/ dosis</span>
-          } @else {
-            <span class="text-sm text-gray-400 italic">Sin stock activo</span>
-          }
-        </div>
-
         <!-- Actions -->
-        <div class="flex gap-2 mt-2">
+        <div class="mt-auto pt-2">
           <a [routerLink]="['/catalog', bull().id]"
-            class="flex-1 text-center btn-primary-outline text-xs py-2 rounded-lg font-medium">
+            class="block w-full text-center btn-primary-outline text-xs py-2 rounded-lg font-medium">
             Ver Detalle
           </a>
-          <button
-            [disabled]="!selectedStraw()"
-            (click)="addToCart()"
-            class="flex-1 btn-primary text-xs py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed">
-            + Carrito
-          </button>
         </div>
       </div>
     </div>
-  
+
   `,
 })
-export class BullCardComponent implements OnInit {
+export class BullCardComponent {
   bull = input.required<Bull>();
 
-  private cartStore = inject(CartStore);
-
-  selectedStraw = signal<BullStraw | null>(null);
-
-  activeStraws = computed(() =>
-    this.bull().straws.filter((s) => s.status === 'ACTIVE')
-  );
+  private bullService = inject(BullService);
 
   coverUrl = computed(() => {
     const cover = this.bull().media.find((m) => m.isCover && m.mediaType === 'image')
       ?? this.bull().media.find((m) => m.mediaType === 'image');
-    return cover ? `${environment.cdn}/${cover.s3Key}` : null;
+    return cover ? this.bullService.getMediaPublicUrl(cover.storagePath) : null;
   });
-
-  ngOnInit(): void {
-    const straws = this.activeStraws();
-    if (straws.length > 0) this.selectedStraw.set(straws[0]);
-  }
-
-  strawLabel(type: StrawType): string {
-    return STRAW_LABELS[type];
-  }
-
-  addToCart(): void {
-    const straw = this.selectedStraw();
-    if (!straw) return;
-    const bull: BullSelected = {
-      id: this.bull().id,
-      name: this.bull().name,
-      s3key: this.bull().media.find((m) => m.isCover && m.mediaType === 'image')!.s3Key,
-      breed: this.bull().breed.name
-    }
-    this.cartStore.addItem(bull, straw);
-  }
 }

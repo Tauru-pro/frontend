@@ -1,8 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { BullService } from '../../../core/services/bull.service';
 import { Bull, BullStatus } from '../../../core/models/bull.model';
 import {
@@ -10,7 +7,6 @@ import {
   TableColumn,
 } from '../../../shared/components/data-table/data-table.component';
 import { TableCellDirective, TableEmptyDirective } from '../../../shared/directives';
-import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-bull-list',
@@ -19,7 +15,6 @@ import { environment } from '../../../../environments/environment';
   template: `
     <div class="space-y-6">
 
-      <!-- Page header -->
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-xl font-bold text-gray-900">Mis Toros</h1>
@@ -37,14 +32,12 @@ import { environment } from '../../../../environments/environment';
         </button>
       </div>
 
-      <!-- Generic error -->
       @if (errorMsg()) {
         <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
           {{ errorMsg() }}
         </div>
       }
 
-      <!-- Table card -->
       <app-data-table
         [columns]="columns"
         [rows]="bulls()"
@@ -56,7 +49,6 @@ import { environment } from '../../../../environments/environment';
         (pageChange)="onPageChange($event)"
       >
 
-        <!-- Cover image -->
         <ng-template tableCell="image" let-bull>
           @if (getCoverUrl(bull); as url) {
             <img [src]="url" [alt]="bull.name" class="w-32 h-20 rounded-lg object-cover" />
@@ -69,44 +61,28 @@ import { environment } from '../../../../environments/environment';
           }
         </ng-template>
 
-        <!-- Name -->
         <ng-template tableCell="name" let-bull>
           <span class="font-medium text-gray-900 max-w-[200px] truncate block">{{ bull.name }}</span>
         </ng-template>
 
-        <!-- Breed -->
         <ng-template tableCell="breed" let-bull>
-          <span class="text-gray-500 max-w-[120px] truncate block">{{ bull.breed.name }}</span>
+          <span class="text-gray-500 max-w-[120px] truncate block">{{ bull.breed?.name ?? '—' }}</span>
         </ng-template>
 
-        <!-- Origin -->
         <ng-template tableCell="origin" let-bull>
           <span class="text-gray-500">{{ bull.origin === 'NATIONAL' ? 'Nacional' : 'Importado' }}</span>
         </ng-template>
 
-        <!-- Straws count -->
-        <ng-template tableCell="straws" let-bull>
-          <span class="inline-flex items-center gap-1 text-sm text-gray-600">
-            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-            </svg>
-            {{ bull.straws?.length ?? 0 }}
-          </span>
-        </ng-template>
-
-        <!-- Status -->
         <ng-template tableCell="status" let-bull>
           <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + statusClass(bull.status)">
             {{ statusLabel(bull.status) }}
           </span>
         </ng-template>
 
-        <!-- Created at -->
         <ng-template tableCell="createdAt" let-bull>
           <span class="text-gray-400 text-xs">{{ formatDate(bull.createdAt) }}</span>
         </ng-template>
 
-        <!-- Actions -->
         <ng-template tableCell="actions" let-bull>
           <div class="flex items-center gap-2 justify-end">
             <button
@@ -153,7 +129,6 @@ import { environment } from '../../../../environments/environment';
       </app-data-table>
     </div>
 
-    <!-- Delete confirmation modal -->
     @if (confirmDelete()) {
       <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
@@ -163,7 +138,7 @@ import { environment } from '../../../../environments/environment';
             </svg>
           </div>
           <h3 class="font-semibold text-gray-900 mb-1">Eliminar toro</h3>
-          <p class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer. Se eliminarán también sus pajillas y archivos.</p>
+          <p class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer. Se eliminarán también sus archivos.</p>
           <div class="flex gap-3">
             <button
               type="button"
@@ -196,7 +171,6 @@ export default class BullListComponent implements OnInit {
     { key: 'name', label: 'Nombre', headerClass: 'px-6 py-3', cellClass: 'px-6 py-4' },
     { key: 'breed', label: 'Raza' },
     { key: 'origin', label: 'Origen' },
-    { key: 'straws', label: 'Pajillas' },
     { key: 'status', label: 'Estado' },
     { key: 'createdAt', label: 'Creado' },
     { key: 'actions', label: '', headerClass: 'px-4 py-3 w-20' },
@@ -247,7 +221,7 @@ export default class BullListComponent implements OnInit {
     this.deleting.set(true);
     this.errorMsg.set(null);
     try {
-      await firstValueFrom(this.bullService.deleteBull(id));
+      await this.bullService.deleteBull(id);
       this.confirmDelete.set(null);
       this.bulls.update(list => list.filter(b => b.id !== id));
       this.total.update(n => n - 1);
@@ -286,6 +260,6 @@ export default class BullListComponent implements OnInit {
   getCoverUrl(bull: Bull): string | null {
     const cover = bull.media?.find(m => m.isCover && m.mediaType === 'image')
       ?? bull.media?.find(m => m.mediaType === 'image');
-    return cover ? `${environment.cdn}/${cover.s3Key}` : null;
+    return cover ? this.bullService.getMediaPublicUrl(cover.storagePath) : null;
   }
 }

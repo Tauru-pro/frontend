@@ -1,39 +1,18 @@
 import { Breed } from './breed.model';
-import { PaginatedResponse } from './product.model';
+import { PaginatedResponse, ProductMedia, StrawType } from './product.model';
 
 export type BullOrigin = 'NATIONAL' | 'IMPORTED';
 export type BullRegistrationType = 'PURO' | 'COMERCIAL';
 export type BullStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED';
-export type StrawType = 'SEXADO_MALE' | 'SEXADO_FEMALE' | 'CONVENTIONAL';
-export type StrawStatus = 'PENDING_VALIDATION' | 'OUT_OF_STOCK' | 'SUSPENDED' | 'ACTIVE' | 'DRAFT';
 
-export interface BullMedia {
-  id: string;
-  mediaType: 'image' | 'video';
-  s3Key: string;
-  s3Bucket: string;
-  mimeType: string;
-  sortOrder: number | null;
-  isCover: boolean;
-  createdAt: string;
-}
-
-export interface BullStraw {
-  id: string;
-  strawType: StrawType;
-  price: number;
-  minOrderQuantity: number;
-  stockQuantity: number;
-  status: StrawStatus;
-  createdAt: string;
-}
+export type BullMedia = ProductMedia;
 
 export interface Bull {
   id: string;
-  sellerId: string;
+  tenantId: string;
   name: string;
   breedId: string;
-  breed: Breed
+  breed: Breed;
   origin: BullOrigin;
   registrationType: BullRegistrationType | null;
   code: string | null;
@@ -41,8 +20,6 @@ export interface Bull {
   status: BullStatus;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
-  straws: BullStraw[];
   media: BullMedia[];
 }
 
@@ -57,18 +34,6 @@ export interface CreateBullDto {
 
 export type UpdateBullDto = Partial<CreateBullDto>;
 
-export interface CreateBullStrawDto {
-  strawType: StrawType;
-  price: number;
-  stockQuantity: number;
-  minOrderQuantity: number;
-}
-
-export interface UpdateBullStrawDto {
-  price?: number;
-  stockQuantity?: number;
-  minOrderQuantity?: number;
-  status?: StrawStatus;
-}
-
 export type PaginatedBulls = PaginatedResponse<Bull>;
+
+export type { StrawType };
