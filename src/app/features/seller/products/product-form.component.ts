@@ -34,7 +34,6 @@ interface ProductFormModel {
   name: string;
   description: string;
   price: number;
-  stockQuantity: number;
   minOrderQuantity: number;
   bullId: string;
   strawType: StrawType | '';
@@ -236,30 +235,19 @@ const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', '
                 ></textarea>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Precio (COP) <span class="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    [formField]="productForm.price"
-                    placeholder="0"
-                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                  />
-                  @if (productForm.price().touched() && productForm.price().errors().length) {
-                    <p class="text-red-400 text-xs mt-1.5">{{ productForm.price().errors()[0].message }}</p>
-                  }
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock</label>
-                  <input
-                    type="number"
-                    [formField]="productForm.stockQuantity"
-                    placeholder="0"
-                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                  />
-                </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                  Precio (COP) <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="number"
+                  [formField]="productForm.price"
+                  placeholder="0"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+                @if (productForm.price().touched() && productForm.price().errors().length) {
+                  <p class="text-red-400 text-xs mt-1.5">{{ productForm.price().errors()[0].message }}</p>
+                }
               </div>
             </div>
 
@@ -441,7 +429,6 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
     name: '',
     description: '',
     price: 0,
-    stockQuantity: 0,
     minOrderQuantity: 1,
     bullId: '',
     strawType: '',
@@ -508,7 +495,6 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
             name: values.name,
             description: values.description || undefined,
             price: Number(values.price),
-            stockQuantity: Number(values.stockQuantity),
             minOrderQuantity: Number(values.minOrderQuantity),
             bullId: values.bullId || undefined,
             strawType: (values.strawType as StrawType) || undefined,
@@ -520,7 +506,6 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
             name: values.name,
             description: values.description || undefined,
             price: Number(values.price),
-            stockQuantity: Number(values.stockQuantity),
             minOrderQuantity: Number(values.minOrderQuantity),
             bullId: values.bullId || undefined,
             strawType: (values.strawType as StrawType) || undefined,
@@ -625,7 +610,6 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
           name: product.name,
           description: product.description ?? '',
           price: product.price,
-          stockQuantity: product.stockQuantity,
           minOrderQuantity: product.minOrderQuantity,
           bullId: product.bullId ?? '',
           strawType: product.strawType ?? '',

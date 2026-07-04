@@ -38,7 +38,7 @@ export interface Product {
   bull: ProductBull | null;
   strawType: StrawType | null;
   minOrderQuantity: number;
-  stockQuantity: number;
+  readonly stockQuantity: number;
   status: ProductStatus;
   validationNotes: string | null;
   createdAt: string;
@@ -62,7 +62,6 @@ export interface CreateProductDto {
   bullId?: string;
   strawType?: StrawType;
   minOrderQuantity?: number;
-  stockQuantity?: number;
 }
 
 export type UpdateProductDto = Partial<Omit<CreateProductDto, 'productType'>>;

@@ -238,7 +238,6 @@ export class ProductService {
         bull_id: dto.bullId ?? null,
         straw_type: dto.strawType ?? null,
         min_order_quantity: dto.minOrderQuantity ?? 1,
-        stock_quantity: dto.stockQuantity ?? 0,
       })
       .select(PRODUCT_SELECT)
       .single();
@@ -255,7 +254,7 @@ export class ProductService {
     if (dto.bullId !== undefined) row['bull_id'] = dto.bullId ?? null;
     if (dto.strawType !== undefined) row['straw_type'] = dto.strawType ?? null;
     if (dto.minOrderQuantity !== undefined) row['min_order_quantity'] = dto.minOrderQuantity;
-    if (dto.stockQuantity !== undefined) row['stock_quantity'] = dto.stockQuantity;
+
 
     const { data, error } = await this.supabase
       .from('products')
