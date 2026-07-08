@@ -45,6 +45,7 @@ Thumbs.db
 
 # Secrets
 .supabase-credential.env
+supabase.env
 *.env
 !*.env.example
 
