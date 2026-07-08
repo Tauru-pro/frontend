@@ -420,7 +420,7 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
 
   imageInputRef = viewChild<ElementRef<HTMLInputElement>>('imageInput');
 
-  existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image'));
+  existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image' && m.entityType === 'product'));
   totalImages = computed(() => this.existingImages().length + this.pendingImages().length);
   isStraw = computed(() => this.model().productType === 'STRAW');
 

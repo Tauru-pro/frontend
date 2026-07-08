@@ -6,41 +6,44 @@ import {
   inject,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { BullService } from '../../../core/services/bull.service';
-import { Bull } from '../../../core/models/bull.model';
-import { BullCardComponent } from './bull-card.component';
+import { ProductService } from '../../../core/services/product.service';
+import { BreedService } from '../../../core/services/breed.service';
+import { Product, ProductType } from '../../../core/models/product.model';
+import { Breed } from '../../../core/models/breed.model';
+import { ProductCardComponent } from './product-card.component';
 
 @Component({
   selector: 'app-catalog',
-  imports: [RouterLink, FormsModule, BullCardComponent],
+  imports: [FormsModule, ProductCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './catalog.component.html',
 })
 export default class CatalogComponent implements OnInit {
-  private bullService = inject(BullService);
+  private productService = inject(ProductService);
+  private breedService = inject(BreedService);
 
-  bulls = signal<Bull[]>([]);
+  products = signal<Product[]>([]);
+  breeds = signal<Breed[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   currentPage = signal(1);
   totalPages = signal(1);
   totalItems = signal(0);
 
-  // Filters
+  selectedType = signal<ProductType | ''>('');
   selectedBreed = signal<string>('');
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
 
-  breeds = computed(() => {
-    const all = this.bulls().map((b) => b.breed);
-    return [...new Set(all)].sort();
-  });
+  showBreedFilter = computed(() => this.selectedType() === 'STRAW');
 
   readonly limit = 12;
 
   ngOnInit(): void {
+    this.breedService.getAll().subscribe({
+      next: (b) => this.breeds.set(b),
+    });
     this.load();
   }
 
@@ -48,13 +51,21 @@ export default class CatalogComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.bullService
-      .getCatalogBulls(this.currentPage(), this.limit)
+    const type = this.selectedType() || undefined;
+    const breedId = (this.showBreedFilter() && this.selectedBreed()) ? this.selectedBreed() : undefined;
+
+    this.productService
+      .getPublicCatalog(this.currentPage(), this.limit, {
+        productType: type as ProductType | undefined,
+        breedId,
+        minPrice: this.minPrice() ?? undefined,
+        maxPrice: this.maxPrice() ?? undefined,
+      })
       .subscribe({
         next: (res) => {
-          this.bulls.set(res.data);
+          this.products.set(res.data);
           this.totalItems.set(res.total);
-          this.totalPages.set(Math.ceil(res.total / this.limit));
+          this.totalPages.set(res.totalPages);
           this.loading.set(false);
         },
         error: () => {
@@ -70,6 +81,7 @@ export default class CatalogComponent implements OnInit {
   }
 
   clearFilters(): void {
+    this.selectedType.set('');
     this.selectedBreed.set('');
     this.minPrice.set(null);
     this.maxPrice.set(null);

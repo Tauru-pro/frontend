@@ -3,10 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "npm run build",
+    "start:prod": "npm run build && wrangler pages dev",
+    "build": "ng build && npm run process",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "process": "node ./tools/copy-files.mjs",
+    "deploy": "npm run build && wrangler pages deploy",
+    "cf-typegen": "wrangler types",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
     "seed:super-admin": "tsx scripts/seed-super-admin.ts",
     "seed:geography": "tsx scripts/seed-geography.ts"
@@ -53,6 +57,7 @@
     "tailwindcss": "^4.1.12",
     "tsx": "^4.22.4",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wrangler": "^4.108.0"
   }
 }

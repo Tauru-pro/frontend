@@ -3,7 +3,7 @@
   <nav class="flex items-center gap-2 text-xs text-gray-400">
     <a routerLink="/" class="hover:text-secondary transition-colors">Inicio</a>
     <span>›</span>
-    <span class="text-primary font-medium">Catálogo de Toros</span>
+    <span class="text-primary font-medium">Catálogo de Productos</span>
   </nav>
 </div>
 
@@ -16,21 +16,34 @@
 
       <h2 class="font-bold text-primary text-sm uppercase tracking-widest">Filtros</h2>
 
-      <!-- Breed filter -->
+      <!-- Product type filter -->
+      <div>
+        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Tipo</p>
+        <select class="form-input text-sm" [value]="selectedType()"
+          (change)="selectedType.set($any($event.target).value); selectedBreed.set('')">
+          <option value="">Todos</option>
+          <option value="STRAW">Pajillas</option>
+          <option value="SUPPLIES">Insumos</option>
+        </select>
+      </div>
+
+      <!-- Breed filter (only for STRAW) -->
+      @if (showBreedFilter()) {
       <div>
         <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Raza</p>
         <select class="form-input text-sm" [value]="selectedBreed()"
           (change)="selectedBreed.set($any($event.target).value)">
           <option value="">Todas las razas</option>
-          @for (breed of breeds(); track breed) {
-          <option [value]="breed">{{ breed }}</option>
+          @for (breed of breeds(); track breed.id) {
+          <option [value]="breed.id">{{ breed.name }}</option>
           }
         </select>
       </div>
+      }
 
       <!-- Price range filter -->
       <div>
-        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Rango de precio</p>
+        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Precio (USD)</p>
         <div class="flex gap-2 items-center">
           <input type="number" placeholder="Mín" class="form-input text-sm w-full" [value]="minPrice()"
             (input)="minPrice.set($any($event.target).valueAsNumber || null)" min="0" />
@@ -58,22 +71,30 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-primary">Catálogo de Toros</h1>
+        <h1 class="text-2xl font-bold text-primary">Catálogo de Productos</h1>
         @if (!loading() && !error()) {
-        <p class="text-sm text-gray-400 mt-0.5">{{ totalItems() }} toros encontrados</p>
+        <p class="text-sm text-gray-400 mt-0.5">{{ totalItems() }} productos encontrados</p>
         }
       </div>
     </div>
 
-    <!-- Mobile filters (condensed) -->
+    <!-- Mobile filters -->
     <div class="lg:hidden mb-4 flex gap-2 flex-wrap">
+      <select class="form-input text-sm flex-1" [value]="selectedType()"
+        (change)="selectedType.set($any($event.target).value); selectedBreed.set(''); applyFilters()">
+        <option value="">Todos</option>
+        <option value="STRAW">Pajillas</option>
+        <option value="SUPPLIES">Insumos</option>
+      </select>
+      @if (showBreedFilter()) {
       <select class="form-input text-sm flex-1" [value]="selectedBreed()"
         (change)="selectedBreed.set($any($event.target).value); applyFilters()">
         <option value="">Todas las razas</option>
-        @for (breed of breeds(); track breed) {
-        <option [value]="breed">{{ breed }}</option>
+        @for (breed of breeds(); track breed.id) {
+        <option [value]="breed.id">{{ breed.name }}</option>
         }
       </select>
+      }
       <button (click)="clearFilters()" class="btn-primary-outline px-4 py-2 text-sm">
         Limpiar
       </button>
@@ -89,10 +110,7 @@
           <div class="h-4 bg-gray-100 rounded w-3/4"></div>
           <div class="h-3 bg-gray-100 rounded w-1/2"></div>
           <div class="h-6 bg-gray-100 rounded w-1/3 mt-2"></div>
-          <div class="flex gap-2 mt-3">
-            <div class="h-8 bg-gray-100 rounded flex-1"></div>
-            <div class="h-8 bg-gray-100 rounded flex-1"></div>
-          </div>
+          <div class="h-8 bg-gray-100 rounded mt-3"></div>
         </div>
       </div>
       }
@@ -109,20 +127,20 @@
     }
 
     <!-- Empty state -->
-    @if (!loading() && !error() && bulls().length === 0) {
+    @if (!loading() && !error() && products().length === 0) {
     <div class="flex flex-col items-center justify-center py-20 text-center">
-      <span class="text-6xl mb-4">🐂</span>
+      <span class="text-6xl mb-4">📦</span>
       <h3 class="text-lg font-semibold text-primary mb-2">Sin resultados</h3>
-      <p class="text-gray-400 text-sm mb-5">No se encontraron toros con los filtros aplicados.</p>
+      <p class="text-gray-400 text-sm mb-5">No se encontraron productos con los filtros aplicados.</p>
       <button (click)="clearFilters()" class="btn-primary-outline px-6 py-2 text-sm">Limpiar filtros</button>
     </div>
     }
 
-    <!-- Bull grid -->
-    @if (!loading() && !error() && bulls().length > 0) {
+    <!-- Product grid -->
+    @if (!loading() && !error() && products().length > 0) {
     <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      @for (bull of bulls(); track bull.id) {
-      <app-bull-card [bull]="bull" />
+      @for (product of products(); track product.id) {
+      <app-product-card [product]="product" />
       }
     </div>
 
@@ -135,7 +153,8 @@
       </button>
 
       @for (page of pages(); track page) {
-      <button (click)="goToPage(page)" class="w-9 h-9 rounded-lg border text-sm font-medium transition-colors" [class]="page === currentPage()
+      <button (click)="goToPage(page)" class="w-9 h-9 rounded-lg border text-sm font-medium transition-colors"
+        [class]="page === currentPage()
                 ? 'bg-primary text-white border-primary'
                 : 'border-gray-200 text-gray-500 hover:border-primary hover:text-primary'">
         {{ page }}

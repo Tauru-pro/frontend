@@ -1,8 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
-import { StrawType } from '../../../core/models/bull.model';
-import { S3fileUrlPipe } from '../../../shared/pipes/s3fileUrl-pipe';
+import { ProductType, StrawType } from '../../../core/models/product.model';
 
 const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
@@ -10,41 +9,46 @@ const STRAW_LABELS: Record<StrawType, string> = {
   SEXADO_FEMALE: 'Sexado ♀',
 };
 
+const TYPE_LABELS: Record<ProductType, string> = {
+  STRAW: 'Pajilla',
+  SUPPLIES: 'Insumo',
+};
+
 @Component({
   selector: 'app-cart',
   standalone: true,
-  host: {
-    class: 'w-full'
-  },
-  imports: [RouterLink, S3fileUrlPipe],
+  host: { class: 'w-full' },
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.component.html',
 })
 export default class CartComponent {
   cartStore = inject(CartStore);
 
-  shipping = 15.00;
+  grandTotal = computed(() => this.cartStore.total());
 
-  grandTotal = computed(() => this.cartStore.total() + (this.cartStore.count() > 0 ? this.shipping : 0));
-
-  strawLabel(type: StrawType): string {
-    return STRAW_LABELS[type];
+  productTypeLabel(type: ProductType): string {
+    return TYPE_LABELS[type];
   }
 
-  increment(bullId: string, strawId: string, current: number): void {
-    this.cartStore.updateQuantity(bullId, strawId, current + 1);
+  strawLabel(type: StrawType | null): string {
+    return type ? STRAW_LABELS[type] : '';
   }
 
-  decrement(bullId: string, strawId: string, current: number): void {
-    if (current <= 1) {
-      this.cartStore.removeItem(bullId, strawId);
+  increment(productId: string, current: number): void {
+    this.cartStore.updateQuantity(productId, current + 1);
+  }
+
+  decrement(productId: string, current: number, min: number): void {
+    if (current <= min) {
+      this.cartStore.removeItem(productId);
     } else {
-      this.cartStore.updateQuantity(bullId, strawId, current - 1);
+      this.cartStore.updateQuantity(productId, current - 1);
     }
   }
 
-  remove(bullId: string, strawId: string): void {
-    this.cartStore.removeItem(bullId, strawId);
+  remove(productId: string): void {
+    this.cartStore.removeItem(productId);
   }
 
   itemSubtotal(price: number, qty: number): number {

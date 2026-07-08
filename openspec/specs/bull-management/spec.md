@@ -23,11 +23,11 @@ The system SHALL restrict bull read/write access to the owning tenant's `SELLER`
 - **THEN** the system denies the operation
 
 ### Requirement: Seller attaches media to bulls
-The system SHALL allow a `SELLER` to upload up to 3 images and 1 video per bull via Supabase Storage, designating one image as the cover.
+The system SHALL allow a `SELLER` to upload up to 3 images, 1 video, and 1 PDF document per bull via Supabase Storage. Images may be designated as cover. The PDF document SHALL be used to attach the genetic test report (prueba genética) for the bull.
 
 #### Scenario: Uploading a bull image
-- **WHEN** a `SELLER` uploads an image for a bull
-- **THEN** the system stores the file in Supabase Storage and records the reference in `product_media`
+- **WHEN** a `SELLER` uploads an image (JPG, PNG, WEBP, or AVIF) for a bull in the form step 2
+- **THEN** the system stores the file in Supabase Storage under the bull's media path and records it in `bull_media` with `media_type = 'image'`
 
 #### Scenario: Setting a cover image
 - **WHEN** a `SELLER` designates an image as the cover
@@ -36,3 +36,27 @@ The system SHALL allow a `SELLER` to upload up to 3 images and 1 video per bull 
 #### Scenario: Exceeding image limit
 - **WHEN** a `SELLER` attempts to upload a 4th image for a bull
 - **THEN** the system rejects the upload with a limit error
+
+#### Scenario: Uploading a bull video
+- **WHEN** a `SELLER` uploads a video (MP4 or WebM) for a bull
+- **THEN** the system stores the file in Supabase Storage and records it in `bull_media` with `media_type = 'video'`
+
+#### Scenario: Uploading a genetic test PDF
+- **WHEN** a `SELLER` uploads a PDF file in the "Prueba Genética" section of the bull form step 2
+- **THEN** the system stores the PDF in Supabase Storage and records it in `bull_media` with `media_type = 'document'`
+
+#### Scenario: Replacing the genetic test PDF
+- **WHEN** a `SELLER` edits a bull that already has a PDF document and uploads a new PDF
+- **THEN** the system deletes the previous document from Storage and records the new one, so that at most one PDF document exists per bull
+
+#### Scenario: Viewing an existing genetic test PDF
+- **WHEN** a `SELLER` opens the edit form for a bull that has a PDF document
+- **THEN** the system displays the document name and a link to open it, along with a button to delete it
+
+#### Scenario: Invalid file type for document section
+- **WHEN** a `SELLER` attempts to drop or select a non-PDF file in the document section
+- **THEN** the system ignores the file and does not add it to the pending document
+
+#### Scenario: Document uploaded alongside images and video
+- **WHEN** a `SELLER` submits the form step 2 with pending images, a pending video, and a pending PDF document
+- **THEN** the system uploads all files sequentially, updating the progress bar for each, and navigates to the bull list on success

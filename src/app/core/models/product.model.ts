@@ -24,6 +24,15 @@ export interface ProductMedia {
 export interface ProductBull {
   id: string;
   name: string;
+  breedId?: string;
+  breedName?: string;
+}
+
+export interface CatalogFilters {
+  productType?: ProductType;
+  breedId?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export interface Product {

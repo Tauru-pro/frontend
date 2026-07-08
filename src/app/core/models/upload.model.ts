@@ -1,11 +1,12 @@
-export type MediaType = 'image' | 'video';
+export type MediaType = 'image' | 'video' | 'document';
 
 export type MimeType = 'image/jpeg' |
     'image/png' |
     'image/webp' |
     'image/avif' |
     'video/mp4' |
-    'video/webm';
+    'video/webm' |
+    'application/pdf';
 
 export interface RequestUploadUrlDto {
     mediaType: MediaType

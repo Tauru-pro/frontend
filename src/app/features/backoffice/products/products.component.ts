@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { Product, ProductStatus, ProductType } from '../../../core/models/product.model';
 import {
@@ -7,11 +8,11 @@ import {
 } from '../../../shared/components/data-table/data-table.component';
 import { TableCellDirective, TableEmptyDirective } from '../../../shared/directives';
 import { DecimalPipe } from '@angular/common';
-import { FormField, form, required } from '@angular/forms/signals';
+import { FormField, form, required, submit } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-products-validation',
-  imports: [DecimalPipe, DataTableComponent, TableCellDirective, TableEmptyDirective, FormField],
+  imports: [RouterLink, DecimalPipe, DataTableComponent, TableCellDirective, TableEmptyDirective, FormField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -39,7 +40,7 @@ import { FormField, form, required } from '@angular/forms/signals';
       >
 
         <ng-template tableCell="product" let-p>
-          <div class="flex items-center gap-3">
+          <a [routerLink]="['/admin/products', p.id]" class="flex items-center gap-3 group">
             @if (getCoverUrl(p); as url) {
               <img [src]="url" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" [alt]="p.name"/>
             } @else {
@@ -50,12 +51,12 @@ import { FormField, form, required } from '@angular/forms/signals';
               </div>
             }
             <div class="min-w-0">
-              <p class="font-medium text-gray-900 truncate max-w-[200px]">{{ p.name }}</p>
+              <p class="font-medium text-gray-900 group-hover:text-primary truncate max-w-[200px] transition-colors">{{ p.name }}</p>
               @if (p.bull) {
                 <p class="text-xs text-gray-400">Toro: {{ p.bull.name }}</p>
               }
             </div>
-          </div>
+          </a>
         </ng-template>
 
         <ng-template tableCell="type" let-p>
@@ -74,6 +75,12 @@ import { FormField, form, required } from '@angular/forms/signals';
 
         <ng-template tableCell="actions" let-p>
           <div class="flex items-center gap-2 justify-end">
+            <a
+              [routerLink]="['/admin/products', p.id]"
+              class="px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              Ver detalle
+            </a>
             <button
               type="button"
               (click)="approve(p.id)"
@@ -176,7 +183,7 @@ export default class ProductsValidationComponent implements OnInit {
     { key: 'type', label: 'Tipo' },
     { key: 'price', label: 'Precio' },
     { key: 'submittedAt', label: 'Enviado' },
-    { key: 'actions', label: '', headerClass: 'px-4 py-3 w-52' },
+    { key: 'actions', label: '', headerClass: 'px-4 py-3 w-72' },
   ];
 
   products = signal<Product[]>([]);
@@ -238,27 +245,27 @@ export default class ProductsValidationComponent implements OnInit {
     this.notesModal.set({ productId, action });
   }
 
-  async submitModal(): Promise<void> {
+  submitModal(): void {
     const modal = this.notesModal();
     if (!modal) return;
-    const notes = this.notesModel().notes.trim();
-    if (!notes) return;
-
-    this.processingId.set(modal.productId);
-    try {
-      if (modal.action === 'REJECTED') {
-        await this.productService.rejectProduct(modal.productId, notes);
-      } else {
-        await this.productService.requestChanges(modal.productId, notes);
+    submit(this.notesForm, async () => {
+      const notes = this.notesModel().notes.trim();
+      this.processingId.set(modal.productId);
+      try {
+        if (modal.action === 'REJECTED') {
+          await this.productService.rejectProduct(modal.productId, notes);
+        } else {
+          await this.productService.requestChanges(modal.productId, notes);
+        }
+        this.notesModal.set(null);
+        this.products.update(list => list.filter(p => p.id !== modal.productId));
+        this.total.update(n => n - 1);
+      } catch {
+        this.errorMsg.set('No se pudo procesar la acción. Intenta de nuevo.');
+      } finally {
+        this.processingId.set(null);
       }
-      this.notesModal.set(null);
-      this.products.update(list => list.filter(p => p.id !== modal.productId));
-      this.total.update(n => n - 1);
-    } catch {
-      this.errorMsg.set('No se pudo procesar la acción. Intenta de nuevo.');
-    } finally {
-      this.processingId.set(null);
-    }
+    });
   }
 
   typeClass(type: ProductType): string {

@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, from, map, Observable, of, switchMap } from 'rxjs';
 import { SupabaseClientService } from '../auth/supabase-client';
 import { getJwtClaim } from '../auth/jwt-claims';
 import {
+  CatalogFilters,
   CreateProductDto,
   PaginatedResponse,
   Product,
@@ -41,7 +42,7 @@ interface ProductRow {
   validation_notes: string | null;
   created_at: string;
   updated_at: string;
-  bulls: { id: string; name: string } | null;
+  bulls: { id: string; name: string; breed_id?: string; breeds?: { id: string; name: string } | null } | null;
   product_media: MediaRow[];
 }
 
@@ -60,6 +61,15 @@ function mapMediaRow(row: MediaRow): ProductMedia {
 }
 
 function mapProductRow(row: ProductRow): Product {
+  const bullRaw = row.bulls ?? null;
+  const bull = bullRaw
+    ? {
+        id: bullRaw.id,
+        name: bullRaw.name,
+        breedId: bullRaw.breed_id,
+        breedName: (bullRaw.breeds as { id: string; name: string } | null | undefined)?.name,
+      }
+    : null;
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -69,7 +79,7 @@ function mapProductRow(row: ProductRow): Product {
     description: row.description,
     price: Number(row.price),
     bullId: row.bull_id,
-    bull: row.bulls ?? null,
+    bull,
     strawType: row.straw_type,
     minOrderQuantity: row.min_order_quantity,
     stockQuantity: row.stock_quantity,
@@ -106,7 +116,13 @@ const PRODUCT_SELECT = `
   id, tenant_id, product_type, name, slug, description, price,
   bull_id, straw_type, min_order_quantity, stock_quantity,
   status, validation_notes, created_at, updated_at,
-  bulls(id, name)
+  bulls(id, name, breed_id, breeds(id, name))
+`.trim();
+
+const CATALOG_SELECT_BASE = `
+  id, tenant_id, product_type, name, slug, description, price,
+  bull_id, straw_type, min_order_quantity, stock_quantity,
+  status, created_at, updated_at
 `.trim();
 
 const MEDIA_SELECT = `id, entity_type, entity_id, media_type, storage_path, mime_type, sort_order, is_cover, created_at`;
@@ -167,6 +183,51 @@ export class ProductService {
     );
   }
 
+  getPublicCatalog(
+    page = 1,
+    limit = 12,
+    filters: CatalogFilters = {},
+  ): Observable<PaginatedResponse<Product>> {
+    const from_ = (page - 1) * limit;
+    const to = from_ + limit - 1;
+    const { productType, breedId, minPrice, maxPrice } = filters;
+
+    const bullJoin = breedId
+      ? 'bulls!inner(id, name, breed_id, breeds(id, name))'
+      : 'bulls(id, name, breed_id, breeds(id, name))';
+    const selectStr = `${CATALOG_SELECT_BASE}, ${bullJoin}`;
+
+    let query = this.supabase
+      .from('products')
+      .select(selectStr, { count: 'exact' })
+      .eq('status', 'ACTIVE')
+      .order('created_at', { ascending: false })
+      .range(from_, to);
+
+    if (productType) query = query.eq('product_type', productType);
+    if (breedId) query = (query as any).eq('bulls.breed_id', breedId);
+    if (minPrice != null) query = query.gte('price', minPrice);
+    if (maxPrice != null) query = query.lte('price', maxPrice);
+
+    return from(query).pipe(
+      switchMap(({ data, error, count }) => {
+        if (error) throw error;
+        const rows = (data as unknown as ProductRow[]) ?? [];
+        const total = count ?? 0;
+        if (rows.length === 0) return of({ data: [], total, page, limit, totalPages: Math.ceil(total / limit) });
+        return this.fetchProductMedia(rows.map((r) => r.id)).pipe(
+          map((mediaMap) => ({
+            data: rows.map((r) => mapProductRow({ ...r, product_media: mediaMap.get(r.id) ?? [] })),
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+          })),
+        );
+      }),
+    );
+  }
+
   getProduct(id: string): Observable<Product> {
     return from(
       this.supabase.from('products').select(PRODUCT_SELECT).eq('id', id).single(),
@@ -174,12 +235,12 @@ export class ProductService {
       switchMap(({ data, error }) => {
         if (error) throw error;
         const row = data as unknown as ProductRow;
+        const entityIds = [id, ...(row.bull_id ? [row.bull_id] : [])];
         return from(
           this.supabase
             .from('product_media')
             .select(MEDIA_SELECT)
-            .eq('entity_id', id)
-            .eq('entity_type', 'product'),
+            .in('entity_id', entityIds),
         ).pipe(
           map(({ data: mediaData, error: mediaError }) => {
             if (mediaError) throw mediaError;
@@ -219,6 +280,13 @@ export class ProductService {
           })),
         );
       }),
+    );
+  }
+
+  getPendingCount(): Observable<number> {
+    return this.getAllPendingValidation(1, 1).pipe(
+      map(res => res.total),
+      catchError(() => of(0)),
     );
   }
 

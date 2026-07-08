@@ -12,9 +12,8 @@ import { firstValueFrom } from 'rxjs';
 import { CartStore } from '../../../core/store/cart.store';
 import { PickupPointService } from '../../../core/services/pickup-point.service';
 import { PickupPoint } from '../../../core/models/pickup-point.model';
-import { StrawType } from '../../../core/models/bull.model';
+import { ProductType, StrawType } from '../../../core/models/product.model';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
-import { S3fileUrlPipe } from '../../../shared/pipes/s3fileUrl-pipe';
 import { OrderService } from '../../../core/services/order.service';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -23,11 +22,16 @@ const STRAW_LABELS: Record<StrawType, string> = {
   SEXADO_FEMALE: 'Sexado ♀',
 };
 
+const TYPE_LABELS: Record<ProductType, string> = {
+  STRAW: 'Pajilla',
+  SUPPLIES: 'Insumo',
+};
+
 @Component({
   selector: 'app-checkout',
   standalone: true,
   host: { class: 'w-full' },
-  imports: [RouterLink, FormsModule, S3fileUrlPipe, LocationSelectComponent],
+  imports: [RouterLink, FormsModule, LocationSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './checkout.component.html',
 })
@@ -145,6 +149,10 @@ export default class CheckoutComponent implements OnInit {
     this.stepError.set(null);
     this.submitting.set(true);
     try {
+      const items = this.cartStore.items().map((i) => ({
+        productId: i.product.id,
+        quantity: i.quantity,
+      }));
       const order = await firstValueFrom(
         this.orderService.checkoutFromCart({
           buyerFullName: this.buyerFullName(),
@@ -154,9 +162,10 @@ export default class CheckoutComponent implements OnInit {
           buyerAddress: this.buyerAddress() || undefined,
           pickupPointId: this.selectedPickupPointId()!,
           notes: this.notes() || undefined,
-        })
+          items,
+        } as any)
       );
-      await this.cartStore.clear();
+      this.cartStore.clear();
       window.location.href = order.paymentUrl;
     } catch {
       this.stepError.set('No se pudo crear la orden. Por favor intenta de nuevo.');
@@ -165,8 +174,12 @@ export default class CheckoutComponent implements OnInit {
     }
   }
 
-  strawLabel(type: StrawType): string {
-    return STRAW_LABELS[type];
+  productTypeLabel(type: ProductType): string {
+    return TYPE_LABELS[type];
+  }
+
+  strawLabel(type: StrawType | null): string {
+    return type ? STRAW_LABELS[type] : '';
   }
 
   itemTotal(price: number, qty: number): string {

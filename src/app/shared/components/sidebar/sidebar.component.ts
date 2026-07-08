@@ -44,7 +44,14 @@ import { NavItem } from '../../interfaces';
               class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all"
               (click)="sidebarOpen.set(false)"
             >
-              <span class="w-5 h-5 flex-shrink-0 [&>svg]:w-5 [&>svg]:h-5" [innerHTML]="item.icon"></span>
+              <span class="relative w-5 h-5 flex-shrink-0">
+                <span class="w-5 h-5 [&>svg]:w-5 [&>svg]:h-5" [innerHTML]="item.icon"></span>
+                @if (item.badge && item.badge > 0) {
+                  <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                    {{ item.badge > 9 ? '9+' : item.badge }}
+                  </span>
+                }
+              </span>
               {{ item.label }}
             </a>
           }

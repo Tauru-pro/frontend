@@ -1,14 +1,19 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  PLATFORM_ID,
   computed,
   inject,
+  signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { NavItem } from '../interfaces';
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { UserStore } from '../../core/store/user.store';
+import { ProductService } from '../../core/services/product.service';
 
 @Component({
   selector: 'app-backoffice-layout',
@@ -25,6 +30,10 @@ import { UserStore } from '../../core/store/user.store';
 export class BackofficeLayoutComponent {
   private sanitizer = inject(DomSanitizer);
   private userStore = inject(UserStore);
+
+  private pendingCount = isPlatformBrowser(inject(PLATFORM_ID))
+    ? toSignal(inject(ProductService).getPendingCount(), { initialValue: 0 })
+    : signal(0);
 
   private svg(raw: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(raw);
@@ -46,11 +55,11 @@ export class BackofficeLayoutComponent {
     //   path: '/admin/orders',
     //   icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>`),
     // },
-    // {
-    //   label: 'Productos',
-    //   path: '/admin/products',
-    //   icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>`),
-    // },
+    {
+      label: 'Productos',
+      path: '/admin/products',
+      icon: this.svg(`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>`),
+    },
     {
       label: 'Vendedores',
       path: '/admin/sellers',
@@ -111,9 +120,12 @@ export class BackofficeLayoutComponent {
     },
   ];
 
-  navItems = computed<NavItem[]>(() =>
-    this.userStore.user()?.role === 'SELLER'
-      ? this.sellerNavItems
-      : this.adminNavItems,
-  );
+  navItems = computed<NavItem[]>(() => {
+    if (this.userStore.user()?.role === 'SELLER') return this.sellerNavItems;
+    return this.adminNavItems.map(item =>
+      item.path === '/admin/products'
+        ? { ...item, badge: this.pendingCount() }
+        : item,
+    );
+  });
 }

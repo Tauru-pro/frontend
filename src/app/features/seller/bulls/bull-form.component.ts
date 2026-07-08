@@ -41,12 +41,13 @@ interface BullFormModel {
 interface PendingFile {
   file: File;
   preview: string;
-  mediaType: 'image' | 'video';
+  mediaType: 'image' | 'video' | 'document';
   mimeType: MimeType;
 }
 
 const IMAGE_MIME_TYPES: MimeType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
+const PDF_MIME_TYPES: MimeType[] = ['application/pdf'];
 
 @Component({
   selector: 'app-bull-form',
@@ -353,6 +354,71 @@ const VIDEO_MIME_TYPES: MimeType[] = ['video/mp4', 'video/webm'];
               }
             </div>
 
+            <!-- Prueba Genética (PDF) -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+              <div>
+                <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Prueba Genética</h2>
+                <p class="text-xs text-gray-400 mt-0.5">PDF · Máximo 1 documento</p>
+              </div>
+
+              @if (existingDocuments().length > 0) {
+                @for (doc of existingDocuments(); track doc.id) {
+                  <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <svg class="w-8 h-8 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 17v-1h8v1H8zm0-3v-1h8v1H8zm0-3v-1h5v1H8z"/>
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-gray-800 truncate">{{ doc.storagePath.split('/').pop() ?? 'Prueba genética.pdf' }}</p>
+                      <a [href]="getMediaUrl(doc.storagePath)" target="_blank" rel="noopener noreferrer"
+                        class="text-xs text-primary hover:underline">Abrir documento</a>
+                    </div>
+                    <button type="button" (click)="deleteExistingMedia(doc.id)"
+                      class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
+              }
+
+              @if (pendingDocument()) {
+                <div class="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                  <svg class="w-8 h-8 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 17v-1h8v1H8zm0-3v-1h8v1H8zm0-3v-1h5v1H8z"/>
+                  </svg>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ pendingDocument()!.file.name }}</p>
+                    <p class="text-xs text-gray-400">Listo para subir</p>
+                  </div>
+                  <button type="button" (click)="removeDocument()"
+                    class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              }
+
+              @if (!pendingDocument() && existingDocuments().length === 0) {
+                <div
+                  class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  (dragover)="$event.preventDefault()"
+                  (drop)="onPdfDrop($event)"
+                  (click)="openPdfPicker()"
+                >
+                  <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  <p class="text-sm text-gray-500">
+                    <span class="font-medium text-primary">Haz clic para subir</span> o arrastra tu PDF aquí
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1">Solo PDF</p>
+                </div>
+                <input #pdfInput type="file" accept="application/pdf" class="hidden" (change)="onPdfSelected($event)"/>
+              }
+            </div>
+
             @if (saving() && uploadProgress() > 0) {
               <div class="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
                 <div class="flex items-center justify-between text-sm">
@@ -416,9 +482,13 @@ export default class BullFormComponent implements OnInit, OnDestroy {
 
   imageInputRef = viewChild<ElementRef<HTMLInputElement>>('imageInput');
   videoInputRef = viewChild<ElementRef<HTMLInputElement>>('videoInput');
+  pdfInputRef = viewChild<ElementRef<HTMLInputElement>>('pdfInput');
+
+  pendingDocument = signal<PendingFile | null>(null);
 
   existingImages = computed(() => this.existingMedia().filter(m => m.mediaType === 'image'));
   existingVideo = computed(() => this.existingMedia().find(m => m.mediaType === 'video') ?? null);
+  existingDocuments = computed(() => this.existingMedia().filter(m => m.mediaType === 'document'));
   totalImages = computed(() => this.existingImages().length + this.pendingImages().length);
 
   selectedBreedId = signal<string | null>(null);
@@ -459,6 +529,8 @@ export default class BullFormComponent implements OnInit, OnDestroy {
     this.pendingImages().forEach(f => URL.revokeObjectURL(f.preview));
     const video = this.pendingVideo();
     if (video) URL.revokeObjectURL(video.preview);
+    const doc = this.pendingDocument();
+    if (doc) URL.revokeObjectURL(doc.preview);
   }
 
   onBreedSelected(id: string | null): void {
@@ -550,6 +622,30 @@ export default class BullFormComponent implements OnInit, OnDestroy {
     this.pendingVideo.set(null);
   }
 
+  openPdfPicker(): void {
+    this.pdfInputRef()?.nativeElement.click();
+  }
+
+  onPdfSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) this.addDocumentFile(file);
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  onPdfDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = Array.from(event.dataTransfer?.files ?? []).find(f =>
+      PDF_MIME_TYPES.includes(f.type as MimeType),
+    );
+    if (file) this.addDocumentFile(file);
+  }
+
+  removeDocument(): void {
+    const doc = this.pendingDocument();
+    if (doc) URL.revokeObjectURL(doc.preview);
+    this.pendingDocument.set(null);
+  }
+
   async deleteExistingMedia(mediaId: string): Promise<void> {
     try {
       await this.bullService.deleteMedia(mediaId);
@@ -634,6 +730,18 @@ export default class BullFormComponent implements OnInit, OnDestroy {
     this.pendingImages.update(curr => [...curr, ...valid]);
   }
 
+  private addDocumentFile(file: File): void {
+    if (!PDF_MIME_TYPES.includes(file.type as MimeType)) return;
+    const current = this.pendingDocument();
+    if (current) URL.revokeObjectURL(current.preview);
+    this.pendingDocument.set({
+      file,
+      preview: URL.createObjectURL(file),
+      mediaType: 'document',
+      mimeType: file.type as MimeType,
+    });
+  }
+
   private addVideoFile(file: File): void {
     if (!VIDEO_MIME_TYPES.includes(file.type as MimeType)) return;
     const current = this.pendingVideo();
@@ -650,6 +758,7 @@ export default class BullFormComponent implements OnInit, OnDestroy {
     const allFiles: PendingFile[] = [
       ...this.pendingImages(),
       ...(this.pendingVideo() ? [this.pendingVideo()!] : []),
+      ...(this.pendingDocument() ? [this.pendingDocument()!] : []),
     ];
     if (allFiles.length === 0) return;
 

@@ -1,4 +1,5 @@
-import { computed, inject } from '@angular/core';
+import { computed, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   signalStore,
   withState,
@@ -7,139 +8,99 @@ import {
   withHooks,
   patchState,
 } from '@ngrx/signals';
-import { firstValueFrom } from 'rxjs';
-import { StrawType } from '../models/bull.model';
-import { CartItemResponse } from '../models/cart.model';
-import { CartService } from '../services/cart.service';
-export interface BullSelected {
-  id: string;
-  sellerId?: string;
-  name: string;
-  breed?: string;
-  s3key: string;
-}
-export interface SelectedStraw {
-  id: string;
-  strawType: StrawType;
-  price: number;
-  minOrderQuantity: number;
-}
+import { Product } from '../models/product.model';
+
 export interface CartItem {
-  bull: BullSelected;
-  selectedStraw: SelectedStraw;
+  product: Product;
   quantity: number;
 }
 
 interface CartState {
   items: CartItem[];
-  loading: boolean;
-  error: string | null;
 }
 
-function mapResponseToCartItem(item: CartItemResponse): CartItem {
-  return {
-    bull: item.bull,
-    selectedStraw: item.selectedStraw,
-    quantity: item.quantity,
-  };
+const STORAGE_KEY = 'tauru_cart';
+
+function loadFromStorage(isBrowser: boolean): CartItem[] {
+  if (!isBrowser) return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as CartItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(items: CartItem[], isBrowser: boolean): void {
+  if (!isBrowser) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // storage quota or private mode — ignore
+  }
 }
 
 export const CartStore = signalStore(
   { providedIn: 'root' },
-  withState<CartState>({ items: [], loading: false, error: null }),
+  withState<CartState>({ items: [] }),
   withComputed((store) => ({
     count: computed(() => store.items().reduce((sum, i) => sum + i.quantity, 0)),
     total: computed(() =>
-      store.items().reduce((sum, i) => sum + i.selectedStraw.price * i.quantity, 0)
+      store.items().reduce((sum, i) => sum + i.product.price * i.quantity, 0)
     ),
   })),
   withMethods((store) => {
-    const cartService = inject(CartService);
+    const platformId = inject(PLATFORM_ID);
+    const isBrowser = isPlatformBrowser(platformId);
+
     return {
-      async loadCart(): Promise<void> {
-        patchState(store, { loading: true, error: null });
-        try {
-          const response = await firstValueFrom(cartService.getCart());
-          const items = response.items.map(mapResponseToCartItem);
-          patchState(store, { items, loading: false });
-        } catch {
-          patchState(store, { loading: false, error: 'No se pudo cargar el carrito.' });
-        }
-      },
-
-      async addItem(bull: BullSelected, straw: SelectedStraw, qty = 1): Promise<void> {
-        const effectiveQty = Math.max(qty, straw.minOrderQuantity);
+      addItem(product: Product, qty = 1): void {
+        const min = product.minOrderQuantity;
+        const effectiveQty = Math.max(qty, min);
         const current = store.items();
-        const idx = current.findIndex(
-          (i) => i.bull.id === bull.id && i.selectedStraw.id === straw.id
-        );
-        const snapshot = current;
+        const idx = current.findIndex((i) => i.product.id === product.id);
+        let updated: CartItem[];
         if (idx >= 0) {
-          const updated = [...current];
-          updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + effectiveQty };
-          patchState(store, { items: updated });
-        } else {
-          patchState(store, {
-            items: [...current, { bull, selectedStraw: straw, quantity: effectiveQty }],
-          });
-        }
-        try {
-          await firstValueFrom(
-            cartService.addItem({ productId: straw.id, quantity: effectiveQty })
+          updated = current.map((item, i) =>
+            i === idx ? { ...item, quantity: item.quantity + effectiveQty } : item
           );
-          patchState(store, { error: null });
-        } catch {
-          patchState(store, { items: snapshot, error: 'No se pudo agregar el ítem al carrito.' });
+        } else {
+          updated = [...current, { product, quantity: effectiveQty }];
         }
+        patchState(store, { items: updated });
+        saveToStorage(updated, isBrowser);
       },
 
-      async updateQuantity(bullId: string, strawId: string, qty: number): Promise<void> {
-        const snapshot = store.items();
-        const item = snapshot.find((i) => i.bull.id === bullId && i.selectedStraw.id === strawId);
-        const min = item?.selectedStraw.minOrderQuantity ?? 1;
+      updateQuantity(productId: string, qty: number): void {
+        const current = store.items();
+        const item = current.find((i) => i.product.id === productId);
+        const min = item?.product.minOrderQuantity ?? 1;
         if (qty < min) return;
-        const updated = snapshot.map((i) =>
-          i.bull.id === bullId && i.selectedStraw.id === strawId ? { ...i, quantity: qty } : i
+        const updated = current.map((i) =>
+          i.product.id === productId ? { ...i, quantity: qty } : i
         );
         patchState(store, { items: updated });
-        try {
-          await firstValueFrom(cartService.updateItem(strawId, { quantity: qty }));
-          patchState(store, { error: null });
-        } catch {
-          patchState(store, { items: snapshot, error: 'No se pudo actualizar la cantidad.' });
-        }
+        saveToStorage(updated, isBrowser);
       },
 
-      async removeItem(bullId: string, strawId: string): Promise<void> {
-        const snapshot = store.items();
-        patchState(store, {
-          items: snapshot.filter(
-            (i) => !(i.bull.id === bullId && i.selectedStraw.id === strawId)
-          ),
-        });
-        try {
-          await firstValueFrom(cartService.removeItem(strawId));
-          patchState(store, { error: null });
-        } catch {
-          patchState(store, { items: snapshot, error: 'No se pudo eliminar el ítem.' });
-        }
+      removeItem(productId: string): void {
+        const updated = store.items().filter((i) => i.product.id !== productId);
+        patchState(store, { items: updated });
+        saveToStorage(updated, isBrowser);
       },
 
-      async clear(): Promise<void> {
-        const snapshot = store.items();
+      clear(): void {
         patchState(store, { items: [] });
-        try {
-          await firstValueFrom(cartService.clearCart());
-          patchState(store, { error: null });
-        } catch {
-          patchState(store, { items: snapshot, error: 'No se pudo vaciar el carrito.' });
-        }
+        saveToStorage([], isBrowser);
       },
     };
   }),
   withHooks({
     onInit(store) {
-      store.loadCart();
+      const platformId = inject(PLATFORM_ID);
+      const isBrowser = isPlatformBrowser(platformId);
+      const items = loadFromStorage(isBrowser);
+      if (items.length > 0) patchState(store, { items });
     },
   })
 );

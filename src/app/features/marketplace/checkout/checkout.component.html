@@ -202,21 +202,24 @@
 
     <!-- Items -->
     <div class="space-y-4 mb-6">
-      @for (item of cartStore.items(); track item.bull.id + item.selectedStraw.id) {
+      @for (item of cartStore.items(); track item.product.id) {
         <div class="flex items-center gap-3">
           <div class="relative flex-shrink-0">
-            <div class="w-14 h-14 rounded-xl overflow-hidden bg-surface-muted border border-gray-100 flex items-center justify-center">
-              <img [src]="item.bull.s3key | appS3fileUrl" [alt]="item.bull.name" class="w-full h-full object-cover" />
+            <div class="w-14 h-14 rounded-xl overflow-hidden bg-surface-muted border border-gray-100 flex items-center justify-center text-2xl">
+              {{ item.product.productType === 'STRAW' ? '🧫' : '📦' }}
             </div>
             <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
               {{ item.quantity }}
             </span>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-primary leading-tight line-clamp-1">{{ item.bull.name }}</p>
-            <p class="text-xs text-gray-400">{{ strawLabel(item.selectedStraw.strawType) }}</p>
+            <p class="text-sm font-semibold text-primary leading-tight line-clamp-1">{{ item.product.name }}</p>
+            <p class="text-xs text-gray-400">
+              {{ productTypeLabel(item.product.productType) }}
+              @if (item.product.strawType) { · {{ strawLabel(item.product.strawType) }} }
+            </p>
           </div>
-          <span class="text-sm font-bold text-primary flex-shrink-0">${{ itemTotal(item.selectedStraw.price, item.quantity) }}</span>
+          <span class="text-sm font-bold text-primary flex-shrink-0">${{ itemTotal(item.product.price, item.quantity) }}</span>
         </div>
       }
     </div>
