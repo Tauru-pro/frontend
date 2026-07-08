@@ -1,9 +1,11 @@
 import { AngularAppEngine, createRequestHandler } from '@angular/ssr';
 
 const angularApp = new AngularAppEngine({
-  // It is safe to set allow `localhost`, so that SSR can run in local development,
-  // as, in production, Cloudflare will ensure that `localhost` is not the host.
-  allowedHosts: ['localhost'],
+  // Hosts allowed by Angular's SSR SSRF protection. `localhost` keeps local
+  // `wrangler pages dev` / `ng serve` working; the pages.dev entries cover the
+  // Cloudflare Pages production domain and its preview/branch subdomains. Add a
+  // custom domain (and its `www.`) here once it's live.
+  allowedHosts: ['localhost', 'frontend-72m.pages.dev', '*.frontend-72m.pages.dev'],
 });
 
 /**
