@@ -28,7 +28,7 @@ import { UserStore } from '../../../core/store/user.store';
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
-          <p class="text-gray-500 text-sm">Completing sign in...</p>
+          <p class="text-gray-500 text-sm">Completando el inicio de sesión...</p>
         </div>
       } @else {
         <div class="text-center max-w-sm mx-auto px-4">
@@ -37,13 +37,13 @@ import { UserStore } from '../../../core/store/user.store';
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
-          <h2 class="text-lg font-semibold text-gray-800 mb-2">Authentication failed</h2>
+          <h2 class="text-lg font-semibold text-gray-800 mb-2">Error de autenticación</h2>
           <p class="text-sm text-gray-500 mb-6">{{ error() }}</p>
           <a
             routerLink="/auth/sign-in"
             class="inline-block btn-primary px-6 py-2.5 text-sm"
           >
-            Back to Sign In
+            Volver a iniciar sesión
           </a>
         </div>
       }
@@ -76,7 +76,7 @@ export default class CallbackComponent implements OnInit, OnDestroy {
     this.supabase.auth.getSession().then(({ data, error }) => {
       if (error) {
         this.loading.set(false);
-        this.error.set('Sign in with Google failed. Please try again.');
+        this.error.set('No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
       } else if (data.session) {
         this.navigateByRole();
       }

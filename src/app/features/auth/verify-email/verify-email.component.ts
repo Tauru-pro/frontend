@@ -39,10 +39,10 @@ import { AuthService } from '../../../core/auth/auth.service';
             </div>
           </div>
 
-          <h1 class="text-xl font-bold text-primary text-center mb-1">Verify your email</h1>
+          <h1 class="text-xl font-bold text-primary text-center mb-1">Verifica tu correo</h1>
           <p class="text-sm text-gray-400 text-center mb-6 leading-relaxed">
-            We sent a 6-digit code to<br />
-            <span class="font-medium text-gray-600">{{ email() ?? 'your email address' }}</span>
+            Enviamos un código de 6 dígitos a<br />
+            <span class="font-medium text-gray-600">{{ email() ?? 'tu correo electrónico' }}</span>
           </p>
 
           <!-- Error -->
@@ -58,7 +58,7 @@ import { AuthService } from '../../../core/auth/auth.service';
               <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Code resent! Check your inbox.
+              ¡Código reenviado! Revisa tu bandeja de entrada.
             </div>
           }
 
@@ -66,7 +66,7 @@ import { AuthService } from '../../../core/auth/auth.service';
           <form (submit)="onVerify(); $event.preventDefault()">
             <div class="mb-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Verification code <span class="text-red-400">*</span>
+                Código de verificación <span class="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -74,7 +74,7 @@ import { AuthService } from '../../../core/auth/auth.service';
                 maxlength="6"
                 [value]="code()"
                 (input)="onCodeInput($event)"
-                placeholder="Enter 6-digit code"
+                placeholder="Ingresa el código de 6 dígitos"
                 class="w-full border border-gray-200 rounded-lg px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all tracking-[0.3em] font-mono text-center text-base"
               />
             </div>
@@ -90,10 +90,10 @@ import { AuthService } from '../../../core/auth/auth.service';
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  Verifying...
+                  Verificando...
                 </span>
               } @else {
-                Verify Email
+                Verificar correo
               }
             </button>
           </form>
@@ -101,14 +101,14 @@ import { AuthService } from '../../../core/auth/auth.service';
           <!-- Resend -->
           <div class="mt-5 text-center">
             <p class="text-sm text-gray-400">
-              Didn't receive the code?
+              ¿No recibiste el código?
               <button
                 type="button"
                 (click)="onResend()"
                 [disabled]="resendLoading()"
                 class="text-accent hover:text-accent-dark font-medium transition-colors hover:underline ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                @if (resendLoading()) { Sending... } @else { Resend code }
+                @if (resendLoading()) { Enviando... } @else { Reenviar código }
               </button>
             </p>
           </div>
@@ -117,9 +117,9 @@ import { AuthService } from '../../../core/auth/auth.service';
       </div>
 
       <p class="text-center text-sm text-gray-400 mt-6">
-        Wrong email?
+        ¿Correo incorrecto?
         <a routerLink="/auth/sign-up" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
-          Go back to sign up
+          Volver al registro
         </a>
       </p>
     </div>

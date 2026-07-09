@@ -21,13 +21,13 @@ import { UserStore } from "../../../core/store/user.store";
             routerLinkActive="border-b-2 border-primary text-primary font-semibold"
             [routerLinkActiveOptions]="{ exact: true }"
             class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
-          >Login</a>
+          >Iniciar sesión</a>
           <a
             routerLink="/auth/sign-up"
             routerLinkActive="border-b-2 border-primary text-primary font-semibold"
             [routerLinkActiveOptions]="{ exact: true }"
             class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
-          >Register</a>
+          >Registrarse</a>
         </div>
 
         <div class="px-8 py-7">
@@ -41,7 +41,7 @@ import { UserStore } from "../../../core/store/user.store";
             <!-- Email -->
             <div class="mb-5">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Email address <span class="text-red-400">*</span>
+                Correo electrónico <span class="text-red-400">*</span>
               </label>
               <input
                 type="email"
@@ -62,7 +62,7 @@ import { UserStore } from "../../../core/store/user.store";
             <!-- Password -->
             <div class="mb-5">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Password <span class="text-red-400">*</span>
+                Contraseña <span class="text-red-400">*</span>
               </label>
               <div class="relative">
                 <input
@@ -100,7 +100,7 @@ import { UserStore } from "../../../core/store/user.store";
               <label class="flex items-center gap-2.5 cursor-pointer group">
                 <input type="checkbox" [formField]="signInForm.rememberMe"
                   class="w-4 h-4 rounded border-gray-300 accent-primary cursor-pointer" />
-                <span class="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Remember me</span>
+                <span class="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">Recordarme</span>
               </label>
             </div>
 
@@ -116,16 +116,16 @@ import { UserStore } from "../../../core/store/user.store";
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  Logging in...
+                  Iniciando sesión...
                 </span>
               } @else {
-                Log In
+                Iniciar sesión
               }
             </button>
 
             <div class="mt-4 text-center">
               <a href="#" class="text-sm text-accent hover:text-accent-dark font-medium transition-colors hover:underline">
-                Lost your password?
+                ¿Olvidaste tu contraseña?
               </a>
             </div>
           </form>
@@ -133,7 +133,7 @@ import { UserStore } from "../../../core/store/user.store";
           <!-- Divider -->
           <div class="flex items-center gap-3 my-6">
             <hr class="flex-1 border-gray-100" />
-            <span class="text-[11px] text-gray-300 font-medium uppercase tracking-widest whitespace-nowrap">Or login with</span>
+            <span class="text-[11px] text-gray-300 font-medium uppercase tracking-widest whitespace-nowrap">O inicia sesión con</span>
             <hr class="flex-1 border-gray-100" />
           </div>
 
@@ -161,9 +161,9 @@ import { UserStore } from "../../../core/store/user.store";
       </div>
 
       <p class="text-center text-sm text-gray-400 mt-6">
-        Don't have an account?
+        ¿No tienes una cuenta?
         <a routerLink="/auth/sign-up" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
-          Register here
+          Regístrate aquí
         </a>
       </p>
     </div>
@@ -179,10 +179,10 @@ export default class SignInComponent {
 
   model = signal({ email: '', password: '', rememberMe: false });
   signInForm = form(this.model, (s) => {
-    required(s.email, { message: 'Email is required' });
-    email(s.email, { message: 'Please enter a valid email address' });
-    required(s.password, { message: 'Password is required' });
-    minLength(s.password, 6, { message: 'Password must be at least 6 characters' });
+    required(s.email, { message: 'El correo es requerido' });
+    email(s.email, { message: 'Ingresa un correo electrónico válido' });
+    required(s.password, { message: 'La contraseña es requerida' });
+    minLength(s.password, 6, { message: 'La contraseña debe tener al menos 6 caracteres' });
   });
 
   onGoogleSignIn(): void {

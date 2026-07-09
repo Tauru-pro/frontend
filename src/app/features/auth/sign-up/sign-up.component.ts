@@ -23,7 +23,7 @@ import { AuthService } from "../../../core/auth/auth.service";
             [routerLinkActiveOptions]="{ exact: true }"
             class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
           >
-            Login
+            Iniciar sesión
           </a>
           <a
             routerLink="/auth/sign-up"
@@ -31,7 +31,7 @@ import { AuthService } from "../../../core/auth/auth.service";
             [routerLinkActiveOptions]="{ exact: true }"
             class="flex-1 py-4 text-center text-sm font-medium text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
           >
-            Register
+            Registrarse
           </a>
         </div>
 
@@ -49,12 +49,12 @@ import { AuthService } from "../../../core/auth/auth.service";
             <!-- Full name -->
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Full name <span class="text-red-400">*</span>
+                Nombre completo <span class="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 [formField]="signUpForm.fullName"
-                placeholder="John Doe"
+                placeholder="Juan Pérez"
                 class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (signUpForm.fullName().touched() && signUpForm.fullName().errors().length) {
@@ -70,7 +70,7 @@ import { AuthService } from "../../../core/auth/auth.service";
             <!-- Email -->
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Email address <span class="text-red-400">*</span>
+                Correo electrónico <span class="text-red-400">*</span>
               </label>
               <input
                 type="email"
@@ -91,13 +91,13 @@ import { AuthService } from "../../../core/auth/auth.service";
             <!-- Password -->
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Password <span class="text-red-400">*</span>
+                Contraseña <span class="text-red-400">*</span>
               </label>
               <div class="relative">
                 <input
                   [type]="showPassword() ? 'text' : 'password'"
                   [formField]="signUpForm.password"
-                  placeholder="Min. 8 characters"
+                  placeholder="Mínimo 8 caracteres"
                   class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 <button
@@ -131,13 +131,13 @@ import { AuthService } from "../../../core/auth/auth.service";
             <!-- Confirm Password -->
             <div class="mb-6">
               <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                Confirm password <span class="text-red-400">*</span>
+                Confirmar contraseña <span class="text-red-400">*</span>
               </label>
               <div class="relative">
                 <input
                   [type]="showConfirmPassword() ? 'text' : 'password'"
                   [formField]="signUpForm.confirmPassword"
-                  placeholder="Repeat your password"
+                  placeholder="Repite tu contraseña"
                   class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
                 <button
@@ -180,26 +180,26 @@ import { AuthService } from "../../../core/auth/auth.service";
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  Creating account...
+                  Creando cuenta...
                 </span>
               } @else {
-                Create Account
+                Crear cuenta
               }
             </button>
 
             <!-- Terms note -->
             <p class="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-              By registering you agree to our
-              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Terms of Service</a>
-              and
-              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Privacy Policy</a>
+              Al registrarte aceptas nuestros
+              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Términos de servicio</a>
+              y la
+              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Política de privacidad</a>
             </p>
           </form>
 
           <!-- Divider -->
           <div class="flex items-center gap-3 my-6">
             <hr class="flex-1 border-gray-100" />
-            <span class="text-[11px] text-gray-300 font-medium uppercase tracking-widest whitespace-nowrap">Or sign up with</span>
+            <span class="text-[11px] text-gray-300 font-medium uppercase tracking-widest whitespace-nowrap">O regístrate con</span>
             <hr class="flex-1 border-gray-100" />
           </div>
 
@@ -233,9 +233,9 @@ import { AuthService } from "../../../core/auth/auth.service";
 
       <!-- Login link -->
       <p class="text-center text-sm text-gray-400 mt-6">
-        Already have an account?
+        ¿Ya tienes una cuenta?
         <a routerLink="/auth/sign-in" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
-          Log in here
+          Inicia sesión aquí
         </a>
       </p>
     </div>
@@ -257,16 +257,16 @@ export default class SignUpComponent {
   });
 
   signUpForm = form(this.model, (s) => {
-    required(s.fullName, { message: 'Full name is required' });
-    minLength(s.fullName, 2, { message: 'Full name must be at least 2 characters' });
-    required(s.email, { message: 'Email is required' });
-    email(s.email, { message: 'Please enter a valid email address' });
-    required(s.password, { message: 'Password is required' });
-    minLength(s.password, 8, { message: 'Password must be at least 8 characters' });
-    required(s.confirmPassword, { message: 'Please confirm your password' });
+    required(s.fullName, { message: 'El nombre completo es requerido' });
+    minLength(s.fullName, 2, { message: 'El nombre debe tener al menos 2 caracteres' });
+    required(s.email, { message: 'El correo es requerido' });
+    email(s.email, { message: 'Ingresa un correo electrónico válido' });
+    required(s.password, { message: 'La contraseña es requerida' });
+    minLength(s.password, 8, { message: 'La contraseña debe tener al menos 8 caracteres' });
+    required(s.confirmPassword, { message: 'Confirma tu contraseña' });
     validate(s.confirmPassword, ({ value, valueOf }) => {
       if (value() !== valueOf(s.password)) {
-        return { kind: 'mismatch', message: 'Passwords do not match' };
+        return { kind: 'mismatch', message: 'Las contraseñas no coinciden' };
       }
       return undefined;
     });

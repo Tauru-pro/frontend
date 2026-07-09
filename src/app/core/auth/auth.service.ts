@@ -98,19 +98,19 @@ export class AuthService {
     const error = err as AuthError;
     switch (error.code) {
       case 'invalid_credentials':
-        return 'Incorrect email or password.';
+        return 'Correo o contraseña incorrectos.';
       case 'email_not_confirmed':
-        return 'Please verify your email address first.';
+        return 'Primero verifica tu correo electrónico.';
       case 'user_already_exists':
-        return 'An account with this email already exists.';
+        return 'Ya existe una cuenta con este correo.';
       case 'weak_password':
-        return 'Password does not meet requirements (min 8 chars, upper, lower, number, symbol).';
+        return 'La contraseña no cumple los requisitos (mínimo 8 caracteres, mayúscula, minúscula, número y símbolo).';
       case 'otp_expired':
-        return 'Verification code has expired. Please request a new one.';
+        return 'El código de verificación expiró. Solicita uno nuevo.';
       case 'over_email_send_rate_limit':
-        return 'Too many attempts. Please try again later.';
+        return 'Demasiados intentos. Inténtalo más tarde.';
       default:
-        return error.message || 'An unexpected error occurred. Please try again.';
+        return error.message || 'Ocurrió un error inesperado. Inténtalo de nuevo.';
     }
   }
 }
