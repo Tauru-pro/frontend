@@ -9,6 +9,7 @@ import { UserStore } from '../../../core/store/user.store';
 @Component({
   selector: 'app-set-password',
   imports: [RouterLink, FormField],
+  host: { class: 'w-full' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="w-full max-w-md block mx-auto">
