@@ -11,7 +11,7 @@ import { CartStore } from '../../../core/store/cart.store';
   selector: 'app-navbar',
   imports: [RouterLink, HasRoleDirective],
   template: `
-  <!-- ===== ANNOUNCEMENT BAR ===== -->
+    <!-- ===== ANNOUNCEMENT BAR ===== 
 <div class="bg-dark text-white text-xs py-2 px-4">
   <div class="max-w-[1400px] mx-auto flex items-center justify-between">
     <div class="flex items-center gap-6">
@@ -28,141 +28,187 @@ import { CartStore } from '../../../core/store/cart.store';
     </div>
   </div>
 </div>
-
-<!-- ===== HEADER ===== -->
-<header class="bg-primary text-white py-3 sticky top-0 z-50 shadow-xl">
-  <div class="max-w-[1400px] mx-auto px-4 flex items-center gap-5">
-
-    <!-- Logo -->
-    <a href="/" class="flex items-center gap-2 flex-shrink-0">
-      <div
-        class="w-9 h-9 bg-secondary rounded-lg flex items-center justify-center font-bold text-white text-lg"
-      >
-        T
-      </div>
-      <div class="leading-none">
-        <span class="text-xl font-bold text-white">Tauru</span>
-        <span class="text-accent font-bold text-xl">.</span>
-        <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>
-      </div>
-    </a>
-
-    <!-- Search -->
-    <div class="flex-1 flex rounded-lg overflow-hidden border border-white/10 max-w-2xl mx-4">
-      <select
-        class="bg-secondary text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
-      >
-        <option>All Categories</option>
-        @for (cat of categories.slice(1); track cat.slug) {
-          <option>{{ cat.name }}</option>
-        }
-      </select>
-      <input
-        type="text"
-        placeholder="Search for fresh groceries, products..."
-        class="flex-1 px-4 py-2.5 text-primary text-sm outline-none min-w-0"
-      />
-      <button
-        class="bg-secondary hover:bg-secondary-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Icons -->
-    <div class="flex items-center gap-4 ml-auto flex-shrink-0">
-      <!-- Account -->
-      @if (!isAuthenticated()) {
-        <a
-          routerLink="/auth/sign-in"
-          class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span class="text-[10px]">Account</span>
-        </a>
-      } @else {
-        <div class="relative group">
-          <button class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="text-[10px] max-w-[72px] truncate">{{ userName() }}</span>
-          </button>
-          <div class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[160px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50">
-            <a
-              *hasRole="['ADMIN', 'SELLER']"
-              [routerLink]="dashboardRoute()"
-              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              Dashboard
-            </a>
-            <button
-              (click)="logout()"
-              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign out
-            </button>
-          </div>
-        </div>
-      }
-
-      <!-- Cart -->
-      <a routerLink="/cart"
-        class="flex items-center gap-3 btn-secondary px-4 py-2"
-      >
-        <div class="relative">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-6 h-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+-->
+    <!-- ===== HEADER ===== -->
+    <header class="bg-primary text-white py-3 sticky top-0 z-50 shadow-xl">
+      <div class="max-w-[1400px] mx-auto px-4 flex items-center gap-5">
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2 flex-shrink-0">
+          <div
+            class="w-9 h-9 bg-secondary rounded-lg flex items-center justify-center font-bold text-white text-lg"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          @if (cartStore.count() > 0) {
-            <span
-              class="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
-            >{{ cartStore.count() }}</span>
-          }
-        </div>
-        <div class="text-white text-left hidden sm:block">
-          <div class="text-[10px] opacity-75">Mi Carrito</div>
-          <div class="text-sm font-bold">{{ cartTotalDisplay() }}</div>
-        </div>
-      </a>
-    </div>
-  </div>
-</header>
+            T
+          </div>
+          <div class="leading-none">
+            <span class="text-xl font-bold text-white">Tauru</span>
+            <span class="text-accent font-bold text-xl">.</span>
+            <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>
+          </div>
+        </a>
 
-<!-- ===== NAV BAR ===== -->
-<!-- <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <!-- Search -->
+        <div class="flex-1 flex rounded-lg overflow-hidden border border-white/10 max-w-2xl mx-4">
+          <select
+            class="bg-secondary text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
+          >
+            <option>All Categories</option>
+            @for (cat of categories.slice(1); track cat.slug) {
+              <option>{{ cat.name }}</option>
+            }
+          </select>
+          <input
+            type="text"
+            placeholder="Search for fresh groceries, products..."
+            class="flex-1 px-4 py-2.5 text-primary text-sm outline-none min-w-0"
+          />
+          <button
+            class="bg-secondary hover:bg-secondary-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Icons -->
+        <div class="flex items-center gap-4 ml-auto flex-shrink-0">
+          <!-- Account -->
+          @if (!isAuthenticated()) {
+            <a
+              routerLink="/auth/sign-in"
+              class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span class="text-[10px]">Cuenta</span>
+            </a>
+          } @else {
+            <div class="relative group">
+              <button
+                class="flex flex-col items-center gap-0.5 text-gray-300 hover:text-accent transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <span class="text-[10px] max-w-[72px] truncate">{{ userName() }}</span>
+              </button>
+              <div
+                class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[160px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50"
+              >
+                <a
+                  *hasRole="['ADMIN', 'SELLER']"
+                  [routerLink]="dashboardRoute()"
+                  class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                    />
+                  </svg>
+                  Dashboard
+                </a>
+                <button
+                  (click)="logout()"
+                  class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Cart -->
+          <a routerLink="/cart" class="flex items-center gap-3 btn-secondary px-4 py-2">
+            <div class="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              @if (cartStore.count() > 0) {
+                <span
+                  class="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold"
+                  >{{ cartStore.count() }}</span
+                >
+              }
+            </div>
+            <div class="text-white text-left hidden sm:block">
+              <div class="text-[10px] opacity-75">Mi Carrito</div>
+              <div class="text-sm font-bold">{{ cartTotalDisplay() }}</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== NAV BAR ===== -->
+    <!-- <nav class="bg-white border-b border-gray-200 shadow-sm">
   <div class="max-w-[1400px] mx-auto flex items-center">
     <div
       class="flex items-center gap-2 bg-primary text-white px-5 py-3.5 cursor-pointer hover:bg-primary-dark transition-colors flex-shrink-0 select-none"
@@ -197,7 +243,6 @@ import { CartStore } from '../../../core/store/cart.store';
     </div>
   </div>
 </nav> -->
-
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
