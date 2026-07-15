@@ -17,5 +17,8 @@ export enum RoutesApp {
     settings = 'settings',
     supplies = 'supplies',
     branches = 'branches',
+    onboardingSurvey = 'onboarding-survey',
+    profile = 'profile',
+    becomeSeller = 'become-seller',
     root = '',
 }

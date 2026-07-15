@@ -1,8 +1,13 @@
 import { Router } from '@angular/router';
 import { UserRole } from '../models/user.model';
 
+/** The default landing route for a role. */
+export function roleHomeCommands(role: UserRole | undefined): string[] {
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN') return ['/admin'];
+  if (role === 'SELLER') return ['/seller/products'];
+  return ['/'];
+}
+
 export function navigateByRole(router: Router, role: UserRole | undefined): void {
-  if (role === 'SUPER_ADMIN' || role === 'ADMIN') router.navigate(['/admin']);
-  else if (role === 'SELLER') router.navigate(['/seller/products']);
-  else router.navigate(['/']);
+  router.navigate(roleHomeCommands(role));
 }

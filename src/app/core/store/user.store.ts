@@ -2,6 +2,11 @@ import { inject } from '@angular/core';
 import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
 import { SellerProfile, UserProfile } from '../models/user.model';
 import { SupabaseClientService } from '../auth/supabase-client';
+import {
+  mapSellerProfileRow,
+  SELLER_CITY_EMBED,
+  SellerProfileRow,
+} from '../services/seller.service';
 
 interface UserState {
   user: UserProfile | null;
@@ -21,16 +26,6 @@ interface ProfileRow {
   created_at: string;
   seller_profiles: SellerProfileRow[] | null;
   customer_profiles: CustomerProfileRow[] | null;
-}
-
-interface SellerProfileRow {
-  id: string;
-  user_id: string;
-  business_name: string | null;
-  contact_phone: string | null;
-  logo_key: string | null;
-  address: string | null;
-  status: SellerProfile['status'];
 }
 
 interface CustomerProfileRow {
@@ -53,17 +48,7 @@ function mapProfileRow(row: ProfileRow): UserProfile {
     role: row.role,
     status: row.status,
     createdAt: row.created_at,
-    sellerProfile: sellerRow
-      ? {
-          id: sellerRow.id,
-          userId: sellerRow.user_id,
-          bussinesName: sellerRow.business_name ?? '',
-          contactPhone: sellerRow.contact_phone ?? undefined,
-          logoKey: sellerRow.logo_key ?? '',
-          address: sellerRow.address ?? undefined,
-          status: sellerRow.status,
-        }
-      : undefined,
+    sellerProfile: sellerRow ? mapSellerProfileRow(sellerRow) : undefined,
     customerProfile: customerRow
       ? {
           id: customerRow.id,
@@ -96,14 +81,26 @@ export const UserStore = signalStore(
 
           const { data, error } = await supabase
             .from('profiles')
-            .select('*, seller_profiles(*), customer_profiles(*)')
+            .select(`*, seller_profiles(*, ${SELLER_CITY_EMBED}), customer_profiles(*)`)
             .eq('id', authUser.id)
             .single();
           if (error) throw error;
 
           patchState(store, { user: mapProfileRow(data as ProfileRow), loading: false });
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Failed to load user';
+          // Nothing renders `error`, and a null user reads as "no role": every
+          // *hasRole element vanishes and the role guards redirect. Log it, or
+          // the app degrades silently and looks like a permissions problem.
+          //
+          // Log the raw value, not just a message: supabase only wraps errors in
+          // PostgrestError under .throwOnError(), so this is usually a plain
+          // { message, details, hint, code } object — and `hint` is where
+          // Postgres puts the actionable fix.
+          console.error('UserStore.loadUser failed:', err);
+          const message =
+            err instanceof Error
+              ? err.message
+              : ((err as { message?: string } | null)?.message ?? 'Failed to load user');
           patchState(store, { loading: false, error: message });
         }
       },

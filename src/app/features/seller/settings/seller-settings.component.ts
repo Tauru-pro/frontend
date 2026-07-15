@@ -22,8 +22,6 @@ import { LocationSelectComponent, LocationSelection } from '../../../shared/comp
 interface SettingsFormModel {
   bussinesName: string;
   description: string;
-  country: string;
-  businessHours: string;
   contactPhone: string;
   cityId: string;
   address: string;
@@ -159,29 +157,6 @@ interface SettingsFormModel {
               ></textarea>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <!-- País -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">País</label>
-                <input
-                  type="text"
-                  [formField]="settingsForm.country"
-                  placeholder="Colombia"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                />
-              </div>
-
-              <!-- Horario operativo -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Horario operativo</label>
-                <input
-                  type="text"
-                  [formField]="settingsForm.businessHours"
-                  placeholder="Lun-Vie 8am-5pm"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                />
-              </div>
-            </div>
          <!-- Departamento y Municipio -->
             <app-location-select
               [initialStateId]="initialStateId()"
@@ -280,8 +255,6 @@ export default class SellerSettingsComponent implements OnInit {
   model = signal<SettingsFormModel>({
     bussinesName: '',
     description: '',
-    country: 'Colombia',
-    businessHours: '',
     contactPhone: '',
     cityId: '',
     address: '',
@@ -315,8 +288,6 @@ export default class SellerSettingsComponent implements OnInit {
     this.model.set({
       bussinesName: profile.bussinesName ?? '',
       description: profile.description ?? '',
-      country: profile.country ?? 'Colombia',
-      businessHours: profile.businessHours ?? '',
       contactPhone: profile.contactPhone ?? '',
       cityId: profile.city?.id ?? '',
       address: profile.address ?? '',
@@ -397,8 +368,6 @@ export default class SellerSettingsComponent implements OnInit {
         const dto: UpdateSellerProfileDto = {
           bussinesName: values.bussinesName,
           description: values.description || undefined,
-          country: values.country || undefined,
-          businessHours: values.businessHours || undefined,
           contactPhone: values.contactPhone || undefined,
           cityId: this.selectedCityId()!,
           address: values.address || undefined

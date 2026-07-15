@@ -1,7 +1,10 @@
-﻿import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+﻿import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive } from "@angular/router";
 import { form, FormField, submit, required, email, minLength, validate } from "@angular/forms/signals";
+import { firstValueFrom } from "rxjs";
 import { AuthService } from "../../../core/auth/auth.service";
+import { TermsService } from "../../../core/services/terms.service";
+import { TermsDocument } from "../../../core/models/terms.model";
 
 @Component({
   selector: 'app-sign-up',
@@ -187,13 +190,26 @@ import { AuthService } from "../../../core/auth/auth.service";
               }
             </button>
 
-            <!-- Terms note -->
-            <p class="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-              Al registrarte aceptas nuestros
-              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Términos de servicio</a>
-              y la
-              <a href="#" class="text-primary hover:text-accent font-medium transition-colors">Política de privacidad</a>
-            </p>
+            <!-- Buyer terms acceptance -->
+            <div class="mt-4">
+              <label class="flex items-start gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  [checked]="acceptedTerms()"
+                  (change)="acceptedTerms.set($any($event.target).checked); termsError.set(false)"
+                  class="w-4 h-4 mt-0.5 rounded border-gray-300 accent-primary cursor-pointer"
+                />
+                <span class="text-xs text-gray-500 leading-relaxed">
+                  He leído y acepto los
+                  <button type="button" (click)="showTerms.set(true)" class="text-primary hover:text-accent font-medium underline">
+                    Términos y Condiciones del comprador
+                  </button>
+                </span>
+              </label>
+              @if (termsError()) {
+                <p class="text-red-400 text-xs mt-1.5">Debes aceptar los términos y condiciones para continuar.</p>
+              }
+            </div>
           </form>
 
           <!-- Divider -->
@@ -218,15 +234,6 @@ import { AuthService } from "../../../core/auth/auth.service";
               </svg>
               Google
             </button>
-            <button
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#1877F2] hover:bg-[#1565C0] text-white rounded-xl text-sm font-medium transition-all shadow-sm hover:shadow-md"
-            >
-              <svg class="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Facebook
-            </button>
           </div>
         </div>
       </div>
@@ -239,15 +246,45 @@ import { AuthService } from "../../../core/auth/auth.service";
         </a>
       </p>
     </div>
+
+    @if (showTerms()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" (click)="showTerms.set(false)">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-primary">Términos y Condiciones del comprador</h3>
+            <button type="button" (click)="showTerms.set(false)" class="text-gray-400 hover:text-gray-600" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="px-6 py-4 overflow-y-auto text-sm text-gray-600 whitespace-pre-line">{{ buyerTerms()?.content ?? 'Cargando…' }}</div>
+          <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+            <button type="button" (click)="acceptedTerms.set(true); termsError.set(false); showTerms.set(false)" class="btn-primary px-5 py-2 text-sm">
+              Aceptar
+            </button>
+          </div>
+        </div>
+      </div>
+    }
     `,
 })
-export default class SignUpComponent {
+export default class SignUpComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private termsService = inject(TermsService);
 
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   errorMessage = signal<string | null>(null);
+  acceptedTerms = signal(false);
+  termsError = signal(false);
+  showTerms = signal(false);
+  buyerTerms = signal<TermsDocument | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    try {
+      this.buyerTerms.set(await firstValueFrom(this.termsService.getCurrent('BUYER')));
+    } catch {
+      // Non-blocking: the acceptance checkbox still gates submission.
+    }
+  }
 
   model = signal({
     fullName: '',
@@ -278,10 +315,14 @@ export default class SignUpComponent {
 
   onSubmit() {
     this.errorMessage.set(null);
+    if (!this.acceptedTerms()) {
+      this.termsError.set(true);
+      return;
+    }
     submit(this.signUpForm, async () => {
       try {
         const { fullName, email, password } = this.model();
-        await this.authService.register(fullName, email, password);
+        await this.authService.register(fullName, email, password, this.buyerTerms()?.version);
         this.router.navigate(['/auth/verify-email']);
       } catch (err) {
         this.errorMessage.set(this.authService.getErrorMessage(err));

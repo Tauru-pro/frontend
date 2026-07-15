@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-footer',
-  imports: [],
+  imports: [RouterLink],
   template: `<!-- ===== FOOTER ===== -->
     <footer class="bg-footer text-gray-400 pt-12 pb-6">
       <div class="max-w-[1400px] mx-auto px-4">
@@ -47,6 +48,14 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
               Enlaces rápidos
             </h4>
             <ul class="space-y-2.5 text-sm">
+              <li>
+                <a
+                  routerLink="/become-seller"
+                  class="text-accent font-semibold hover:text-white transition-colors inline-flex items-center gap-1.5"
+                >
+                  Quiero ser proveedor
+                </a>
+              </li>
               @for (
                 link of ['Inicio', 'Nosotros', 'Nuestra historia', 'Blog', 'Contacto'];
                 track link

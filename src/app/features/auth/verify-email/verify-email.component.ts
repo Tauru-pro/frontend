@@ -7,15 +7,18 @@ import { AuthService } from '../../../core/auth/auth.service';
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'w-full'
+    class: 'w-full',
   },
   template: `
     <div class="w-full max-w-md block mx-auto">
-
       <!-- Logo -->
       <div class="flex justify-center mb-8">
         <a routerLink="/" class="flex items-center gap-2.5">
-          <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-xl">T</div>
+          <div
+            class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-xl"
+          >
+            T
+          </div>
           <div class="leading-none">
             <div class="flex items-baseline gap-0.5">
               <span class="text-2xl font-bold text-primary">Tauru</span>
@@ -29,34 +32,57 @@ import { AuthService } from '../../../core/auth/auth.service';
       <!-- Card -->
       <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div class="px-8 py-8">
-
           <!-- Icon -->
           <div class="flex justify-center mb-5">
             <div class="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <svg
+                class="w-8 h-8 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </div>
           </div>
 
           <h1 class="text-xl font-bold text-primary text-center mb-1">Verifica tu correo</h1>
           <p class="text-sm text-gray-400 text-center mb-6 leading-relaxed">
-            Enviamos un código de 6 dígitos a<br />
+            Enviamos un código de 8 dígitos a<br />
             <span class="font-medium text-gray-600">{{ email() ?? 'tu correo electrónico' }}</span>
           </p>
 
           <!-- Error -->
           @if (errorMessage()) {
-            <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600 mb-4">
+            <div
+              class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600 mb-4"
+            >
               {{ errorMessage() }}
             </div>
           }
 
           <!-- Success (resend) -->
           @if (resendSuccess()) {
-            <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 mb-4 flex items-center gap-2">
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <div
+              class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 mb-4 flex items-center gap-2"
+            >
+              <svg
+                class="w-4 h-4 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               ¡Código reenviado! Revisa tu bandeja de entrada.
             </div>
@@ -71,24 +97,35 @@ import { AuthService } from '../../../core/auth/auth.service';
               <input
                 type="text"
                 inputmode="numeric"
-                maxlength="6"
+                maxlength="8"
                 [value]="code()"
                 (input)="onCodeInput($event)"
-                placeholder="Ingresa el código de 6 dígitos"
+                placeholder="Ingresa el código de 8 dígitos"
                 class="w-full border border-gray-200 rounded-lg px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all tracking-[0.3em] font-mono text-center text-base"
               />
             </div>
 
             <button
               type="submit"
-              [disabled]="loading() || code().length < 6"
+              [disabled]="loading() || code().length < 8"
               class="w-full bg-primary hover:bg-primary-dark  text-white font-semibold py-3 rounded-xl transition-all duration-200 text-sm tracking-wide shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               @if (loading()) {
                 <span class="flex items-center justify-center gap-2">
                   <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    ></path>
                   </svg>
                   Verificando...
                 </span>
@@ -108,17 +145,23 @@ import { AuthService } from '../../../core/auth/auth.service';
                 [disabled]="resendLoading()"
                 class="text-accent hover:text-accent-dark font-medium transition-colors hover:underline ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                @if (resendLoading()) { Enviando... } @else { Reenviar código }
+                @if (resendLoading()) {
+                  Enviando...
+                } @else {
+                  Reenviar código
+                }
               </button>
             </p>
           </div>
-
         </div>
       </div>
 
       <p class="text-center text-sm text-gray-400 mt-6">
         ¿Correo incorrecto?
-        <a routerLink="/auth/sign-up" class="text-primary font-semibold hover:text-accent transition-colors ml-1">
+        <a
+          routerLink="/auth/sign-up"
+          class="text-primary font-semibold hover:text-accent transition-colors ml-1"
+        >
           Volver al registro
         </a>
       </p>
@@ -137,13 +180,13 @@ export default class VerifyEmailComponent {
   resendSuccess = signal(false);
 
   onCodeInput(event: Event) {
-    const value = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6);
+    const value = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 8);
     this.code.set(value);
     (event.target as HTMLInputElement).value = value;
   }
 
   async onVerify() {
-    if (this.code().length < 6 || this.loading()) return;
+    if (this.code().length < 8 || this.loading()) return;
     if (!this.email()) {
       this.router.navigate(['/auth/sign-up']);
       return;
@@ -175,4 +218,3 @@ export default class VerifyEmailComponent {
     }
   }
 }
-

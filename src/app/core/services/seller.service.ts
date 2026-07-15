@@ -6,30 +6,41 @@ import { SellerProfile, UpdateSellerProfileDto } from '../models/user.model';
 import { ResponseUploadDto } from '../models/upload.model';
 import { SupabaseClientService } from '../auth/supabase-client';
 
-interface SellerProfileRow {
+// Resolving this embed requires seller_profiles.city_id to have a real FK to
+// cities (added in 0012) — PostgREST can't infer the join without it.
+// Exported so UserStore embeds the city the same way instead of duplicating it.
+export const SELLER_CITY_EMBED = 'cities(id, name, states(id, name))';
+
+const PROFILE_SELECT = `*, ${SELLER_CITY_EMBED}`;
+
+export interface SellerProfileRow {
   id: string;
   user_id: string;
   business_name: string | null;
   description: string | null;
-  country: string | null;
-  business_hours: string | null;
   contact_phone: string | null;
   logo_key: string | null;
   address: string | null;
   status: SellerProfile['status'];
+  cities: {
+    id: string;
+    name: string;
+    states: { id: string; name: string } | null;
+  } | null;
 }
 
-function mapSellerProfileRow(row: SellerProfileRow): SellerProfile {
+export function mapSellerProfileRow(row: SellerProfileRow): SellerProfile {
   return {
     id: row.id,
     userId: row.user_id,
     bussinesName: row.business_name ?? '',
     description: row.description ?? undefined,
-    country: row.country ?? undefined,
-    businessHours: row.business_hours ?? undefined,
     contactPhone: row.contact_phone ?? undefined,
     logoKey: row.logo_key ?? '',
     address: row.address ?? undefined,
+    city: row.cities
+      ? { id: row.cities.id, name: row.cities.name, state: row.cities.states ?? { id: '', name: '' } }
+      : undefined,
     status: row.status,
   };
 }
@@ -51,7 +62,7 @@ export class SellerService {
     const userId = await this.currentUserId();
     const { data, error } = await this.supabase
       .from('seller_profiles')
-      .select('*')
+      .select(PROFILE_SELECT)
       .eq('user_id', userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -67,8 +78,6 @@ export class SellerService {
     const row: Record<string, unknown> = { user_id: userId };
     if (dto.bussinesName !== undefined) row['business_name'] = dto.bussinesName;
     if (dto.description !== undefined) row['description'] = dto.description;
-    if (dto.country !== undefined) row['country'] = dto.country;
-    if (dto.businessHours !== undefined) row['business_hours'] = dto.businessHours;
     if (dto.contactPhone !== undefined) row['contact_phone'] = dto.contactPhone;
     if (dto.cityId !== undefined) row['city_id'] = dto.cityId;
     if (dto.address !== undefined) row['address'] = dto.address;
@@ -77,7 +86,7 @@ export class SellerService {
     const { data, error } = await this.supabase
       .from('seller_profiles')
       .upsert(row, { onConflict: 'user_id' })
-      .select()
+      .select(PROFILE_SELECT)
       .single();
     if (error) throw new Error(error.message);
     return mapSellerProfileRow(data as SellerProfileRow);

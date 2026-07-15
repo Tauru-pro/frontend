@@ -1,0 +1,43 @@
+<!-- Supabase "Confirm signup" template. Uses {{ .Token }} so the verify-email
+     UI (6-digit code, verifyOtp type 'signup') receives a code, not a link. -->
+<!DOCTYPE html>
+<html lang="es">
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:'IBM Plex Sans',Segoe UI,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(6,13,26,0.08);">
+            <!-- Header -->
+            <tr>
+              <td style="background-color:#060d1a;padding:24px 32px;">
+                <span style="font-size:22px;font-weight:700;color:#ffffff;">Tauru</span><span style="font-size:22px;font-weight:700;color:#f59e0b;">.</span>
+                <span style="display:block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#7b8aa0;margin-top:2px;">Market</span>
+              </td>
+            </tr>
+            <!-- Body -->
+            <tr>
+              <td style="padding:36px 32px 8px;">
+                <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">Verifica tu correo</h1>
+                <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">
+                  Usa este código para confirmar tu cuenta en Tauru Market. El código expira en 1 hora.
+                </p>
+                <div style="background-color:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center;">
+                  <span style="font-size:34px;font-weight:700;letter-spacing:10px;color:#003585;font-family:'Courier New',monospace;">{{ .Token }}</span>
+                </div>
+                <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#94a3b8;">
+                  Si no creaste una cuenta en Tauru Market, puedes ignorar este correo.
+                </p>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="padding:28px 32px;border-top:1px solid #f1f5f9;">
+                <p style="margin:0;font-size:11px;color:#94a3b8;">© 2026 Tauru Market · Genética bovina</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

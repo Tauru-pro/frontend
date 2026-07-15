@@ -23,14 +23,28 @@ export class AuthService {
     }
   }
 
-  async register(fullName: string, email: string, password: string) {
+  async register(fullName: string, email: string, password: string, buyerTermsVersion?: string) {
+    // buyer_terms_version is recorded as a BUYER terms_acceptances row by the
+    // handle_new_user trigger (there's no session right after signUp to insert
+    // it client-side).
+    const data_: Record<string, string> = { full_name: fullName };
+    if (buyerTermsVersion) data_['buyer_terms_version'] = buyerTermsVersion;
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: data_ },
     });
     if (error) throw error;
     this.pendingEmail.set(email);
+    return data;
+  }
+
+  // After a privileged role change (e.g. seller self-onboarding), refresh the
+  // session so the new JWT carries the updated user_role / tenant_id claims.
+  async refreshSession() {
+    const { data, error } = await this.supabase.auth.refreshSession();
+    if (error) throw error;
+    this.currentUser.set(data.session?.user ?? null);
     return data;
   }
 
@@ -59,6 +73,9 @@ export class AuthService {
     });
     if (error) throw error;
     this.pendingEmail.set(null);
+    // Fire-and-forget branded welcome email — verifyOtp established a session,
+    // so the function reads the recipient from the caller's JWT.
+    this.supabase.functions.invoke('send-welcome').catch(() => {});
     return data;
   }
 

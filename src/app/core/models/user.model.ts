@@ -30,8 +30,6 @@ export interface SellerProfile {
   userId: string;
   bussinesName: string;
   description?: string;
-  country?: string;
-  businessHours?: string;
   contactPhone?: string;
   logoKey: string;
   city?: City;
@@ -57,8 +55,6 @@ export interface UpdateUserDto {
 export interface UpdateSellerProfileDto {
   bussinesName?: string;
   description?: string;
-  country?: string;
-  businessHours?: string;
   contactPhone?: string;
   cityId?: string;
   address?: string;
