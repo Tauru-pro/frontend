@@ -1,6 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { form, FormField, submit, required, minLength, validate } from '@angular/forms/signals';
 import { AuthService } from '../../../core/auth/auth.service';
 import { navigateByRole } from '../../../core/auth/navigate-by-role';
@@ -41,16 +49,20 @@ import { UserStore } from '../../../core/store/user.store';
           } @else if (!sessionValid()) {
             <div class="text-center">
               <h2 class="text-lg font-semibold text-gray-800 mb-2">Link inválido o vencido</h2>
-              <p class="text-sm text-gray-500 mb-6">
-                Este enlace ya no es válido. Pide a quien te invitó que reenvíe la invitación.
-              </p>
-              <a routerLink="/auth/sign-in" class="inline-block btn-primary px-6 py-2.5 text-sm">
-                Volver a iniciar sesión
-              </a>
+              <p class="text-sm text-gray-500 mb-6">{{ expiredHelp() }}</p>
+              @if (isRecovery()) {
+                <a routerLink="/auth/forgot-password" class="inline-block btn-primary px-6 py-2.5 text-sm">
+                  Pedir un enlace nuevo
+                </a>
+              } @else {
+                <a routerLink="/auth/sign-in" class="inline-block btn-primary px-6 py-2.5 text-sm">
+                  Volver a iniciar sesión
+                </a>
+              }
             </div>
           } @else {
-            <h1 class="text-lg font-semibold text-primary mb-1">Crea tu contraseña</h1>
-            <p class="text-sm text-gray-500 mb-6">Define una contraseña para tu cuenta.</p>
+            <h1 class="text-lg font-semibold text-primary mb-1">{{ title() }}</h1>
+            <p class="text-sm text-gray-500 mb-6">{{ subtitle() }}</p>
 
             <form (submit)="onSubmit(); $event.preventDefault()">
               @if (errorMessage()) {
@@ -134,6 +146,7 @@ export default class SetPasswordComponent implements OnInit {
   private authService = inject(AuthService);
   private userStore = inject(UserStore);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private platformId = inject(PLATFORM_ID);
 
   checkingSession = signal(true);
@@ -141,6 +154,23 @@ export default class SetPasswordComponent implements OnInit {
   showPassword = signal(false);
   saving = signal(false);
   errorMessage = signal<string | null>(null);
+
+  // Same screen, two entry points: an admin invite (no password yet) and the
+  // recovery email (?flow=recovery). Only the wording differs — telling someone
+  // who forgot their password to "ask whoever invited you" makes no sense.
+  private isRecoveryFlow = signal(false);
+  isRecovery = computed(() => this.isRecoveryFlow());
+  title = computed(() => (this.isRecoveryFlow() ? 'Restablece tu contraseña' : 'Crea tu contraseña'));
+  subtitle = computed(() =>
+    this.isRecoveryFlow()
+      ? 'Elige una contraseña nueva para tu cuenta.'
+      : 'Define una contraseña para tu cuenta.'
+  );
+  expiredHelp = computed(() =>
+    this.isRecoveryFlow()
+      ? 'Este enlace ya venció o se usó. Pide uno nuevo para continuar.'
+      : 'Este enlace ya no es válido. Pide a quien te invitó que reenvíe la invitación.'
+  );
 
   model = signal({ password: '', confirmPassword: '' });
   setPasswordForm = form(this.model, (s) => {
@@ -156,6 +186,7 @@ export default class SetPasswordComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    this.isRecoveryFlow.set(this.route.snapshot.queryParamMap.get('flow') === 'recovery');
     if (!isPlatformBrowser(this.platformId)) return;
     const user = await this.authService.loadCurrentUser();
     this.sessionValid.set(!!user);

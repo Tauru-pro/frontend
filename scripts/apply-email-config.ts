@@ -1,6 +1,7 @@
 // Applies email configuration to the Supabase project via the Management API:
-// branded Auth templates (Confirm signup with {{ .Token }}, Invite), site_url,
-// and — when RESEND_API_KEY/EMAIL_FROM are set — Resend SMTP for delivery.
+// branded Auth templates (Confirm signup with {{ .Token }}, Invite, Reset
+// password), site_url, and — when RESEND_API_KEY/EMAIL_FROM are set — Resend
+// SMTP for delivery.
 //
 // Run: set -a; source ./supabase.env; set +a; npx tsx scripts/apply-email-config.ts
 import { readFileSync } from 'node:fs';
@@ -31,6 +32,8 @@ async function main() {
     mailer_templates_confirmation_content: tpl('confirm-signup.html'),
     mailer_subjects_invite: 'Te invitaron como proveedor · Tauru Market',
     mailer_templates_invite_content: tpl('invite.html'),
+    mailer_subjects_recovery: 'Restablece tu contraseña · Tauru Market',
+    mailer_templates_recovery_content: tpl('reset-password.html'),
   };
 
   if (resendKey && from) {

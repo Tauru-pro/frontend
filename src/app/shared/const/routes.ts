@@ -1,6 +1,7 @@
 export enum RoutesApp {
     verifyEmail = 'verify-email',
     setPassword = 'set-password',
+    forgotPassword = 'forgot-password',
     dashboard = 'dashboard',
     callback = 'callback',
     sellers = 'sellers',

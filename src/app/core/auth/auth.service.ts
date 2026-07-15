@@ -86,6 +86,16 @@ export class AuthService {
     if (error) throw error;
   }
 
+  // Sends the recovery email. Supabase answers the same whether or not the
+  // address has an account, so callers must not branch on the result — doing so
+  // would turn this into an "is this email registered?" oracle.
+  async requestPasswordReset(email: string) {
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/set-password?flow=recovery`,
+    });
+    if (error) throw error;
+  }
+
   // Used after an invite/recovery link establishes a session with no
   // password set yet (see features/auth/set-password).
   async setPassword(password: string) {

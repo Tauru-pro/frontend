@@ -124,7 +124,7 @@ import { UserStore } from "../../../core/store/user.store";
             </button>
 
             <div class="mt-4 text-center">
-              <a href="#" class="text-sm text-accent hover:text-accent-dark font-medium transition-colors hover:underline">
+              <a routerLink="/auth/forgot-password" class="text-sm text-accent hover:text-accent-dark font-medium transition-colors hover:underline">
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
