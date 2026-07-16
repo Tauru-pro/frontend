@@ -22,7 +22,7 @@ type AnswerValue = string | string[] | number | null;
     <div class="w-full max-w-2xl mx-auto py-2">
       <div class="text-center mb-6">
         <h1 class="text-2xl font-bold text-primary">Únete como proveedor</h1>
-        <p class="text-sm text-gray-500 mt-1">Completa estos pasos para empezar a vender en Tauru</p>
+        <p class="text-sm text-gray-500 mt-1">Completa estos pasos para empezar a vender en TAUVO</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">

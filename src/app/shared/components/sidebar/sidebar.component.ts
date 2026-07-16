@@ -27,11 +27,13 @@ import { NavItem } from '../../interfaces';
           : 'fixed inset-y-0 left-0 z-30 w-64 bg-primary flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0'"
       >
         <!-- Logo -->
+        <!-- BRAND: replace this "T" box with <img src="/brand/tauvo-logosimbolo.svg">
+             once the file exists — see public/brand/README.md -->
         <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
           <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
             <span class="text-white font-bold text-sm">T</span>
           </div>
-          <span class="text-white font-semibold text-sm tracking-wide">Tauru · Backoffice</span>
+          <span class="text-white font-semibold text-sm tracking-wide">TAUVO · Backoffice</span>
         </div>
 
         <!-- Nav -->

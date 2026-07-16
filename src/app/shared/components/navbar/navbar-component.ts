@@ -33,6 +33,8 @@ import { CartStore } from '../../../core/store/cart.store';
     <header class="bg-primary text-white py-3 sticky top-0 z-50 shadow-xl">
       <div class="max-w-[1400px] mx-auto px-4 flex items-center gap-5">
         <!-- Logo -->
+        <!-- BRAND: replace this "T" box with <img src="/brand/tauvo-wordmark.svg">
+             (or tauvo-lockup.svg) once the file exists — see public/brand/README.md -->
         <a href="/" class="flex items-center gap-2 flex-shrink-0">
           <div
             class="w-9 h-9 bg-secondary rounded-lg flex items-center justify-center font-bold text-white text-lg"
@@ -40,7 +42,7 @@ import { CartStore } from '../../../core/store/cart.store';
             T
           </div>
           <div class="leading-none">
-            <span class="text-xl font-bold text-white">Tauru</span>
+            <span class="text-xl font-bold text-white">TAUVO</span>
             <span class="text-accent font-bold text-xl">.</span>
             <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>
           </div>

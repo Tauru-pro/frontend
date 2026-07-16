@@ -77,7 +77,7 @@ import { CustomerProfileService } from '../../../core/services/customer-profile.
       @if (isCustomer()) {
         <div class="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 class="text-lg font-bold">¿Quieres vender en Tauru?</h3>
+            <h3 class="text-lg font-bold">¿Quieres vender en TAUVO?</h3>
             <p class="text-sm text-white/80 mt-1 max-w-md">
               Únete como proveedor y publica tu genética bovina. Completa unos datos y empieza a vender.
             </p>

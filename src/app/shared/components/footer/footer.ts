@@ -9,6 +9,8 @@ import { RouterLink } from '@angular/router';
       <div class="max-w-[1400px] mx-auto px-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           <!-- Brand column -->
+          <!-- BRAND: replace this "T" box with <img src="/brand/tauvo-lockup-white.svg">
+               on the dark footer once the file exists — see public/brand/README.md -->
           <div class="lg:col-span-2">
             <div class="flex items-center gap-2 mb-4">
               <div
@@ -17,7 +19,7 @@ import { RouterLink } from '@angular/router';
                 T
               </div>
               <div class="leading-none">
-                <span class="text-xl font-bold text-white">Tauru</span>
+                <span class="text-xl font-bold text-white">TAUVO</span>
                 <span class="text-accent font-bold text-xl">.</span>
                 <div class="text-[10px] text-gray-500 tracking-widest uppercase">Market</div>
               </div>
@@ -86,7 +88,7 @@ import { RouterLink } from '@angular/router';
         <div
           class="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
         >
-          <p class="text-xs text-gray-600">© 2026 Tauru Market. Todos los derechos reservados.</p>
+          <p class="text-xs text-gray-600">© 2026 TAUVO Market. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>`,

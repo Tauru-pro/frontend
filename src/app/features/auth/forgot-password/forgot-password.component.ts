@@ -13,11 +13,13 @@ import { AuthService } from '../../../core/auth/auth.service';
 
       <!-- Logo -->
       <div class="flex justify-center mb-8">
+        <!-- BRAND: replace this "T" box with <img src="/brand/tauvo-lockup.svg"> once
+             the file exists — see public/brand/README.md -->
         <a routerLink="/" class="flex items-center gap-2.5">
           <div class="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-white text-xl">T</div>
           <div class="leading-none">
             <div class="flex items-baseline gap-0.5">
-              <span class="text-2xl font-bold text-primary">Tauru</span>
+              <span class="text-2xl font-bold text-primary">TAUVO</span>
               <span class="text-accent font-bold text-2xl">.</span>
             </div>
             <div class="text-[10px] text-gray-400 tracking-widest uppercase">Market</div>

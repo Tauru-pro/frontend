@@ -131,7 +131,7 @@ interface SettingsFormModel {
               <input
                 type="text"
                 [formField]="settingsForm.name"
-                placeholder="Ej. Tauru Pro"
+                placeholder="Ej. TAUVO"
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
               />
               @if (settingsForm.name().touched() && settingsForm.name().errors().length) {

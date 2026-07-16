@@ -1,34 +1,83 @@
+/* IBM Plex Sans is the working fallback until the licensed TAUVO fonts
+   (Gotham/Inter + Montserrat) are added — see the @font-face slot below. */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
+/* ───────────────────────────────────────────────────────────────────────────
+   TAUVO brand fonts (files in public/brand/fonts/, served at /brand/fonts/).
+   Gotham ships only in Bold; Montserrat is declared in the weights the UI uses
+   (400/500/600/700) so browsers don't synthesize faux-bold. Non-bold headings
+   fall back to Inter/IBM Plex since no lighter Gotham weight is available.
+   ─────────────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Gotham';
+  src: url('/brand/fonts/Gotham Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/brand/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/brand/fonts/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/brand/fonts/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/brand/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  /* ── Primario: Cobalt Blue ── */
-  --color-primary: #060d1a
-    /*#004aad*/
-  ;
-  --color-primary-dark: #003585;
-  --color-primary-light: #e8f0fb;
+  /* ── Primario: Verde Primario (Manual TAUVO §03) ── */
+  --color-primary: #1b7a3f;
+  --color-primary-dark: #0d4a26; /* Verde Oscuro */
+  --color-primary-light: #e6f4ec; /* tint de primario para superficies *-light */
 
-  /* ── Secundario: Green ── */
-  --color-secondary: #00bf63;
-  --color-secondary-dark: #009e52;
-  --color-secondary-light: #e6fff3;
+  /* ── Secundario: Verde Claro ── */
+  --color-secondary: #4caf7d;
+  --color-secondary-dark: #1b7a3f; /* Verde Primario */
+  --color-secondary-light: #eaf6f0;
 
-  /* ── Acento: Amber (cálido, contrasta con cobalt + green) ── */
-  --color-accent: #f59e0b;
-  --color-accent-dark: #d97706;
-  --color-accent-light: #fef3c7;
+  /* ── Acento: Verde Claro (la marca no tiene ámbar; foreground oscuro por
+     contraste — ver .btn-accent/.badge-accent) ── */
+  --color-accent: #4caf7d;
+  --color-accent-dark: #1b7a3f;
+  --color-accent-light: #eaf6f0;
+
+  /* ── Soporte: Azul Tormenta (único color frío; contraste/info) ── */
+  --color-support: #a4c5d8;
 
   /* ── Fondos ── */
   --color-surface: #f1f5f9;
-  --color-surface-muted: #e8f0fb;
-  --color-card: #ffffff;
+  --color-surface-muted: #e6f4ec;
+  --color-card: #ffffff; /* Blanco Corporativo */
 
-  /* ── UI oscuro ── */
-  --color-dark: #0a1628;
-  --color-footer: #060d1a;
+  /* ── UI oscuro: Negro Corporativo ── */
+  --color-dark: #1a1a1a;
+  --color-footer: #1a1a1a;
 
-  --font-family-sans: 'IBM Plex Sans', sans-serif;
+  /* Titulares/CTAs → Gotham/Inter; texto general → Montserrat.
+     IBM Plex Sans queda como fallback hasta cargar las fuentes de marca. */
+  --font-family-heading: 'Gotham', 'Inter', 'IBM Plex Sans', sans-serif;
+  --font-family-sans: 'Montserrat', 'IBM Plex Sans', sans-serif;
 }
 
 *,
@@ -41,8 +90,16 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-family-sans);
+  color: #2d2d2d; /* Carbón Tipográfico */
   background-color: var(--color-surface);
+}
+
+/* Titulares y nombre de marca → familia de titulares (Gotham/Inter). */
+h1,
+h2,
+h3 {
+  font-family: var(--font-family-heading);
 }
 
 @layer utilities {
@@ -54,8 +111,9 @@ body {
     @apply border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold rounded-xl transition-colors;
   }
 
+  /* Verde Claro accent: dark text passes WCAG AA where white would fail. */
   .btn-accent {
-    @apply bg-accent text-white font-semibold rounded-xl hover:bg-accent-dark transition-colors;
+    @apply bg-accent text-[#2d2d2d] font-semibold rounded-xl hover:bg-accent-dark hover:text-white transition-colors;
   }
 
   .btn-secondary {
@@ -75,7 +133,7 @@ body {
   }
 
   .badge-accent {
-    @apply bg-accent text-white text-[10px] font-bold px-2 py-0.5 rounded-full;
+    @apply bg-accent text-[#2d2d2d] text-[10px] font-bold px-2 py-0.5 rounded-full;
   }
 
   .badge-secondary {
