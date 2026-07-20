@@ -19,6 +19,7 @@ export default <Routes>[
   { path: `${RoutesApp.onboardingSurvey}/new`, canActivate: [superAdminGuard], loadComponent: () => import('./onboarding-survey/survey-question-form.component') },
   { path: `${RoutesApp.onboardingSurvey}/:id/edit`, canActivate: [superAdminGuard], loadComponent: () => import('./onboarding-survey/survey-question-form.component') },
   { path: 'products', canActivate: [superAdminGuard], loadComponent: () => import('./products/products.component') },
+  { path: 'products/bull/:bullId', canActivate: [superAdminGuard], loadComponent: () => import('./products/product-review.component') },
   { path: 'products/:id', canActivate: [superAdminGuard], loadComponent: () => import('./products/product-review.component') },
   { path: 'inventory', loadComponent: () => import('./inventory/inventory-overview.component') },
   { path: RoutesApp.settings, loadComponent: () => import('./settings/marketplace-settings.component') },

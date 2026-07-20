@@ -61,6 +61,16 @@ import { NavItem } from '../../interfaces';
 
         <!-- User info + sign out -->
         <div class="px-3 pb-4 border-t border-white/10 pt-4">
+          <a
+            [routerLink]="'/'"
+            (click)="sidebarOpen.set(false)"
+            class="w-full flex items-center gap-2 px-3 py-2 mb-3 rounded-xl text-sm text-white/60 hover:bg-white/5 hover:text-white transition-all"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            Ir a la tienda
+          </a>
           <div class="flex items-center gap-3 px-3 mb-3">
             <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
               <span class="text-white text-xs font-bold">{{ userInitial() }}</span>

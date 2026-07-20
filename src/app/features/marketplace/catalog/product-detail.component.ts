@@ -10,13 +10,7 @@ import { RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CartStore } from '../../../core/store/cart.store';
-import { Product, ProductMedia, StrawType } from '../../../core/models/product.model';
-
-const STRAW_LABELS: Record<StrawType, string> = {
-  CONVENTIONAL: 'Convencional',
-  SEXADO_MALE: 'Sexado ♂',
-  SEXADO_FEMALE: 'Sexado ♀',
-};
+import { Product, ProductMedia, StrawType, STRAW_LABELS } from '../../../core/models/product.model';
 
 @Component({
   selector: 'app-product-detail',

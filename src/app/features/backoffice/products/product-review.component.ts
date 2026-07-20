@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -10,7 +11,14 @@ import { DecimalPipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormField, form, required, submit } from '@angular/forms/signals';
 import { ProductService } from '../../../core/services/product.service';
-import { Product, ProductMedia, ProductType, StrawType } from '../../../core/models/product.model';
+import {
+  Product,
+  ProductMedia,
+  ProductStatus,
+  ProductType,
+  StrawType,
+  STRAW_LABELS,
+} from '../../../core/models/product.model';
 
 @Component({
   selector: 'app-product-review',
@@ -30,7 +38,9 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
           </svg>
         </a>
         <div>
-          <h1 class="text-xl font-bold text-gray-900">Revisión de producto</h1>
+          <h1 class="text-xl font-bold text-gray-900">
+            {{ isBullMode() ? 'Revisión de toro' : 'Revisión de producto' }}
+          </h1>
           <p class="text-sm text-gray-500 mt-0.5">Verifica la información antes de aprobar o rechazar</p>
         </div>
       </div>
@@ -45,85 +55,115 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
         <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
           {{ loadError() }}
         </div>
-      } @else if (product(); as p) {
+      } @else {
 
-        <!-- Info general -->
-        <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0">
-              <div class="flex flex-wrap items-center gap-2 mb-2">
-                <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + typeClass(p.productType)">
-                  {{ typeLabel(p.productType) }}
-                </span>
-                @if (p.strawType) {
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                    {{ strawLabel(p.strawType) }}
-                  </span>
-                }
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">
-                  En revisión
-                </span>
-              </div>
-              <h2 class="text-lg font-bold text-gray-900">{{ p.name }}</h2>
-              @if (p.description) {
-                <p class="text-sm text-gray-500 mt-2 leading-relaxed">{{ p.description }}</p>
-              }
-            </div>
-            <div class="text-right flex-shrink-0">
-              <p class="text-2xl font-bold text-gray-900">\${{ p.price | number:'1.0-0' }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">por unidad</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-50">
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wider">Pedido mínimo</p>
-              <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ p.minOrderQuantity }} unidad(es)</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-400 uppercase tracking-wider">Stock disponible</p>
-              <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ p.stockQuantity }} unidad(es)</p>
-            </div>
-            @if (p.slug) {
-              <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wider">Slug</p>
-                <p class="text-sm font-medium text-gray-500 mt-0.5 font-mono truncate">{{ p.slug }}</p>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Información del toro (solo STRAW) -->
-        @if (p.productType === 'STRAW' && p.bull) {
-          <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
-            <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Toro donante</h3>
+        <!-- ── Modo TORO ── -->
+        @if (isBullMode() && bull(); as b) {
+          <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                 </svg>
               </div>
-              <div>
-                <p class="font-semibold text-gray-900">{{ p.bull.name }}</p>
-                @if (p.bull.breedName) {
-                  <p class="text-sm text-gray-400">{{ p.bull.breedName }}</p>
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">Toro</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">En revisión</span>
+                </div>
+                <h2 class="text-lg font-bold text-gray-900">{{ b.name }}</h2>
+                @if (b.breedName) {
+                  <p class="text-sm text-gray-400">{{ b.breedName }}</p>
                 }
               </div>
+            </div>
+            @if (bullDescription()) {
+              <p class="text-sm text-gray-500 leading-relaxed pt-2 border-t border-gray-50">{{ bullDescription() }}</p>
+            }
+          </div>
+
+          <!-- Pajillas -->
+          <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">
+              Pajillas ({{ straws().length }})
+            </h3>
+            <div class="divide-y divide-gray-50">
+              @for (s of straws(); track s.id) {
+                <div class="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                        {{ strawLabel(s.strawType) }}
+                      </span>
+                      <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + statusClass(s.status)">
+                        {{ statusLabel(s.status) }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">
+                      Pedido mínimo: {{ s.minOrderQuantity }} · Stock: {{ s.stockQuantity }}
+                    </p>
+                  </div>
+                  <p class="text-lg font-bold text-gray-900 flex-shrink-0">\${{ s.price | number:'1.0-0' }}</p>
+                </div>
+              }
             </div>
           </div>
         }
 
-        <!-- Imágenes -->
-        @if (images(p).length > 0) {
+        <!-- ── Modo INSUMO ── -->
+        @if (!isBullMode() && product(); as p) {
+          <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                  <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + typeClass(p.productType)">
+                    {{ typeLabel(p.productType) }}
+                  </span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">
+                    En revisión
+                  </span>
+                </div>
+                <h2 class="text-lg font-bold text-gray-900">{{ p.name }}</h2>
+                @if (p.description) {
+                  <p class="text-sm text-gray-500 mt-2 leading-relaxed">{{ p.description }}</p>
+                }
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="text-2xl font-bold text-gray-900">\${{ p.price | number:'1.0-0' }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">por unidad</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-50">
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Pedido mínimo</p>
+                <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ p.minOrderQuantity }} unidad(es)</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider">Stock disponible</p>
+                <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ p.stockQuantity }} unidad(es)</p>
+              </div>
+              @if (p.slug) {
+                <div>
+                  <p class="text-xs text-gray-400 uppercase tracking-wider">Slug</p>
+                  <p class="text-sm font-medium text-gray-500 mt-0.5 font-mono truncate">{{ p.slug }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Imágenes (toro o producto) -->
+        @if (images().length > 0) {
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
             <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">
-              Imágenes ({{ images(p).length }})
+              Imágenes ({{ images().length }})
             </h3>
             <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              @for (url of images(p); track url; let i = $index) {
+              @for (url of images(); track url; let i = $index) {
                 <div class="relative aspect-square rounded-xl overflow-hidden bg-gray-50">
                   <img [src]="url" class="w-full h-full object-cover" [alt]="'Imagen ' + (i + 1)"/>
-                  @if (i === coverIndex(p)) {
+                  @if (i === coverIndex()) {
                     <span class="absolute top-1 left-1 bg-primary text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
                       Portada
                     </span>
@@ -135,7 +175,7 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
         }
 
         <!-- Video -->
-        @if (video(p); as vid) {
+        @if (video(); as vid) {
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
             <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Video</h3>
             <div class="rounded-xl overflow-hidden bg-black">
@@ -149,7 +189,7 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
         }
 
         <!-- Documento (PDF genética) -->
-        @if (document(p); as doc) {
+        @if (document(); as doc) {
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Prueba genética</h3>
@@ -175,9 +215,13 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
         }
 
         <!-- Decisión -->
-        @if (p.status === 'PENDING_VALIDATION') {
+        @if (canDecide()) {
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
             <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Decisión</h3>
+
+            @if (isBullMode()) {
+              <p class="text-xs text-gray-500 -mt-2">La decisión se aplica a las {{ pendingStraws().length }} pajilla(s) pendientes del toro.</p>
+            }
 
             @if (actionError()) {
               <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
@@ -188,7 +232,7 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
             <div class="flex flex-wrap gap-3">
               <button
                 type="button"
-                (click)="approve(p.id)"
+                (click)="approve()"
                 [disabled]="processing()"
                 class="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-green-500 rounded-xl hover:bg-green-600 disabled:opacity-60 transition-colors"
               >
@@ -228,11 +272,9 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
               </button>
             </div>
           </div>
-        }
-
-        @if (p.status !== 'PENDING_VALIDATION') {
+        } @else {
           <div class="bg-gray-50 rounded-2xl border border-gray-100 p-6 text-center">
-            <p class="text-sm text-gray-400">Este producto ya fue procesado. Estado actual: <strong class="text-gray-700">{{ p.status }}</strong></p>
+            <p class="text-sm text-gray-400">No hay elementos pendientes de revisión.</p>
           </div>
         }
 
@@ -250,9 +292,12 @@ import { Product, ProductMedia, ProductType, StrawType } from '../../../core/mod
               </svg>
             </div>
             <h3 class="font-semibold text-gray-900">
-              {{ modal()!.action === 'REJECTED' ? 'Rechazar producto' : 'Solicitar cambios' }}
+              {{ modal()!.action === 'REJECTED' ? 'Rechazar' : 'Solicitar cambios' }}
             </h3>
           </div>
+          @if (isBullMode()) {
+            <p class="text-xs text-gray-500 -mt-1">Se aplicará a las {{ pendingStraws().length }} pajilla(s) pendientes del toro.</p>
+          }
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">
               {{ modal()!.action === 'REJECTED' ? 'Motivo del rechazo' : 'Cambios solicitados' }}
@@ -298,7 +343,9 @@ export default class ProductReviewComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
   productService = inject(ProductService);
 
+  mode = signal<'bull' | 'supply'>('supply');
   product = signal<Product | null>(null);
+  straws = signal<Product[]>([]);
   loading = signal(true);
   loadError = signal<string | null>(null);
   actionError = signal<string | null>(null);
@@ -310,28 +357,67 @@ export default class ProductReviewComponent implements OnInit {
     required(s.notes, { message: 'El motivo es requerido' });
   });
 
+  isBullMode = computed(() => this.mode() === 'bull');
+  bull = computed(() => this.straws()[0]?.bull ?? null);
+  bullDescription = computed(() => this.straws()[0]?.description ?? null);
+  pendingStraws = computed(() => this.straws().filter((s) => s.status === 'PENDING_VALIDATION'));
+  mediaList = computed<ProductMedia[]>(() =>
+    this.isBullMode() ? this.straws()[0]?.media ?? [] : this.product()?.media ?? [],
+  );
+  canDecide = computed(() =>
+    this.isBullMode() ? this.pendingStraws().length > 0 : this.product()?.status === 'PENDING_VALIDATION',
+  );
+
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id')!;
-    this.productService.getProduct(id).subscribe({
-      next: (p) => {
-        this.product.set(p);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loadError.set('No se pudo cargar el producto. Intenta de nuevo.');
-        this.loading.set(false);
-      },
-    });
+    const bullId = this.route.snapshot.paramMap.get('bullId');
+    const id = this.route.snapshot.paramMap.get('id');
+    if (bullId) {
+      this.mode.set('bull');
+      this.productService.getStrawProductsByBull(bullId).subscribe({
+        next: (straws) => {
+          this.straws.set(straws);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loadError.set('No se pudo cargar el toro. Intenta de nuevo.');
+          this.loading.set(false);
+        },
+      });
+    } else if (id) {
+      this.mode.set('supply');
+      this.productService.getProduct(id).subscribe({
+        next: (p) => {
+          this.product.set(p);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loadError.set('No se pudo cargar el producto. Intenta de nuevo.');
+          this.loading.set(false);
+        },
+      });
+    } else {
+      this.loadError.set('No se pudo cargar el producto. Intenta de nuevo.');
+      this.loading.set(false);
+    }
   }
 
-  async approve(id: string): Promise<void> {
+  /** Ids de productos pendientes objetivo de una acción. */
+  private targetIds(): string[] {
+    return this.isBullMode()
+      ? this.pendingStraws().map((s) => s.id)
+      : this.product()
+        ? [this.product()!.id]
+        : [];
+  }
+
+  async approve(): Promise<void> {
     this.processing.set(true);
     this.actionError.set(null);
     try {
-      await this.productService.approveProduct(id);
+      await this.productService.validateProducts(this.targetIds(), 'APPROVED');
       this.router.navigate(['/admin/products']);
     } catch {
-      this.actionError.set('No se pudo aprobar el producto. Intenta de nuevo.');
+      this.actionError.set('No se pudo aprobar. Intenta de nuevo.');
       this.processing.set(false);
     }
   }
@@ -343,18 +429,13 @@ export default class ProductReviewComponent implements OnInit {
 
   submitModal(): void {
     const m = this.modal();
-    const p = this.product();
-    if (!m || !p) return;
+    if (!m) return;
     submit(this.notesForm, async () => {
       const notes = this.notesModel().notes.trim();
       this.processing.set(true);
       this.actionError.set(null);
       try {
-        if (m.action === 'REJECTED') {
-          await this.productService.rejectProduct(p.id, notes);
-        } else {
-          await this.productService.requestChanges(p.id, notes);
-        }
+        await this.productService.validateProducts(this.targetIds(), m.action, notes);
         this.router.navigate(['/admin/products']);
       } catch {
         this.actionError.set('No se pudo procesar la acción. Intenta de nuevo.');
@@ -363,26 +444,26 @@ export default class ProductReviewComponent implements OnInit {
     });
   }
 
-  images(p: Product): string[] {
-    const sorted = [...p.media]
-      .filter(m => m.mediaType === 'image')
+  images(): string[] {
+    const sorted = [...this.mediaList()]
+      .filter((m) => m.mediaType === 'image')
       .sort((a, b) => (b.isCover ? 1 : 0) - (a.isCover ? 1 : 0));
-    return sorted.map(m => this.productService.getMediaPublicUrl(m.storagePath));
+    return sorted.map((m) => this.productService.getMediaPublicUrl(m.storagePath));
   }
 
-  coverIndex(p: Product): number {
-    const sorted = [...p.media]
-      .filter(m => m.mediaType === 'image')
+  coverIndex(): number {
+    const sorted = [...this.mediaList()]
+      .filter((m) => m.mediaType === 'image')
       .sort((a, b) => (b.isCover ? 1 : 0) - (a.isCover ? 1 : 0));
-    return sorted.findIndex(m => m.isCover);
+    return sorted.findIndex((m) => m.isCover);
   }
 
-  video(p: Product): ProductMedia | null {
-    return p.media.find(m => m.mediaType === 'video') ?? null;
+  video(): ProductMedia | null {
+    return this.mediaList().find((m) => m.mediaType === 'video') ?? null;
   }
 
-  document(p: Product): ProductMedia | null {
-    return p.media.find(m => m.mediaType === 'document') ?? null;
+  document(): ProductMedia | null {
+    return this.mediaList().find((m) => m.mediaType === 'document') ?? null;
   }
 
   safePdfUrl(storagePath: string): SafeResourceUrl {
@@ -400,12 +481,32 @@ export default class ProductReviewComponent implements OnInit {
   }
 
   strawLabel(type: StrawType | null): string {
-    if (!type) return '';
-    const map: Record<StrawType, string> = {
-      SEXADO_MALE: 'Sexado Macho',
-      SEXADO_FEMALE: 'Sexado Hembra',
-      CONVENTIONAL: 'Convencional',
+    return type ? STRAW_LABELS[type] : '';
+  }
+
+  statusClass(status: ProductStatus): string {
+    const map: Record<ProductStatus, string> = {
+      ACTIVE: 'bg-green-50 text-green-700',
+      DRAFT: 'bg-gray-100 text-gray-600',
+      SUSPENDED: 'bg-red-50 text-red-500',
+      OUT_OF_STOCK: 'bg-orange-50 text-orange-600',
+      PENDING_VALIDATION: 'bg-yellow-50 text-yellow-700',
+      REJECTED: 'bg-red-50 text-red-700',
+      CHANGES_REQUESTED: 'bg-orange-50 text-orange-700',
     };
-    return map[type] ?? type;
+    return map[status] ?? 'bg-gray-100 text-gray-600';
+  }
+
+  statusLabel(status: ProductStatus): string {
+    const map: Record<ProductStatus, string> = {
+      ACTIVE: 'Activo',
+      DRAFT: 'Borrador',
+      SUSPENDED: 'Suspendido',
+      OUT_OF_STOCK: 'Sin stock',
+      PENDING_VALIDATION: 'En revisión',
+      REJECTED: 'Rechazado',
+      CHANGES_REQUESTED: 'Con observaciones',
+    };
+    return map[status] ?? status;
   }
 }

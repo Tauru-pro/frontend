@@ -62,6 +62,48 @@ export function sellerWelcome(name: string): { subject: string; html: string } {
   return { subject: 'Tu cuenta de proveedor está lista', html: shell('welcome-seller', body) };
 }
 
+const notesBlock = (label: string, notes: string) => `
+  <div style="margin:0 0 24px;padding:14px 16px;background-color:#fff7ed;border:1px solid #fed7aa;border-radius:12px;">
+    <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#c2410c;">${label}</p>
+    <p style="margin:0;font-size:14px;line-height:1.6;color:#7c2d12;white-space:pre-line;">${notes}</p>
+  </div>`;
+
+export function productApproved(name: string, itemName: string): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">¡Buenas noticias, ${name}! ✅</h1>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">Tu producto <strong>«${itemName}»</strong> fue revisado y <strong style="color:#00bf63;">aprobado</strong>. Ya está publicado y visible para los compradores en el catálogo de Tauru Market.</p>
+    ${button(`${APP_URL}/seller/products`, 'Ver mis productos', '#00bf63')}`;
+  return { subject: `Tu producto «${itemName}» fue aprobado`, html: shell('product-approved', body) };
+}
+
+export function productRejected(
+  name: string,
+  itemName: string,
+  notes: string,
+): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">Revisión de tu producto</h1>
+    <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#64748b;">Hola ${name}, tu producto <strong>«${itemName}»</strong> fue <strong style="color:#ef4444;">rechazado</strong> durante la revisión.</p>
+    ${notesBlock('Motivo del rechazo', notes)}
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">Puedes ajustar la información y volver a enviarlo a revisión desde tu panel.</p>
+    ${button(`${APP_URL}/seller/products`, 'Revisar y ajustar', '#f59e0b')}`;
+  return { subject: `Tu producto «${itemName}» fue rechazado`, html: shell('product-rejected', body) };
+}
+
+export function productChangesRequested(
+  name: string,
+  itemName: string,
+  notes: string,
+): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">Tu producto necesita cambios</h1>
+    <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#64748b;">Hola ${name}, para publicar <strong>«${itemName}»</strong> necesitamos que hagas algunos ajustes.</p>
+    ${notesBlock('Cambios solicitados', notes)}
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">Realiza los cambios y vuelve a enviarlo a revisión desde tu panel.</p>
+    ${button(`${APP_URL}/seller/products`, 'Ajustar y reenviar', '#f59e0b')}`;
+  return { subject: `«${itemName}» necesita cambios`, html: shell('product-changes', body) };
+}
+
 export function nameFromClaims(claims: Record<string, unknown>): string {
   const meta = (claims['user_metadata'] as Record<string, unknown> | undefined) ?? {};
   const full = (meta['full_name'] as string | undefined)?.trim();

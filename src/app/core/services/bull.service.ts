@@ -12,7 +12,6 @@ import {
   PaginatedBulls,
   UpdateBullDto,
 } from '../models/bull.model';
-import { PaginatedResponse } from '../models/product.model';
 
 interface BullRow {
   id: string;
@@ -281,49 +280,5 @@ export class BullService {
 
   getMediaPublicUrl(storagePath: string): string {
     return this.supabase.storage.from(this.bucket).getPublicUrl(storagePath).data.publicUrl;
-  }
-
-  getMyBullsForSelect(limit = 100): Observable<{ id: string; name: string }[]> {
-    return from(
-      this.supabase
-        .from('bulls')
-        .select('id, name')
-        .order('name', { ascending: true })
-        .limit(limit),
-    ).pipe(
-      map(({ data, error }) => {
-        if (error) throw error;
-        return (data ?? []) as { id: string; name: string }[];
-      }),
-    );
-  }
-
-  getCatalogBulls(page = 1, limit = 12): Observable<PaginatedBulls> {
-    const from_ = (page - 1) * limit;
-    const to = from_ + limit - 1;
-    return from(
-      this.supabase
-        .from('bulls')
-        .select(BULL_SELECT, { count: 'exact' })
-        .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: false })
-        .range(from_, to),
-    ).pipe(
-      switchMap(({ data, error, count }) => {
-        if (error) throw error;
-        const rows = (data as unknown as BullRow[]) ?? [];
-        const total = count ?? 0;
-        if (rows.length === 0) return of({ data: [], total, page, limit, totalPages: Math.ceil(total / limit) });
-        return this.fetchBullMedia(rows.map((r) => r.id)).pipe(
-          map((mediaMap) => ({
-            data: rows.map((r) => mapBullRow({ ...r, product_media: mediaMap.get(r.id) ?? [] })),
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-          })),
-        );
-      }),
-    );
   }
 }

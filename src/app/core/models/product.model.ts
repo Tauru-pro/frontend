@@ -1,5 +1,19 @@
 export type ProductType = 'STRAW' | 'SUPPLIES';
 export type StrawType = 'SEXADO_MALE' | 'SEXADO_FEMALE' | 'CONVENTIONAL';
+
+/** Orden canónico de los tipos de pajilla (para iterar en formularios/listas). */
+export const STRAW_TYPES: readonly StrawType[] = ['CONVENTIONAL', 'SEXADO_MALE', 'SEXADO_FEMALE'];
+
+/** Etiquetas legibles de cada tipo de pajilla. Fuente única para formularios, listas y marketplace. */
+export const STRAW_LABELS: Record<StrawType, string> = {
+  CONVENTIONAL: 'Convencional',
+  SEXADO_MALE: 'Sexado ♂',
+  SEXADO_FEMALE: 'Sexado ♀',
+};
+
+export function strawLabel(type: StrawType | null | undefined): string {
+  return type ? STRAW_LABELS[type] : '';
+}
 export type ProductStatus =
   | 'DRAFT'
   | 'PENDING_VALIDATION'
@@ -61,6 +75,16 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+/**
+ * Agrupación de las pajillas (productos STRAW) de un mismo toro para la lista del vendedor.
+ * `media` es la media del toro (imágenes/video/PDF), no de los productos.
+ */
+export interface StrawListing {
+  bull: ProductBull;
+  straws: Product[];
+  media: ProductMedia[];
 }
 
 export interface CreateProductDto {

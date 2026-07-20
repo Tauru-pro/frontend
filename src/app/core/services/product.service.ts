@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { catchError, from, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, from, map, Observable, of, switchMap } from 'rxjs';
 import { SupabaseClientService } from '../auth/supabase-client';
 import { getJwtClaim } from '../auth/jwt-claims';
 import {
@@ -10,6 +10,7 @@ import {
   ProductMedia,
   ProductStatus,
   ProductType,
+  StrawListing,
   StrawType,
   UpdateProductDto,
 } from '../models/product.model';
@@ -91,6 +92,20 @@ function mapProductRow(row: ProductRow): Product {
   };
 }
 
+function groupStrawsByBull(products: Product[]): StrawListing[] {
+  const map = new Map<string, StrawListing>();
+  for (const p of products) {
+    if (!p.bullId || !p.bull) continue;
+    const existing = map.get(p.bullId);
+    if (existing) {
+      existing.straws.push(p);
+    } else {
+      map.set(p.bullId, { bull: p.bull, straws: [p], media: p.media });
+    }
+  }
+  return [...map.values()];
+}
+
 function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
   const map = new Map<string, MediaRow[]>();
   for (const m of rows) {
@@ -148,6 +163,48 @@ export class ProductService {
     );
   }
 
+  private fetchBullMedia(ids: string[]): Observable<Map<string, MediaRow[]>> {
+    if (ids.length === 0) return of(new Map());
+    return from(
+      this.supabase
+        .from('product_media')
+        .select(MEDIA_SELECT)
+        .in('entity_id', ids)
+        .eq('entity_type', 'bull'),
+    ).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return groupMediaById((data ?? []) as MediaRow[]);
+      }),
+    );
+  }
+
+  /**
+   * Mapea filas de producto adjuntando su media. Las pajillas (STRAW) toman la media de su
+   * toro (`entity_type='bull'`), ya que las imágenes/recursos pertenecen al toro; los insumos
+   * toman su propia media de producto.
+   */
+  private mapRowsWithMedia(rows: ProductRow[]): Observable<Product[]> {
+    if (rows.length === 0) return of([]);
+    const productIds = rows.map((r) => r.id);
+    const bullIds = [
+      ...new Set(
+        rows.filter((r) => r.product_type === 'STRAW' && r.bull_id).map((r) => r.bull_id as string),
+      ),
+    ];
+    return forkJoin([this.fetchProductMedia(productIds), this.fetchBullMedia(bullIds)]).pipe(
+      map(([productMedia, bullMedia]) =>
+        rows.map((r) => {
+          const media =
+            r.product_type === 'STRAW' && r.bull_id
+              ? bullMedia.get(r.bull_id) ?? []
+              : productMedia.get(r.id) ?? [];
+          return mapProductRow({ ...r, product_media: media });
+        }),
+      ),
+    );
+  }
+
   getMyProducts(
     page = 1,
     limit = 10,
@@ -170,9 +227,9 @@ export class ProductService {
         const rows = (data as unknown as ProductRow[]) ?? [];
         const total = count ?? 0;
         if (rows.length === 0) return of({ data: [], total, page, limit, totalPages: Math.ceil(total / limit) });
-        return this.fetchProductMedia(rows.map((r) => r.id)).pipe(
-          map((mediaMap) => ({
-            data: rows.map((r) => mapProductRow({ ...r, product_media: mediaMap.get(r.id) ?? [] })),
+        return this.mapRowsWithMedia(rows).pipe(
+          map((products) => ({
+            data: products,
             total,
             page,
             limit,
@@ -215,9 +272,9 @@ export class ProductService {
         const rows = (data as unknown as ProductRow[]) ?? [];
         const total = count ?? 0;
         if (rows.length === 0) return of({ data: [], total, page, limit, totalPages: Math.ceil(total / limit) });
-        return this.fetchProductMedia(rows.map((r) => r.id)).pipe(
-          map((mediaMap) => ({
-            data: rows.map((r) => mapProductRow({ ...r, product_media: mediaMap.get(r.id) ?? [] })),
+        return this.mapRowsWithMedia(rows).pipe(
+          map((products) => ({
+            data: products,
             total,
             page,
             limit,
@@ -247,6 +304,43 @@ export class ProductService {
             return mapProductRow({ ...row, product_media: (mediaData ?? []) as MediaRow[] });
           }),
         );
+      }),
+    );
+  }
+
+  /** Devuelve las pajillas (productos STRAW) de un toro. Para cargar el modo edición agrupado. */
+  getStrawProductsByBull(bullId: string): Observable<Product[]> {
+    return from(
+      this.supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('bull_id', bullId)
+        .eq('product_type', 'STRAW')
+        .order('created_at', { ascending: true }),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        const rows = (data as unknown as ProductRow[]) ?? [];
+        return this.mapRowsWithMedia(rows);
+      }),
+    );
+  }
+
+  /** Mis pajillas agrupadas por toro (una entrada por toro con todas sus pajillas y la media del toro). */
+  getMyStrawListings(limit = 200): Observable<StrawListing[]> {
+    return from(
+      this.supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('product_type', 'STRAW')
+        .order('created_at', { ascending: false })
+        .limit(limit),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        const rows = (data as unknown as ProductRow[]) ?? [];
+        if (rows.length === 0) return of<StrawListing[]>([]);
+        return this.mapRowsWithMedia(rows).pipe(map((products) => groupStrawsByBull(products)));
       }),
     );
   }
@@ -287,6 +381,45 @@ export class ProductService {
     return this.getAllPendingValidation(1, 1).pipe(
       map(res => res.total),
       catchError(() => of(0)),
+    );
+  }
+
+  /** Pajillas pendientes de validación, agrupadas por toro (para la revisión del admin). */
+  getPendingStrawListings(limit = 200): Observable<StrawListing[]> {
+    return from(
+      this.supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('status', 'PENDING_VALIDATION')
+        .eq('product_type', 'STRAW')
+        .order('updated_at', { ascending: true })
+        .limit(limit),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        const rows = (data as unknown as ProductRow[]) ?? [];
+        if (rows.length === 0) return of<StrawListing[]>([]);
+        return this.mapRowsWithMedia(rows).pipe(map((products) => groupStrawsByBull(products)));
+      }),
+    );
+  }
+
+  /** Insumos pendientes de validación. */
+  getPendingSupplies(limit = 200): Observable<Product[]> {
+    return from(
+      this.supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('status', 'PENDING_VALIDATION')
+        .eq('product_type', 'SUPPLIES')
+        .order('updated_at', { ascending: true })
+        .limit(limit),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        const rows = (data as unknown as ProductRow[]) ?? [];
+        return this.mapRowsWithMedia(rows);
+      }),
     );
   }
 
@@ -346,43 +479,28 @@ export class ProductService {
     if (error) throw new Error(error.message);
   }
 
+  /** Reenvío del vendedor: vuelve a PENDING_VALIDATION y limpia el motivo previo. */
   async submitForValidation(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('products')
-      .update({ status: 'PENDING_VALIDATION' })
+      .update({ status: 'PENDING_VALIDATION', validation_notes: null })
       .eq('id', id);
     if (error) throw new Error(error.message);
   }
 
-  async resubmitAfterChanges(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('products')
-      .update({ status: 'PENDING_VALIDATION' })
-      .eq('id', id);
-    if (error) throw new Error(error.message);
-  }
-
-  async approveProduct(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('products')
-      .update({ status: 'ACTIVE', validation_notes: null })
-      .eq('id', id);
-    if (error) throw new Error(error.message);
-  }
-
-  async rejectProduct(id: string, notes: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('products')
-      .update({ status: 'REJECTED', validation_notes: notes })
-      .eq('id', id);
-    if (error) throw new Error(error.message);
-  }
-
-  async requestChanges(id: string, notes: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('products')
-      .update({ status: 'CHANGES_REQUESTED', validation_notes: notes })
-      .eq('id', id);
+  /**
+   * Decisión de validación del admin (aprobar / rechazar / solicitar cambios) sobre un lote de
+   * productos. Se ejecuta en la edge function `product-validate`, que actualiza el estado con
+   * service_role y notifica al vendedor por correo.
+   */
+  async validateProducts(
+    productIds: string[],
+    decision: 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED',
+    notes?: string,
+  ): Promise<void> {
+    const { error } = await this.supabase.functions.invoke('product-validate', {
+      body: { productIds, decision, notes },
+    });
     if (error) throw new Error(error.message);
   }
 

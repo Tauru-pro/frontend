@@ -1,17 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Product, ProductType, StrawType } from '../../../core/models/product.model';
+import { Product, ProductType, STRAW_LABELS } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
 
 const TYPE_LABELS: Record<ProductType, string> = {
   STRAW: 'Pajilla',
   SUPPLIES: 'Insumo',
-};
-
-const STRAW_LABELS: Record<StrawType, string> = {
-  CONVENTIONAL: 'Convencional',
-  SEXADO_MALE: 'Sexado ♂',
-  SEXADO_FEMALE: 'Sexado ♀',
 };
 
 @Component({
