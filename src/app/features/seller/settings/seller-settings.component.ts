@@ -12,10 +12,12 @@ import {
   required,
   minLength,
 } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SellerService } from '../../../core/services/seller.service';
 import { SellerProfile, UpdateSellerProfileDto } from '../../../core/models/user.model';
 import { UserStore } from '../../../core/store/user.store';
+import { SellerDocumentService } from '../../../core/services/seller-document.service';
 import { environment } from '../../../../environments/environment';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
 
@@ -30,7 +32,7 @@ interface SettingsFormModel {
 @Component({
   selector: 'app-seller-settings',
   standalone: true,
-  imports: [FormField, LocationSelectComponent],
+  imports: [FormField, LocationSelectComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
@@ -228,6 +230,33 @@ interface SettingsFormModel {
           </div>
 
         </form>
+
+        <!-- Documentos legales -->
+        <a routerLink="/seller/legal-documents"
+          class="block bg-white rounded-2xl border border-gray-100 p-6 hover:border-primary/30 hover:shadow-sm transition-all">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <h2 class="text-sm font-semibold text-gray-800">Documentos legales</h2>
+                <p class="text-xs text-gray-400 mt-0.5">RUT y certificado de representación legal</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' +
+                (documentsComplete() ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700')">
+                {{ documentsComplete() ? 'Cargados' : 'Pendientes' }}
+              </span>
+              <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </a>
       }
     </div>
   `,
@@ -235,7 +264,9 @@ interface SettingsFormModel {
 export default class SellerSettingsComponent implements OnInit {
   private sellerService = inject(SellerService);
   private userStore = inject(UserStore);
+  private documentService = inject(SellerDocumentService);
 
+  documentsComplete = signal(false);
 
   initialStateId = signal<string | null>(null);
   initialCityId = signal<string | null>(null);
@@ -267,6 +298,17 @@ export default class SellerSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+    this.loadDocumentStatus();
+  }
+
+  private async loadDocumentStatus(): Promise<void> {
+    try {
+      const docs = await this.documentService.getMyDocuments();
+      const types = new Set(docs.map((d) => d.docType));
+      this.documentsComplete.set(types.has('RUT') && types.has('LEGAL_REP'));
+    } catch {
+      /* si falla, se muestra "Pendientes" por defecto */
+    }
   }
 
   private async loadProfile(): Promise<void> {

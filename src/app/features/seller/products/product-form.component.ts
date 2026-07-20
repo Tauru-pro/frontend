@@ -34,6 +34,7 @@ interface BullModel {
   breedId: string;
   origin: BullOrigin | '';
   code: string;
+  shortCode: string;
   description: string;
 }
 
@@ -287,6 +288,23 @@ const PDF_MIME_TYPES: MimeType[] = ['application/pdf'];
                   @if (bullForm.name().touched() && bullForm.name().errors().length) {
                     <p class="text-red-400 text-xs mt-1.5">
                       {{ bullForm.name().errors()[0].message }}
+                    </p>
+                  }
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Código <span class="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    [formField]="bullForm.shortCode"
+                    placeholder="Ej. 117/2"
+                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  />
+                  @if (bullForm.shortCode().touched() && bullForm.shortCode().errors().length) {
+                    <p class="text-red-400 text-xs mt-1.5">
+                      {{ bullForm.shortCode().errors()[0].message }}
                     </p>
                   }
                 </div>
@@ -1004,12 +1022,13 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
   );
   totalImages = computed(() => this.existingImages().length + this.pendingImages().length);
 
-  bullModel = signal<BullModel>({ name: '', breedId: '', origin: '', code: '', description: '' });
+  bullModel = signal<BullModel>({ name: '', breedId: '', origin: '', code: '', shortCode: '', description: '' });
   supplyModel = signal<SupplyModel>({ name: '', description: '', price: 0 });
 
   bullForm = form(this.bullModel, (s) => {
     required(s.name, { message: 'El nombre es requerido' });
     minLength(s.name, 2, { message: 'El nombre debe tener al menos 2 caracteres' });
+    required(s.shortCode, { message: 'El código es requerido' });
     required(s.breedId, { message: 'La raza es requerida' });
     validate(s.origin, ({ value }) =>
       !(value() as string) ? { kind: 'required', message: 'El origen es requerido' } : undefined,
@@ -1113,6 +1132,7 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
             breedId: this.selectedBreedId()!,
             origin: b.origin as BullOrigin,
             code: b.code || undefined,
+            shortCode: b.shortCode || undefined,
             description: b.description || undefined,
           };
           let bullId = this.bullId();
@@ -1218,6 +1238,7 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
 
   private mapSaveError(e: unknown): string {
     const msg = e instanceof Error ? e.message : '';
+    if (msg === 'DUPLICATE_SHORT_CODE') return 'El código del toro ya existe. Usa otro.';
     if (msg === 'DUPLICATE_CODE') return 'El número de registro ya existe. Usa otro.';
     return 'No se pudo guardar la información. Intenta de nuevo.';
   }
@@ -1361,6 +1382,7 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
           breedId: bull.breedId,
           origin: bull.origin,
           code: bull.code ?? '',
+          shortCode: bull.shortCode ?? '',
           description: bull.description ?? '',
         });
         this.selectedBreedId.set(bull.breedId);

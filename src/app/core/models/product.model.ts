@@ -7,8 +7,8 @@ export const STRAW_TYPES: readonly StrawType[] = ['CONVENTIONAL', 'SEXADO_MALE',
 /** Etiquetas legibles de cada tipo de pajilla. Fuente única para formularios, listas y marketplace. */
 export const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
-  SEXADO_MALE: 'Sexado ♂',
-  SEXADO_FEMALE: 'Sexado ♀',
+  SEXADO_MALE: 'Sexado Macho',
+  SEXADO_FEMALE: 'Sexado Hembra',
 };
 
 export function strawLabel(type: StrawType | null | undefined): string {
@@ -40,6 +40,7 @@ export interface ProductBull {
   name: string;
   breedId?: string;
   breedName?: string;
+  shortCode?: string | null;
 }
 
 export interface CatalogFilters {

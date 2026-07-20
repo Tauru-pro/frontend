@@ -72,9 +72,10 @@ import {
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">En revisión</span>
                 </div>
                 <h2 class="text-lg font-bold text-gray-900">{{ b.name }}</h2>
-                @if (b.breedName) {
-                  <p class="text-sm text-gray-400">{{ b.breedName }}</p>
-                }
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-gray-400">
+                  @if (b.breedName) { <span>{{ b.breedName }}</span> }
+                  @if (b.shortCode) { <span>Código: <span class="font-medium text-gray-600">{{ b.shortCode }}</span></span> }
+                </div>
               </div>
             </div>
             @if (bullDescription()) {

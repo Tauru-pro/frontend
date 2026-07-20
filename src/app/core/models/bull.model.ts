@@ -16,6 +16,7 @@ export interface Bull {
   origin: BullOrigin;
   registrationType: BullRegistrationType | null;
   code: string | null;
+  shortCode: string | null;
   description: string | null;
   status: BullStatus;
   createdAt: string;
@@ -29,6 +30,7 @@ export interface CreateBullDto {
   origin: BullOrigin;
   registrationType?: BullRegistrationType;
   code?: string;
+  shortCode?: string;
   description?: string;
 }
 

@@ -1,5 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { OnboardingSurveyService } from '../../../core/services/onboarding-survey.service';
 import { TermsService } from '../../../core/services/terms.service';
@@ -15,7 +25,7 @@ type AnswerValue = string | string[] | number | null;
 
 @Component({
   selector: 'app-become-seller',
-  imports: [LocationSelectComponent],
+  imports: [LocationSelectComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'w-full' },
   template: `
@@ -55,6 +65,8 @@ type AnswerValue = string | string[] | number | null;
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all" />
             </div>
             <app-location-select
+              [initialStateId]="selectedStateId()"
+              [initialCityId]="selectedCityId()"
               [showErrors]="showLocationErrors()"
               (selectionChange)="onLocationChange($event)"
             />
@@ -123,20 +135,22 @@ type AnswerValue = string | string[] | number | null;
           }
         }
 
-        <!-- ================= STEP 3: Terms ================= -->
-        @if (step() === 3) {
-          <h2 class="text-base font-semibold text-primary mb-5">Términos y Condiciones del proveedor</h2>
-          <div class="border border-gray-200 rounded-xl p-4 max-h-64 overflow-y-auto text-sm text-gray-600 whitespace-pre-line mb-4">
-            {{ sellerTerms()?.content ?? 'Cargando…' }}
+        <!-- ===== Terms acceptance (part of step 2) ===== -->
+        @if (step() === 2) {
+          <div class="mt-6 pt-5 border-t border-gray-100">
+            <label class="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" [checked]="termsAccepted()" (change)="termsAccepted.set($any($event.target).checked); stepError.set(false)"
+                class="w-4 h-4 mt-0.5 rounded border-gray-300 accent-primary cursor-pointer" />
+              <span class="text-sm text-gray-600">
+                He leído y acepto los
+                <a [routerLink]="['/terms', 'seller']" target="_blank" rel="noopener"
+                  class="text-primary font-medium underline hover:text-accent transition-colors">términos y condiciones del proveedor</a>.
+              </span>
+            </label>
+            @if (stepError() && !termsAccepted()) {
+              <p class="text-red-400 text-xs mt-1.5">Debes aceptar los términos para continuar.</p>
+            }
           </div>
-          <label class="flex items-start gap-2.5 cursor-pointer">
-            <input type="checkbox" [checked]="termsAccepted()" (change)="termsAccepted.set($any($event.target).checked); stepError.set(false)"
-              class="w-4 h-4 mt-0.5 rounded border-gray-300 accent-primary cursor-pointer" />
-            <span class="text-sm text-gray-600">He leído y acepto los Términos y Condiciones del proveedor.</span>
-          </label>
-          @if (stepError() && !termsAccepted()) {
-            <p class="text-red-400 text-xs mt-1.5">Debes aceptar los términos para continuar.</p>
-          }
         }
 
         <!-- Nav -->
@@ -145,7 +159,7 @@ type AnswerValue = string | string[] | number | null;
             class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-40">
             Atrás
           </button>
-          @if (step() < 3) {
+          @if (step() < 2) {
             <button type="button" (click)="next()" class="btn-primary px-6 py-2.5 text-sm">Siguiente</button>
           } @else {
             <button type="button" (click)="finish()" [disabled]="submitting()" class="btn-primary px-6 py-2.5 text-sm disabled:opacity-50">
@@ -173,6 +187,7 @@ export default class BecomeSellerComponent implements OnInit {
   description = signal('');
   contactPhone = signal('');
   address = signal('');
+  selectedStateId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
   showLocationErrors = signal(false);
 
@@ -186,6 +201,84 @@ export default class BecomeSellerComponent implements OnInit {
   termsAccepted = signal(false);
 
   requiredQuestions = computed(() => this.questions().filter((q) => q.isRequired));
+
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private static readonly STORAGE_KEY = 'tauvo_become_seller_v1';
+  private static readonly MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+  constructor() {
+    this.restore();
+    // Persiste el avance solo cuando el usuario ya pasó el primer paso.
+    effect(() => {
+      const snapshot = {
+        step: this.step(),
+        businessName: this.businessName(),
+        description: this.description(),
+        contactPhone: this.contactPhone(),
+        address: this.address(),
+        stateId: this.selectedStateId(),
+        cityId: this.selectedCityId(),
+        answers: this.answers(),
+        termsAccepted: this.termsAccepted(),
+        savedAt: Date.now(),
+      };
+      if (!this.isBrowser) return;
+      try {
+        if (snapshot.step >= 2) {
+          sessionStorage.setItem(BecomeSellerComponent.STORAGE_KEY, JSON.stringify(snapshot));
+        } else {
+          sessionStorage.removeItem(BecomeSellerComponent.STORAGE_KEY);
+        }
+      } catch {
+        /* almacenamiento no disponible (modo privado, etc.) */
+      }
+    });
+  }
+
+  private restore(): void {
+    if (!this.isBrowser) return;
+    try {
+      const raw = sessionStorage.getItem(BecomeSellerComponent.STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw) as {
+        step?: number;
+        businessName?: string;
+        description?: string;
+        contactPhone?: string;
+        address?: string;
+        stateId?: string | null;
+        cityId?: string | null;
+        answers?: Record<string, AnswerValue>;
+        termsAccepted?: boolean;
+        savedAt?: number;
+      };
+      if (!s || (s.step ?? 1) < 2) return;
+      if (s.savedAt && Date.now() - s.savedAt > BecomeSellerComponent.MAX_AGE_MS) {
+        sessionStorage.removeItem(BecomeSellerComponent.STORAGE_KEY);
+        return;
+      }
+      this.step.set(s.step!);
+      this.businessName.set(s.businessName ?? '');
+      this.description.set(s.description ?? '');
+      this.contactPhone.set(s.contactPhone ?? '');
+      this.address.set(s.address ?? '');
+      this.selectedStateId.set(s.stateId ?? null);
+      this.selectedCityId.set(s.cityId ?? null);
+      this.answers.set(s.answers ?? {});
+      this.termsAccepted.set(s.termsAccepted ?? false);
+    } catch {
+      /* snapshot corrupto: se ignora */
+    }
+  }
+
+  private clearPersisted(): void {
+    if (!this.isBrowser) return;
+    try {
+      sessionStorage.removeItem(BecomeSellerComponent.STORAGE_KEY);
+    } catch {
+      /* noop */
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     try {
@@ -203,6 +296,7 @@ export default class BecomeSellerComponent implements OnInit {
   }
 
   onLocationChange(selection: LocationSelection | null): void {
+    this.selectedStateId.set(selection?.stateId ?? null);
     this.selectedCityId.set(selection?.cityId ?? null);
   }
 
@@ -250,14 +344,6 @@ export default class BecomeSellerComponent implements OnInit {
       }
       this.showLocationErrors.set(false);
       this.step.set(2);
-      return;
-    }
-    if (this.step() === 2) {
-      if (!this.surveyComplete()) {
-        this.stepError.set(true);
-        return;
-      }
-      this.step.set(3);
     }
   }
 
@@ -269,7 +355,8 @@ export default class BecomeSellerComponent implements OnInit {
 
   async finish(): Promise<void> {
     this.errorMsg.set(null);
-    if (!this.termsAccepted()) {
+    // Paso 2 valida a la vez la encuesta obligatoria y la aceptación de términos.
+    if (!this.surveyComplete() || !this.termsAccepted()) {
       this.stepError.set(true);
       return;
     }
@@ -297,8 +384,10 @@ export default class BecomeSellerComponent implements OnInit {
         sellerTermsVersion: version,
       });
 
-      // Role is now SELLER and the session was refreshed — go to the panel.
-      this.router.navigate(['/seller']);
+      // Role is now SELLER and the session was refreshed — go straight to the legal
+      // documents screen so the new seller can upload (or skip) their credentials.
+      this.clearPersisted();
+      this.router.navigate(['/seller/legal-documents']);
     } catch (err) {
       this.errorMsg.set(
         err instanceof Error ? this.friendlyError(err.message) : 'No se pudo completar el registro. Intenta de nuevo.'

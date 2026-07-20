@@ -21,6 +21,7 @@ interface BullRow {
   origin: BullOrigin | null;
   registration_type: BullRegistrationType | null;
   code: string | null;
+  short_code: string | null;
   description: string | null;
   status: BullStatus;
   created_at: string;
@@ -67,12 +68,19 @@ function mapBullRow(row: BullRow): Bull {
     origin: row.origin ?? 'NATIONAL',
     registrationType: row.registration_type,
     code: row.code,
+    shortCode: row.short_code,
     description: row.description,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     media: (row.product_media ?? []).map(mapMediaRow),
   };
+}
+
+/** Distingue cuál índice único disparó el 23505: el código (short_code) o el número de registro (code). */
+function duplicateCodeError(error: { code?: string; message?: string }): string | null {
+  if (error.code !== '23505') return null;
+  return error.message?.includes('short_code') ? 'DUPLICATE_SHORT_CODE' : 'DUPLICATE_CODE';
 }
 
 function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
@@ -85,7 +93,7 @@ function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
 }
 
 const BULL_SELECT = `
-  id, tenant_id, name, breed_id, origin, registration_type, code, description, status, created_at, updated_at,
+  id, tenant_id, name, breed_id, origin, registration_type, code, short_code, description, status, created_at, updated_at,
   breeds(id, name, purpose, created_at, updated_at)
 `.trim();
 
@@ -177,12 +185,13 @@ export class BullService {
         origin: dto.origin,
         registration_type: dto.registrationType ?? null,
         code: dto.code ?? null,
+        short_code: dto.shortCode ?? null,
         description: dto.description ?? null,
       })
       .select(BULL_SELECT)
       .single();
 
-    if (error) throw new Error(error.code === '23505' ? 'DUPLICATE_CODE' : error.message);
+    if (error) throw new Error(duplicateCodeError(error) ?? error.message);
     return mapBullRow({ ...(data as unknown as BullRow), product_media: [] });
   }
 
@@ -193,6 +202,7 @@ export class BullService {
     if (dto.origin !== undefined) row['origin'] = dto.origin;
     if (dto.registrationType !== undefined) row['registration_type'] = dto.registrationType;
     if (dto.code !== undefined) row['code'] = dto.code ?? null;
+    if (dto.shortCode !== undefined) row['short_code'] = dto.shortCode ?? null;
     if (dto.description !== undefined) row['description'] = dto.description ?? null;
 
     const { data, error } = await this.supabase
@@ -202,7 +212,7 @@ export class BullService {
       .select(BULL_SELECT)
       .single();
 
-    if (error) throw new Error(error.code === '23505' ? 'DUPLICATE_CODE' : error.message);
+    if (error) throw new Error(duplicateCodeError(error) ?? error.message);
 
     const { data: mediaData } = await this.supabase
       .from('product_media')

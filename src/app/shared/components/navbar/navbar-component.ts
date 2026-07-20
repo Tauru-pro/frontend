@@ -37,7 +37,7 @@ import { CartStore } from '../../../core/store/cart.store';
           <img
             src="/brand/logotipo.png"
             alt="TAUVO — The Bulls Marketplace"
-            class="h-9 w-auto rounded-md"
+            class="h-14 w-auto rounded-md"
           />
         </a>
 

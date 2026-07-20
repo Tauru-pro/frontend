@@ -43,7 +43,7 @@ interface ProductRow {
   validation_notes: string | null;
   created_at: string;
   updated_at: string;
-  bulls: { id: string; name: string; breed_id?: string; breeds?: { id: string; name: string } | null } | null;
+  bulls: { id: string; name: string; breed_id?: string; short_code?: string | null; breeds?: { id: string; name: string } | null } | null;
   product_media: MediaRow[];
 }
 
@@ -69,6 +69,7 @@ function mapProductRow(row: ProductRow): Product {
         name: bullRaw.name,
         breedId: bullRaw.breed_id,
         breedName: (bullRaw.breeds as { id: string; name: string } | null | undefined)?.name,
+        shortCode: bullRaw.short_code,
       }
     : null;
   return {
@@ -131,7 +132,7 @@ const PRODUCT_SELECT = `
   id, tenant_id, product_type, name, slug, description, price,
   bull_id, straw_type, min_order_quantity, stock_quantity,
   status, validation_notes, created_at, updated_at,
-  bulls(id, name, breed_id, breeds(id, name))
+  bulls(id, name, breed_id, short_code, breeds(id, name))
 `.trim();
 
 const CATALOG_SELECT_BASE = `

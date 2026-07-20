@@ -12,5 +12,6 @@ export default <Routes>[
     { path: RoutesApp.checkout, loadComponent: () => import('./checkout/checkout.component') },
     { path: RoutesApp.profile, canActivate: [authGuard], loadComponent: () => import('./profile/profile.component') },
     { path: RoutesApp.becomeSeller, canActivate: [becomeSellerGuard], loadComponent: () => import('./become-seller/become-seller.component') },
+    { path: 'terms/:audience', loadComponent: () => import('./terms/terms-page.component') },
     { path: RoutesApp.root, redirectTo: RoutesApp.root, pathMatch: 'full' },
 ]

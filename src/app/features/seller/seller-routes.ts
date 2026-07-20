@@ -10,6 +10,7 @@ export default <Routes>[
   { path: 'branches/:id/edit', loadComponent: () => import('./branches/branch-form.component') },
   { path: 'inventory', loadComponent: () => import('./inventory/inventory-list.component') },
   { path: 'inventory/:itemId', loadComponent: () => import('./inventory/inventory-detail.component') },
+  { path: 'legal-documents', loadComponent: () => import('./legal-documents/seller-legal-documents.component') },
   { path: 'settings', loadComponent: () => import('./settings/seller-settings.component') },
   { path: '', redirectTo: 'products', pathMatch: 'full' },
 ];
