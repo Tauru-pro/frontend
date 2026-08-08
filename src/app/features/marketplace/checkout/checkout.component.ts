@@ -14,6 +14,10 @@ import { PickupPointService } from '../../../core/services/pickup-point.service'
 import { PickupPoint } from '../../../core/models/pickup-point.model';
 import { ProductType, StrawType } from '../../../core/models/product.model';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
+import {
+  PhoneInputComponent,
+  PhoneValue,
+} from '../../../shared/components/phone-input/phone-input.component';
 import { OrderService } from '../../../core/services/order.service';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -31,7 +35,7 @@ const TYPE_LABELS: Record<ProductType, string> = {
   selector: 'app-checkout',
   standalone: true,
   host: { class: 'w-full' },
-  imports: [RouterLink, FormsModule, LocationSelectComponent],
+  imports: [RouterLink, FormsModule, LocationSelectComponent, PhoneInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './checkout.component.html',
 })
@@ -52,8 +56,6 @@ export default class CheckoutComponent implements OnInit {
   buyerCity = signal('');
   buyerAddress = signal('');
 
-  initialStateId = signal<string | null>(null);
-  initialCityId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
   showLocationErrors = signal(false);
 
@@ -104,6 +106,11 @@ export default class CheckoutComponent implements OnInit {
     } else {
       this.currentStep.set(1);
     }
+  }
+
+  // The checkout API stores a single phone field, so the two parts travel joined.
+  onPhoneChange(value: PhoneValue | null): void {
+    this.buyerPhone.set(value?.e164 ?? '');
   }
 
   onLocationChange(selection: LocationSelection | null): void {

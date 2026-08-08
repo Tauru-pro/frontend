@@ -19,10 +19,12 @@ export interface CustomerProfile {
   userId: string;
   fullName: string;
   phone?: string;
+  phoneCountryCode?: string;
   city?: City;
   herdSize?: string;
   buyerType?: string;
   whatsapp?: string;
+  whatsappCountryCode?: string;
 }
 
 export interface SellerProfile {
@@ -31,6 +33,7 @@ export interface SellerProfile {
   bussinesName: string;
   description?: string;
   contactPhone?: string;
+  contactPhoneCountryCode?: string;
   logoKey: string;
   city?: City;
   address?: string;
@@ -56,6 +59,7 @@ export interface UpdateSellerProfileDto {
   bussinesName?: string;
   description?: string;
   contactPhone?: string;
+  contactPhoneCountryCode?: string;
   cityId?: string;
   address?: string;
   logoKey?: string;

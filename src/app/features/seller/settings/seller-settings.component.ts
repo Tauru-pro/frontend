@@ -20,6 +20,10 @@ import { UserStore } from '../../../core/store/user.store';
 import { SellerDocumentService } from '../../../core/services/seller-document.service';
 import { environment } from '../../../../environments/environment';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
+import {
+  PhoneInputComponent,
+  PhoneValue,
+} from '../../../shared/components/phone-input/phone-input.component';
 
 interface SettingsFormModel {
   bussinesName: string;
@@ -32,7 +36,7 @@ interface SettingsFormModel {
 @Component({
   selector: 'app-seller-settings',
   standalone: true,
-  imports: [FormField, LocationSelectComponent, RouterLink],
+  imports: [FormField, LocationSelectComponent, PhoneInputComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
@@ -161,7 +165,6 @@ interface SettingsFormModel {
 
          <!-- Departamento y Municipio -->
             <app-location-select
-              [initialStateId]="initialStateId()"
               [initialCityId]="initialCityId()"
               [showErrors]="showLocationErrors()"
               (selectionChange)="onLocationChange($event)"
@@ -169,12 +172,11 @@ interface SettingsFormModel {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <!-- TelÃ©fono de contacto -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Teléfono de contacto</label>
-                <input
-                  type="tel"
-                  [formField]="settingsForm.contactPhone"
-                  placeholder="+57 300 000 0000"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                <app-phone-input
+                  label="Teléfono de contacto"
+                  [dialCode]="initialPhoneCode()"
+                  [number]="initialPhone()"
+                  (valueChange)="onPhoneChange($event)"
                 />
               </div>
             <!-- Dirección -->
@@ -268,7 +270,6 @@ export default class SellerSettingsComponent implements OnInit {
 
   documentsComplete = signal(false);
 
-  initialStateId = signal<string | null>(null);
   initialCityId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
   logoPreview = signal<string | null>(null);
@@ -282,6 +283,10 @@ export default class SellerSettingsComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   logoKey = signal('');
+  // Seed values for the phone input; the live value arrives via onPhoneChange.
+  initialPhone = signal('');
+  initialPhoneCode = signal<string | null>(null);
+  phoneCode = signal<string | null>(null);
 
   model = signal<SettingsFormModel>({
     bussinesName: '',
@@ -325,8 +330,10 @@ export default class SellerSettingsComponent implements OnInit {
 
   private populateForm(profile: SellerProfile | null): void {
     if (!profile) return;
-    this.initialStateId.set(profile.city?.state?.id ?? null);
     this.initialCityId.set(profile.city?.id ?? null);
+    this.initialPhone.set(profile.contactPhone ?? '');
+    this.initialPhoneCode.set(profile.contactPhoneCountryCode ?? null);
+    this.phoneCode.set(profile.contactPhoneCountryCode ?? null);
     this.model.set({
       bussinesName: profile.bussinesName ?? '',
       description: profile.description ?? '',
@@ -346,6 +353,11 @@ export default class SellerSettingsComponent implements OnInit {
 
   onLocationChange(selection: LocationSelection | null): void {
     this.selectedCityId.set(selection?.cityId ?? null);
+  }
+
+  onPhoneChange(value: PhoneValue | null): void {
+    this.phoneCode.set(value?.dialCode ?? null);
+    this.model.update((m) => ({ ...m, contactPhone: value?.number ?? '' }));
   }
 
   onFileSelected(event: Event): void {
@@ -411,6 +423,7 @@ export default class SellerSettingsComponent implements OnInit {
           bussinesName: values.bussinesName,
           description: values.description || undefined,
           contactPhone: values.contactPhone || undefined,
+          contactPhoneCountryCode: this.phoneCode() ?? undefined,
           cityId: this.selectedCityId()!,
           address: values.address || undefined
         };

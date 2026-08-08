@@ -6,6 +6,7 @@ export interface Branch {
   name: string;
   address: string;
   phone: string | null;
+  phoneCountryCode?: string;
   latitude?: number;
   longitude?: number;
   businessHours?: string;
@@ -25,6 +26,7 @@ export interface CreateBranchDto {
   cityId: string;
   address: string;
   phone?: string;
+  phoneCountryCode?: string;
   latitude?: number;
   longitude?: number;
   businessHours?: string;

@@ -2,10 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { RouterLink } from '@angular/router';
 import { UserStore } from '../../../core/store/user.store';
 import { CustomerProfileService } from '../../../core/services/customer-profile.service';
+import {
+  PhoneInputComponent,
+  PhoneValue,
+} from '../../../shared/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, PhoneInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'w-full' },
   template: `
@@ -44,26 +48,18 @@ import { CustomerProfileService } from '../../../core/services/customer-profile.
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">Teléfono</label>
-            <input
-              type="tel"
-              [value]="phone()"
-              (input)="phone.set($any($event.target).value)"
-              placeholder="Ej. 3001234567"
-              class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">WhatsApp</label>
-            <input
-              type="tel"
-              [value]="whatsapp()"
-              (input)="whatsapp.set($any($event.target).value)"
-              placeholder="Ej. 3001234567"
-              class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-            />
-          </div>
+          <app-phone-input
+            label="Teléfono"
+            [dialCode]="initialPhoneCode()"
+            [number]="initialPhone()"
+            (valueChange)="onPhoneChange($event)"
+          />
+          <app-phone-input
+            label="WhatsApp"
+            [dialCode]="initialWhatsappCode()"
+            [number]="initialWhatsapp()"
+            (valueChange)="onWhatsappChange($event)"
+          />
         </div>
 
         <div class="flex justify-end">
@@ -98,8 +94,17 @@ export default class ProfileComponent implements OnInit {
   isCustomer = computed(() => this.userStore.user()?.role === 'CUSTOMER');
 
   fullName = signal('');
+  // Current values, driven by the phone inputs' output.
   phone = signal('');
+  phoneCode = signal<string | null>(null);
   whatsapp = signal('');
+  whatsappCode = signal<string | null>(null);
+  // Seed values, set once on load. Feeding the live signals back into the
+  // component would rewrite the field on every keystroke.
+  initialPhone = signal('');
+  initialPhoneCode = signal<string | null>(null);
+  initialWhatsapp = signal('');
+  initialWhatsappCode = signal<string | null>(null);
   saving = signal(false);
   errorMsg = signal<string | null>(null);
   successMsg = signal<string | null>(null);
@@ -109,7 +114,23 @@ export default class ProfileComponent implements OnInit {
     const u = this.userStore.user();
     this.fullName.set(u?.fullName ?? '');
     this.phone.set(u?.customerProfile?.phone ?? '');
+    this.phoneCode.set(u?.customerProfile?.phoneCountryCode ?? null);
     this.whatsapp.set(u?.customerProfile?.whatsapp ?? '');
+    this.whatsappCode.set(u?.customerProfile?.whatsappCountryCode ?? null);
+    this.initialPhone.set(this.phone());
+    this.initialPhoneCode.set(this.phoneCode());
+    this.initialWhatsapp.set(this.whatsapp());
+    this.initialWhatsappCode.set(this.whatsappCode());
+  }
+
+  onPhoneChange(value: PhoneValue | null): void {
+    this.phone.set(value?.number ?? '');
+    this.phoneCode.set(value?.dialCode ?? null);
+  }
+
+  onWhatsappChange(value: PhoneValue | null): void {
+    this.whatsapp.set(value?.number ?? '');
+    this.whatsappCode.set(value?.dialCode ?? null);
   }
 
   async onSave(): Promise<void> {
@@ -122,7 +143,9 @@ export default class ProfileComponent implements OnInit {
       await this.service.save(user.id, {
         fullName: this.fullName().trim(),
         phone: this.phone().trim() || undefined,
+        phoneCountryCode: this.phoneCode() ?? undefined,
         whatsapp: this.whatsapp().trim() || undefined,
+        whatsappCountryCode: this.whatsappCode() ?? undefined,
       });
       await this.userStore.loadUser();
       this.successMsg.set('Datos actualizados correctamente.');

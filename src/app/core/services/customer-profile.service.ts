@@ -4,7 +4,9 @@ import { SupabaseClientService } from '../auth/supabase-client';
 export interface CustomerPersonalData {
   fullName: string;
   phone?: string;
+  phoneCountryCode?: string;
   whatsapp?: string;
+  whatsappCountryCode?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,7 +33,9 @@ export class CustomerProfileService {
       user_id: userId,
       full_name: data.fullName,
       phone: data.phone ?? null,
+      phone_country_code: data.phone ? (data.phoneCountryCode ?? null) : null,
       whatsapp: data.whatsapp ?? null,
+      whatsapp_country_code: data.whatsapp ? (data.whatsappCountryCode ?? null) : null,
     };
 
     if (existing) {

@@ -11,6 +11,7 @@ interface BranchRow {
   name: string;
   address: string;
   phone: string | null;
+  phone_country_code: string | null;
   latitude: number | null;
   longitude: number | null;
   business_hours: string | null;
@@ -32,6 +33,7 @@ function mapBranchRow(row: BranchRow): Branch {
     name: row.name,
     address: row.address,
     phone: row.phone,
+    phoneCountryCode: row.phone_country_code ?? undefined,
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     businessHours: row.business_hours ?? undefined,
@@ -101,6 +103,7 @@ export class BranchService {
         address: dto.address,
         city_id: dto.cityId,
         phone: dto.phone,
+        phone_country_code: dto.phoneCountryCode,
         latitude: dto.latitude,
         longitude: dto.longitude,
         business_hours: dto.businessHours,
@@ -117,6 +120,7 @@ export class BranchService {
     if (dto.address !== undefined) row['address'] = dto.address;
     if (dto.cityId !== undefined) row['city_id'] = dto.cityId;
     if (dto.phone !== undefined) row['phone'] = dto.phone;
+    if (dto.phoneCountryCode !== undefined) row['phone_country_code'] = dto.phoneCountryCode;
     if (dto.latitude !== undefined) row['latitude'] = dto.latitude;
     if (dto.longitude !== undefined) row['longitude'] = dto.longitude;
     if (dto.businessHours !== undefined) row['business_hours'] = dto.businessHours;

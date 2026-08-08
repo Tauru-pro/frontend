@@ -1,23 +1,4 @@
-## Purpose
-
-Provide the worldwide country → state → city reference data that every address form in the marketplace selects from, as public read-only catalog data with the ISO, dialing and flag attributes those forms display.
-
-## Requirements
-
-### Requirement: System stores a public catalog of countries, states, and cities
-The system SHALL maintain a normalized three-level geographic catalog (countries → states → cities) stored in Supabase, publicly readable without authentication, and immutable by end users (insert/update/delete restricted to service_role).
-
-#### Scenario: Unauthenticated read of states
-- **WHEN** any client queries states for a given country
-- **THEN** the system returns the full list of states for that country without requiring authentication
-
-#### Scenario: Unauthenticated read of cities
-- **WHEN** any client queries cities for a given state
-- **THEN** the system returns the full list of cities for that state without requiring authentication
-
-#### Scenario: Unauthorized write attempt
-- **WHEN** an authenticated or unauthenticated user attempts to insert, update, or delete a country, state, or city
-- **THEN** the system denies the operation
+## ADDED Requirements
 
 ### Requirement: Countries carry ISO, dialing and flag attributes
 The system SHALL store, for every country, an ISO 3166-1 alpha-2 code (`iso2`, unique), an alpha-3 code (`iso3`), an international dialing prefix (`phonecode`) and a flag emoji (`emoji`), in addition to its name. `iso2` SHALL be unique across the catalog and stored in uppercase.
@@ -73,26 +54,11 @@ The seed SHALL reconcile pre-existing Colombian rows (those without `external_id
 - **THEN** the system deletes the row
 
 ### Requirement: Angular service provides the list of countries
-The system SHALL expose a `LocationService.getCountries()` method returning an Observable of countries — id, name, `iso2`, `phonecode` and `emoji` — ordered alphabetically by name. The result SHALL be cached and shared across subscribers, so that several country selectors rendered on the same screen trigger a single query.
+The system SHALL expose a `LocationService.getCountries()` method returning an Observable of countries — id, name, `iso2`, `phonecode` and `emoji` — ordered alphabetically by name.
 
 #### Scenario: Loading countries
 - **WHEN** a component calls `getCountries()`
 - **THEN** the service returns every country of the catalog ordered alphabetically, each carrying its flag emoji and dialing prefix
-
-#### Scenario: Several selectors on one screen
-- **WHEN** two or more components call `getCountries()` during the same session
-- **THEN** the catalog is fetched once and the same list is served to every caller
-
-### Requirement: Angular service provides states filtered by country
-The system SHALL expose a `LocationService.getStates(countryId)` method that returns an Observable of the states belonging to the country with that identifier, ordered alphabetically by name. Filtering SHALL be done by identifier, not by country name, because names are not unique selectors across the worldwide catalog.
-
-#### Scenario: Loading states for a country
-- **WHEN** a component calls `getStates(colombiaId)`
-- **THEN** the service returns the 32 departments plus the capital district of Colombia ordered alphabetically
-
-#### Scenario: Country with no states
-- **WHEN** a component calls `getStates` with the id of a country that has no states in the dataset
-- **THEN** the service returns an empty list without erroring
 
 ### Requirement: Angular service provides cities filtered by state id
 The system SHALL expose a `LocationService.getCities(stateId)` method that returns an Observable of the cities belonging to the state with that identifier, ordered alphabetically by name.
@@ -123,3 +89,26 @@ The location selector SHALL present three dependent combos — country, state an
 #### Scenario: Editing an existing record
 - **WHEN** the selector receives an initial city id
 - **THEN** it resolves and preselects the owning country and state, and loads both dependent lists
+
+## MODIFIED Requirements
+
+### Requirement: Angular service provides states filtered by country
+The system SHALL expose a `LocationService.getStates(countryId)` method that returns an Observable of the states belonging to the country with that identifier, ordered alphabetically by name. Filtering SHALL be done by identifier, not by country name, because names are not unique selectors across the worldwide catalog.
+
+#### Scenario: Loading states for a country
+- **WHEN** a component calls `getStates(colombiaId)`
+- **THEN** the service returns the 32 departments plus the capital district of Colombia ordered alphabetically
+
+#### Scenario: Country with no states
+- **WHEN** a component calls `getStates` with the id of a country that has no states in the dataset
+- **THEN** the service returns an empty list without erroring
+
+## REMOVED Requirements
+
+### Requirement: Colombia geographic data is seeded at setup time
+**Reason**: El marketplace deja de ser exclusivamente colombiano; la fuente de datos específica de Colombia se reemplaza por el dataset mundial.
+**Migration**: Reemplazada por "World geographic data is seeded from the canonical dataset". Los datos colombianos existentes se conservan mediante la reconciliación por nombre normalizado descrita en "Legacy Colombian rows are reconciled without breaking references"; no requiere acción manual más allá de ejecutar `npm run seed:geography`.
+
+### Requirement: Angular service provides cities filtered by state name
+**Reason**: Los nombres de estado se repiten entre países en el catálogo mundial (p. ej. "Córdoba" en Colombia, Argentina y España), por lo que filtrar por nombre devuelve ciudades de países ajenos.
+**Migration**: Reemplazada por `LocationService.getCities(stateId)`. Los llamadores que pasaban el nombre del departamento deben pasar el `stateId` que ya reciben del selector de estado.

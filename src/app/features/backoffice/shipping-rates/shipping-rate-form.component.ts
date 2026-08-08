@@ -13,7 +13,7 @@ import {
   submit,
   validate,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of, switchMap } from 'rxjs';
 import { ShippingRateService } from '../../../core/services/shipping-rate.service';
 import { CreateShippingRateDto } from '../../../core/models/shipping-rate.model';
 import { LocationService } from '../../../core/services/location.service';
@@ -189,15 +189,20 @@ export default class ShippingRateFormComponent implements OnInit {
     }
   }
 
+  // Shipping rates are quoted between Colombian departments, so the catalog is
+  // narrowed to Colombia here rather than exposing a country combo.
   private loadStates(): void {
     this.statesLoading.set(true);
-    this.locationService.getStates().subscribe({
-      next: (states) => {
-        this.stateOptions.set(states.map((s) => ({ id: s.id, label: s.name })));
-        this.statesLoading.set(false);
-      },
-      error: () => this.statesLoading.set(false),
-    });
+    this.locationService
+      .getCountryByIso2('CO')
+      .pipe(switchMap((country) => (country ? this.locationService.getStates(country.id) : of([]))))
+      .subscribe({
+        next: (states) => {
+          this.stateOptions.set(states.map((s) => ({ id: s.id, label: s.name })));
+          this.statesLoading.set(false);
+        },
+        error: () => this.statesLoading.set(false),
+      });
   }
 
   private loadRate(id: string): void {

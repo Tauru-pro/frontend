@@ -13,7 +13,7 @@
     "cf-typegen": "wrangler types",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
     "seed:super-admin": "tsx scripts/seed-super-admin.ts",
-    "seed:geography": "tsx scripts/seed-geography.ts"
+    "seed:geography": "node --max-old-space-size=4096 ./node_modules/.bin/tsx scripts/seed-geography.ts"
   },
   "prettier": {
     "printWidth": 100,

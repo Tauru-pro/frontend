@@ -92,7 +92,6 @@ interface PickupPointFormModel {
 
             <!-- Departamento y Municipio -->
             <app-location-select
-              [initialStateId]="initialStateId()"
               [initialCityId]="initialCityId()"
               [showErrors]="showLocationErrors()"
               (selectionChange)="onLocationChange($event)"
@@ -197,7 +196,6 @@ export default class PickupPointFormComponent implements OnInit {
   saving = signal(false);
   errorMsg = signal<string | null>(null);
 
-  initialStateId = signal<string | null>(null);
   initialCityId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
   showLocationErrors = signal(false);

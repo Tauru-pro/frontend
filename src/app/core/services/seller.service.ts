@@ -19,6 +19,7 @@ export interface SellerProfileRow {
   business_name: string | null;
   description: string | null;
   contact_phone: string | null;
+  contact_phone_country_code: string | null;
   logo_key: string | null;
   address: string | null;
   status: SellerProfile['status'];
@@ -36,6 +37,7 @@ export function mapSellerProfileRow(row: SellerProfileRow): SellerProfile {
     bussinesName: row.business_name ?? '',
     description: row.description ?? undefined,
     contactPhone: row.contact_phone ?? undefined,
+    contactPhoneCountryCode: row.contact_phone_country_code ?? undefined,
     logoKey: row.logo_key ?? '',
     address: row.address ?? undefined,
     city: row.cities
@@ -79,6 +81,8 @@ export class SellerService {
     if (dto.bussinesName !== undefined) row['business_name'] = dto.bussinesName;
     if (dto.description !== undefined) row['description'] = dto.description;
     if (dto.contactPhone !== undefined) row['contact_phone'] = dto.contactPhone;
+    if (dto.contactPhoneCountryCode !== undefined)
+      row['contact_phone_country_code'] = dto.contactPhoneCountryCode;
     if (dto.cityId !== undefined) row['city_id'] = dto.cityId;
     if (dto.address !== undefined) row['address'] = dto.address;
     if (dto.logoKey !== undefined) row['logo_key'] = dto.logoKey;

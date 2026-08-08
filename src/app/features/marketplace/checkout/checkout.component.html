@@ -43,17 +43,10 @@
               [value]="buyerEmail()"
               (input)="buyerEmail.set($any($event.target).value)" />
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1.5">Teléfono</label>
-            <input type="tel" class="form-input" placeholder="+57 300 000 0000"
-              [value]="buyerPhone()"
-              (input)="buyerPhone.set($any($event.target).value)" />
-          </div>
+          <app-phone-input label="Teléfono" (valueChange)="onPhoneChange($event)" />
         </div>
 
         <app-location-select
-          [initialStateId]="initialStateId()"
-          [initialCityId]="initialCityId()"
           [showErrors]="showLocationErrors()"
           (selectionChange)="onLocationChange($event)" />
 

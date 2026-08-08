@@ -19,6 +19,10 @@ import {
   LocationSelectComponent,
   LocationSelection,
 } from '../../../shared/components/location-select/location-select.component';
+import {
+  PhoneInputComponent,
+  PhoneValue,
+} from '../../../shared/components/phone-input/phone-input.component';
 
 interface BranchFormModel {
   name: string;
@@ -31,7 +35,7 @@ interface BranchFormModel {
 
 @Component({
   selector: 'app-branch-form',
-  imports: [RouterLink, FormField, LocationSelectComponent],
+  imports: [RouterLink, FormField, LocationSelectComponent, PhoneInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
@@ -91,7 +95,6 @@ interface BranchFormModel {
 
             <!-- Ubicación -->
             <app-location-select
-              [initialStateId]="initialStateId()"
               [initialCityId]="initialCityId()"
               [showErrors]="showLocationErrors()"
               (selectionChange)="onLocationChange($event)"
@@ -119,15 +122,12 @@ interface BranchFormModel {
             </div>
 
             <!-- Teléfono -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Teléfono</label>
-              <input
-                type="tel"
-                [formField]="branchForm.phone"
-                placeholder="+57 300 000 0000"
-                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-              />
-            </div>
+            <app-phone-input
+              label="Teléfono"
+              [dialCode]="initialPhoneCode()"
+              [number]="initialPhone()"
+              (valueChange)="onPhoneChange($event)"
+            />
 
             <!-- Horario operativo -->
             <div>
@@ -218,8 +218,11 @@ export default class BranchFormComponent implements OnInit {
   errorMsg = signal<string | null>(null);
   locationError = signal(false);
   showLocationErrors = signal(false);
-  initialStateId = signal<string | null>(null);
   initialCityId = signal<string | null>(null);
+  // Seed values for the phone input; the live value arrives via onPhoneChange.
+  initialPhone = signal('');
+  initialPhoneCode = signal<string | null>(null);
+  phoneCode = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
 
   model = signal<BranchFormModel>({
@@ -250,6 +253,11 @@ export default class BranchFormComponent implements OnInit {
   onLocationChange(selection: LocationSelection | null): void {
     this.selectedCityId.set(selection?.cityId ?? null);
     this.locationError.set(false);
+  }
+
+  onPhoneChange(value: PhoneValue | null): void {
+    this.phoneCode.set(value?.dialCode ?? null);
+    this.model.update((m) => ({ ...m, phone: value?.number ?? '' }));
   }
 
   onSubmit(): void {
@@ -313,7 +321,6 @@ export default class BranchFormComponent implements OnInit {
     this.loading.set(true);
     this.branchService.getBranch(id).subscribe({
       next: (branch) => {
-        this.initialStateId.set(branch.city?.state?.id ?? null);
         this.initialCityId.set(branch.city?.id ?? null);
         this.selectedCityId.set(branch.city?.id ?? null);
         this.model.set({

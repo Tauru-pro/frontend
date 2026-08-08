@@ -10,13 +10,16 @@ import {
   signal,
 } from '@angular/core';
 import { LocationService } from '../../../core/services/location.service';
-import { City, State } from '../../../core/models/location.model';
+import { City, Country, State } from '../../../core/models/location.model';
 import { SearchSelectComponent, SelectOption } from '../search-select/search-select.component';
 
 export interface LocationSelection {
+  countryId: string;
   stateId: string;
   cityId: string;
 }
+
+const DEFAULT_COUNTRY_ISO2 = 'CO';
 
 @Component({
   selector: 'app-location-select',
@@ -24,23 +27,34 @@ export interface LocationSelection {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <app-search-select
-        label="Departamento"
+        label="País"
         [required]="true"
-        placeholder="Buscar departamento"
+        placeholder="Buscar país"
+        errorMessage="El país es requerido"
+        [options]="countryOptions()"
+        [value]="selectedCountryId()"
+        [loading]="countriesLoading()"
+        [showError]="showErrors"
+        (valueChange)="onCountryChange($event)"
+      />
+      <app-search-select
+        label="Departamento/Estado"
+        [required]="true"
         errorMessage="El departamento es requerido"
         [options]="stateOptions()"
         [value]="selectedStateId()"
         [loading]="statesLoading()"
-        [showError]="showErrors"
+        [disabled]="!selectedCountryId()"
+        [placeholder]="statePlaceholder()"
+        [showError]="showErrors && !!selectedCountryId()"
         (valueChange)="onStateChange($event)"
       />
       <app-search-select
-        label="Municipio"
-       
+        label="Ciudad"
         [required]="true"
-        errorMessage="El municipio es requerido"
+        errorMessage="La ciudad es requerida"
         [options]="cityOptions()"
         [value]="selectedCityId()"
         [loading]="citiesLoading()"
@@ -55,19 +69,25 @@ export interface LocationSelection {
 export class LocationSelectComponent implements OnInit {
   private locationService = inject(LocationService);
 
-  @Input() initialStateId: string | null = null;
+  /** Only the city is stored on records; country and state are resolved from it. */
   @Input() initialCityId: string | null = null;
   @Input() showErrors = false;
   @Output() selectionChange = new EventEmitter<LocationSelection | null>();
 
+  private countries = signal<Country[]>([]);
   private states = signal<State[]>([]);
   private cities = signal<City[]>([]);
+  countriesLoading = signal(false);
   statesLoading = signal(false);
   citiesLoading = signal(false);
 
+  selectedCountryId = signal<string | null>(null);
   selectedStateId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
-  private selectedStateName = signal<string | null>(null);
+
+  countryOptions = computed<SelectOption[]>(() =>
+    this.countries().map((c) => ({ id: c.id, label: `${c.emoji} ${c.name}`.trim() }))
+  );
 
   stateOptions = computed<SelectOption[]>(() =>
     this.states().map((s) => ({ id: s.id, label: s.name }))
@@ -77,16 +97,35 @@ export class LocationSelectComponent implements OnInit {
     this.cities().map((c) => ({ id: c.id, label: c.name }))
   );
 
+  statePlaceholder = computed(() =>
+    this.statesLoading()
+      ? 'Cargando...'
+      : !this.selectedCountryId()
+        ? 'Primero elige un país'
+        : 'Buscar departamento'
+  );
+
   cityPlaceholder = computed(() =>
     this.citiesLoading()
       ? 'Cargando...'
       : !this.selectedStateId()
         ? 'Primero elige un departamento'
-        : 'Buscar municipio'
+        : 'Buscar ciudad'
   );
 
   ngOnInit(): void {
-    this.loadStates();
+    this.loadCountries();
+  }
+
+  onCountryChange(countryId: string | null): void {
+    this.selectedCountryId.set(countryId);
+    this.selectedStateId.set(null);
+    this.selectedCityId.set(null);
+    this.states.set([]);
+    this.cities.set([]);
+    this.emit();
+
+    if (countryId) this.loadStates(countryId);
   }
 
   onStateChange(stateId: string | null): void {
@@ -95,13 +134,7 @@ export class LocationSelectComponent implements OnInit {
     this.cities.set([]);
     this.emit();
 
-    if (stateId) {
-      const stateName = this.states().find((s) => s.id === stateId)?.name ?? null;
-      this.selectedStateName.set(stateName);
-      if (stateName) this.loadCities(stateName);
-    } else {
-      this.selectedStateName.set(null);
-    }
+    if (stateId) this.loadCities(stateId);
   }
 
   onCityChange(cityId: string | null): void {
@@ -109,46 +142,67 @@ export class LocationSelectComponent implements OnInit {
     this.emit();
   }
 
-  private loadStates(): void {
+  private loadCountries(): void {
+    this.countriesLoading.set(true);
+    this.locationService.getCountries().subscribe({
+      next: (countries) => {
+        this.countries.set(countries);
+        this.countriesLoading.set(false);
+        if (this.initialCityId) {
+          this.preselectFromCity(this.initialCityId);
+        } else {
+          const fallback = countries.find((c) => c.iso2 === DEFAULT_COUNTRY_ISO2);
+          if (fallback) {
+            this.selectedCountryId.set(fallback.id);
+            this.loadStates(fallback.id);
+          }
+        }
+      },
+      error: () => this.countriesLoading.set(false),
+    });
+  }
+
+  /** Editing an existing record: walk the stored city back up to its state and country. */
+  private preselectFromCity(cityId: string): void {
+    this.locationService.getCityLocation(cityId).subscribe({
+      next: (location) => {
+        if (!location) return;
+        this.selectedCountryId.set(location.countryId);
+        this.selectedStateId.set(location.stateId);
+        this.selectedCityId.set(location.cityId);
+        this.loadStates(location.countryId);
+        this.loadCities(location.stateId);
+        this.emit();
+      },
+    });
+  }
+
+  private loadStates(countryId: string): void {
     this.statesLoading.set(true);
-    this.locationService.getStates().subscribe({
+    this.locationService.getStates(countryId).subscribe({
       next: (states) => {
         this.states.set(states);
         this.statesLoading.set(false);
-        if (this.initialStateId) {
-          const match = states.find((s) => s.id === this.initialStateId);
-          if (match) {
-            this.selectedStateId.set(match.id);
-            this.selectedStateName.set(match.name);
-            this.loadCities(match.name);
-          }
-        }
       },
       error: () => this.statesLoading.set(false),
     });
   }
 
-  private loadCities(stateName: string): void {
+  private loadCities(stateId: string): void {
     this.citiesLoading.set(true);
-    this.locationService.getCities(stateName).subscribe({
+    this.locationService.getCities(stateId).subscribe({
       next: (cities) => {
         this.cities.set(cities);
         this.citiesLoading.set(false);
-        if (this.initialCityId) {
-          const match = cities.find((c) => c.id === this.initialCityId);
-          if (match) {
-            this.selectedCityId.set(match.id);
-            this.emit();
-          }
-        }
       },
       error: () => this.citiesLoading.set(false),
     });
   }
 
   private emit(): void {
+    const countryId = this.selectedCountryId();
     const stateId = this.selectedStateId();
     const cityId = this.selectedCityId();
-    this.selectionChange.emit(stateId && cityId ? { stateId, cityId } : null);
+    this.selectionChange.emit(countryId && stateId && cityId ? { countryId, stateId, cityId } : null);
   }
 }

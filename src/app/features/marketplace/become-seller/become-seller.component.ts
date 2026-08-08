@@ -20,12 +20,16 @@ import {
   LocationSelectComponent,
   LocationSelection,
 } from '../../../shared/components/location-select/location-select.component';
+import {
+  PhoneInputComponent,
+  PhoneValue,
+} from '../../../shared/components/phone-input/phone-input.component';
 
 type AnswerValue = string | string[] | number | null;
 
 @Component({
   selector: 'app-become-seller',
-  imports: [LocationSelectComponent, RouterLink],
+  imports: [LocationSelectComponent, PhoneInputComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'w-full' },
   template: `
@@ -59,14 +63,13 @@ type AnswerValue = string | string[] | number | null;
                 placeholder="Cuéntanos sobre tu ganadería o negocio"
                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"></textarea>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Teléfono de contacto</label>
-              <input type="tel" [value]="contactPhone()" (input)="contactPhone.set($any($event.target).value)"
-                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all" />
-            </div>
+            <app-phone-input
+              label="Teléfono de contacto"
+              [dialCode]="initialPhoneCode()"
+              [number]="initialPhone()"
+              (valueChange)="onPhoneChange($event)"
+            />
             <app-location-select
-              [initialStateId]="selectedStateId()"
-              [initialCityId]="selectedCityId()"
               [showErrors]="showLocationErrors()"
               (selectionChange)="onLocationChange($event)"
             />
@@ -186,6 +189,10 @@ export default class BecomeSellerComponent implements OnInit {
   businessName = signal('');
   description = signal('');
   contactPhone = signal('');
+  contactPhoneCode = signal<string | null>(null);
+  // Seed values for the phone input, set only when a draft is restored.
+  initialPhone = signal('');
+  initialPhoneCode = signal<string | null>(null);
   address = signal('');
   selectedStateId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
@@ -215,6 +222,7 @@ export default class BecomeSellerComponent implements OnInit {
         businessName: this.businessName(),
         description: this.description(),
         contactPhone: this.contactPhone(),
+        contactPhoneCode: this.contactPhoneCode(),
         address: this.address(),
         stateId: this.selectedStateId(),
         cityId: this.selectedCityId(),
@@ -245,6 +253,7 @@ export default class BecomeSellerComponent implements OnInit {
         businessName?: string;
         description?: string;
         contactPhone?: string;
+        contactPhoneCode?: string | null;
         address?: string;
         stateId?: string | null;
         cityId?: string | null;
@@ -261,6 +270,9 @@ export default class BecomeSellerComponent implements OnInit {
       this.businessName.set(s.businessName ?? '');
       this.description.set(s.description ?? '');
       this.contactPhone.set(s.contactPhone ?? '');
+      this.contactPhoneCode.set(s.contactPhoneCode ?? null);
+      this.initialPhone.set(s.contactPhone ?? '');
+      this.initialPhoneCode.set(s.contactPhoneCode ?? null);
       this.address.set(s.address ?? '');
       this.selectedStateId.set(s.stateId ?? null);
       this.selectedCityId.set(s.cityId ?? null);
@@ -293,6 +305,11 @@ export default class BecomeSellerComponent implements OnInit {
     } finally {
       this.loadingSurvey.set(false);
     }
+  }
+
+  onPhoneChange(value: PhoneValue | null): void {
+    this.contactPhone.set(value?.number ?? '');
+    this.contactPhoneCode.set(value?.dialCode ?? null);
   }
 
   onLocationChange(selection: LocationSelection | null): void {
@@ -377,6 +394,7 @@ export default class BecomeSellerComponent implements OnInit {
           business_name: this.businessName().trim(),
           description: this.description().trim() || undefined,
           contact_phone: this.contactPhone().trim() || undefined,
+          contact_phone_country_code: this.contactPhoneCode() ?? undefined,
           city_id: this.selectedCityId() ?? undefined,
           address: this.address().trim() || undefined,
         },

@@ -8,6 +8,7 @@ export interface SellerCompanyData {
   business_name: string;
   description?: string;
   contact_phone?: string;
+  contact_phone_country_code?: string;
   address?: string;
   city_id?: string;
 }

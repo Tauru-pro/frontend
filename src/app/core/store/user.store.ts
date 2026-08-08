@@ -33,9 +33,11 @@ interface CustomerProfileRow {
   user_id: string;
   full_name: string | null;
   phone: string | null;
+  phone_country_code: string | null;
   herd_size: string | null;
   buyer_type: string | null;
   whatsapp: string | null;
+  whatsapp_country_code: string | null;
 }
 
 function mapProfileRow(row: ProfileRow): UserProfile {
@@ -55,9 +57,11 @@ function mapProfileRow(row: ProfileRow): UserProfile {
           userId: customerRow.user_id,
           fullName: customerRow.full_name ?? '',
           phone: customerRow.phone ?? undefined,
+          phoneCountryCode: customerRow.phone_country_code ?? undefined,
           herdSize: customerRow.herd_size ?? undefined,
           buyerType: customerRow.buyer_type ?? undefined,
           whatsapp: customerRow.whatsapp ?? undefined,
+          whatsappCountryCode: customerRow.whatsapp_country_code ?? undefined,
         }
       : undefined,
   };
