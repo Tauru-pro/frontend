@@ -83,7 +83,7 @@
 
         <!-- Unit price -->
         <div class="text-center">
-          <span class="text-sm font-semibold text-gray-700">${{ item.product.price.toFixed(2) }}</span>
+          <span class="text-sm font-semibold text-gray-700">{{ item.product.price | price }}</span>
           <span class="text-[10px] text-gray-400 block">/ unidad</span>
         </div>
 
@@ -105,7 +105,7 @@
 
         <!-- Subtotal -->
         <div class="text-center">
-          <span class="text-sm font-bold text-secondary">${{ itemSubtotal(item.product.price, item.quantity).toFixed(2) }}</span>
+          <span class="text-sm font-bold text-secondary">{{ itemSubtotal(item.product.price, item.quantity) | price }}</span>
         </div>
 
         <!-- Remove -->
@@ -144,7 +144,7 @@
       <div class="space-y-3 text-sm">
         <div class="flex justify-between text-gray-600">
           <span>Subtotal ({{ cartStore.count() }} {{ cartStore.count() === 1 ? 'unidad' : 'unidades' }})</span>
-          <span class="font-semibold text-primary">${{ cartStore.total().toFixed(2) }}</span>
+          <span class="font-semibold text-primary">{{ cartStore.total() | price }}</span>
         </div>
         <div class="text-xs text-gray-400">
           El costo de envío se calcula en el paso de recogida.
@@ -154,7 +154,7 @@
       <div class="border-t border-gray-100 pt-4">
         <div class="flex justify-between items-baseline">
           <span class="font-bold text-primary">Total</span>
-          <span class="text-2xl font-bold text-secondary">${{ grandTotal().toFixed(2) }}</span>
+          <span class="text-2xl font-bold text-secondary">{{ grandTotal() | price }}</span>
         </div>
       </div>
 

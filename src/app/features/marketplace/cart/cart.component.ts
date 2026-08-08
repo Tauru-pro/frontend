@@ -2,6 +2,7 @@ import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
 import { ProductType, StrawType } from '../../../core/models/product.model';
+import { PricePipe } from '../../../shared/pipes/price.pipe';
 
 const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
@@ -18,7 +19,7 @@ const TYPE_LABELS: Record<ProductType, string> = {
   selector: 'app-cart',
   standalone: true,
   host: { class: 'w-full' },
-  imports: [RouterLink],
+  imports: [RouterLink, PricePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.component.html',
 })

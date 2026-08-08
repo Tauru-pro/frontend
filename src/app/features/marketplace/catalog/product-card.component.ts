@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { RouterLink } from '@angular/router';
 import { Product, ProductType, STRAW_LABELS } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
+import { PricePipe } from '../../../shared/pipes/price.pipe';
 
 const TYPE_LABELS: Record<ProductType, string> = {
   STRAW: 'Pajilla',
@@ -11,7 +12,7 @@ const TYPE_LABELS: Record<ProductType, string> = {
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, PricePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group flex flex-col h-full">
@@ -58,7 +59,7 @@ const TYPE_LABELS: Record<ProductType, string> = {
         </div>
 
         <div class="mt-auto pt-2 flex items-center justify-between">
-          <span class="text-sm font-bold text-secondary">\${{ product().price.toFixed(2) }}</span>
+          <span class="text-sm font-bold text-secondary">{{ product().price | price }}</span>
           <a [routerLink]="['/catalog', product().id]"
             class="text-xs btn-primary-outline py-1.5 px-3 rounded-lg font-medium">
             Ver detalle

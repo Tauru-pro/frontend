@@ -5,10 +5,11 @@ import { BullListing, BullListingVariant } from '../../../core/models/bull-listi
 import { STRAW_LABELS } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
 import { CartStore } from '../../../core/store/cart.store';
+import { PricePipe } from '../../pipes/price.pipe';
 
 @Component({
   selector: 'app-bull-listing-card',
-  imports: [RouterLink],
+  imports: [RouterLink, PricePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full' },
   template: `
@@ -41,7 +42,7 @@ import { CartStore } from '../../../core/store/cart.store';
         }
 
         <!-- Precio de la variante seleccionada -->
-        <p class="text-xl font-bold text-primary mt-1">{{ formatPrice(selected().price) }}</p>
+        <p class="text-xl font-bold text-primary mt-1">{{ selected().price | price }}</p>
 
         <!-- Variantes: los tipos de pajilla aprobados del toro -->
         @if (item().straws.length > 1) {
@@ -104,14 +105,6 @@ export class BullListingCardComponent {
 
   strawLabel(variant: BullListingVariant): string {
     return variant.strawType ? STRAW_LABELS[variant.strawType] : 'Pajilla';
-  }
-
-  formatPrice(value: number): string {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0,
-    }).format(value);
   }
 
   /**

@@ -18,6 +18,7 @@ import {
   PhoneInputComponent,
   PhoneValue,
 } from '../../../shared/components/phone-input/phone-input.component';
+import { PricePipe } from '../../../shared/pipes/price.pipe';
 import { OrderService } from '../../../core/services/order.service';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -35,7 +36,7 @@ const TYPE_LABELS: Record<ProductType, string> = {
   selector: 'app-checkout',
   standalone: true,
   host: { class: 'w-full' },
-  imports: [RouterLink, FormsModule, LocationSelectComponent, PhoneInputComponent],
+  imports: [RouterLink, FormsModule, LocationSelectComponent, PhoneInputComponent, PricePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './checkout.component.html',
 })
@@ -189,7 +190,7 @@ export default class CheckoutComponent implements OnInit {
     return type ? STRAW_LABELS[type] : '';
   }
 
-  itemTotal(price: number, qty: number): string {
-    return (price * qty).toFixed(2);
+  itemTotal(price: number, qty: number): number {
+    return price * qty;
   }
 }

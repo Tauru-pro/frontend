@@ -117,7 +117,7 @@
                   </svg>
                 } @else if (shippingCost() !== null) {
                   <span class="text-sm font-bold text-primary flex-shrink-0 self-center">
-                    ${{ shippingCost()!.toFixed(2) }}
+                    {{ shippingCost()! | price }}
                   </span>
                 }
               }
@@ -145,7 +145,7 @@
             @if (shippingCostLoading()) {
               <span class="text-gray-400">Calculando...</span>
             } @else if (shippingCost() !== null) {
-              <strong class="text-primary">${{ shippingCost()!.toFixed(2) }}</strong>
+              <strong class="text-primary">{{ shippingCost()! | price }}</strong>
             } @else {
               <span class="text-gray-400">costo a confirmar</span>
             }
@@ -212,7 +212,7 @@
               @if (item.product.strawType) { · {{ strawLabel(item.product.strawType) }} }
             </p>
           </div>
-          <span class="text-sm font-bold text-primary flex-shrink-0">${{ itemTotal(item.product.price, item.quantity) }}</span>
+          <span class="text-sm font-bold text-primary flex-shrink-0">{{ itemTotal(item.product.price, item.quantity) | price }}</span>
         </div>
       }
     </div>
@@ -221,7 +221,7 @@
     <div class="space-y-2.5 text-sm border-t border-gray-200 pt-5">
       <div class="flex justify-between text-gray-600">
         <span>Subtotal</span>
-        <span class="font-semibold text-primary">${{ cartStore.total().toFixed(2) }}</span>
+        <span class="font-semibold text-primary">{{ cartStore.total() | price }}</span>
       </div>
       <div class="flex justify-between text-gray-600">
         <span>Envío</span>
@@ -229,7 +229,7 @@
           @if (shippingCostLoading()) {
             <span class="text-gray-400 text-xs">Calculando...</span>
           } @else if (shippingCost() !== null) {
-            ${{ shippingCost()!.toFixed(2) }}
+            {{ shippingCost()! | price }}
           } @else {
             <span class="text-gray-400">—</span>
           }
@@ -241,7 +241,7 @@
       <span class="text-base font-bold text-primary">Total</span>
       <div class="text-right">
         <span class="text-xs text-gray-400 mr-1">USD</span>
-        <span class="text-2xl font-bold text-primary">${{ grandTotal().toFixed(2) }}</span>
+        <span class="text-2xl font-bold text-primary">{{ grandTotal() | price }}</span>
       </div>
     </div>
   </div>

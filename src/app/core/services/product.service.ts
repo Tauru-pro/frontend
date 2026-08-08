@@ -334,16 +334,24 @@ export class ProductService {
     );
   }
 
-  /** Devuelve las pajillas (productos STRAW) de un toro. Para cargar el modo edición agrupado. */
-  getStrawProductsByBull(bullId: string): Observable<Product[]> {
-    return from(
-      this.supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq('bull_id', bullId)
-        .eq('product_type', 'STRAW')
-        .order('created_at', { ascending: true }),
-    ).pipe(
+  /**
+   * Pajillas (productos STRAW) de un toro. Para el modo edición del vendedor y
+   * la revisión del administrador, que necesitan también las no aprobadas.
+   *
+   * `onlyActive` es obligatorio en superficies públicas: la RLS ya oculta lo no
+   * aprobado a los visitantes anónimos, pero `seller_own_products` da acceso
+   * total al dueño, así que un vendedor viendo su propia ficha vería sus
+   * borradores entre las variantes comprables.
+   */
+  getStrawProductsByBull(bullId: string, onlyActive = false): Observable<Product[]> {
+    let query = this.supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('bull_id', bullId)
+      .eq('product_type', 'STRAW');
+    if (onlyActive) query = query.eq('status', 'ACTIVE');
+
+    return from(query.order('created_at', { ascending: true })).pipe(
       switchMap(({ data, error }) => {
         if (error) throw error;
         const rows = (data as unknown as ProductRow[]) ?? [];
