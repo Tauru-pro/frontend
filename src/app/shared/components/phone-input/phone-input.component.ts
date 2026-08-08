@@ -39,7 +39,7 @@ const DEFAULT_DIAL_CODE = '+57';
       }
 
       <div class="flex gap-2">
-        <div class="w-32 sm:w-40 shrink-0">
+        <div class="w-24 sm:w-28 shrink-0">
           <app-search-select
             placeholder="País"
             [options]="countryOptions()"
@@ -106,7 +106,11 @@ export class PhoneInputComponent implements OnInit {
   countryOptions = computed<SelectOption[]>(() =>
     this.countries().map((c) => ({
       id: c.id,
-      label: `${c.emoji} ${c.name} +${c.phonecode}`.trim(),
+      // Flag and dial code only: in a phone field the country name is noise and
+      // costs width the number field needs.
+      label: `${c.emoji} +${c.phonecode}`.trim(),
+      // Still findable by ISO code and by name, neither of which is on screen.
+      searchText: `${c.iso2} +${c.phonecode} ${c.name}`,
     }))
   );
 

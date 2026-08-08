@@ -11,6 +11,10 @@ import {
 export interface SelectOption {
   id: string;
   label: string;
+  /** Text the search filters against. Defaults to `label`. Use it when the
+   *  visible label is deliberately terse (a phone code, a flag) but the option
+   *  should still be findable by its full name. */
+  searchText?: string;
 }
 
 @Component({
@@ -129,7 +133,7 @@ export class SearchSelectComponent {
   filteredOptions = computed(() => {
     const q = this.search().toLowerCase().trim();
     return q
-      ? this._optionsSig().filter((o) => o.label.toLowerCase().includes(q))
+      ? this._optionsSig().filter((o) => (o.searchText ?? o.label).toLowerCase().includes(q))
       : this._optionsSig();
   });
 
