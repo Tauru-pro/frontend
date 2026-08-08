@@ -72,6 +72,21 @@ export interface Product {
   media: ProductMedia[];
 }
 
+/**
+ * Ficha pública de producto, servida por la vista `product_details` en una sola
+ * consulta. `variants` trae todas las pajillas aprobadas del toro con su media,
+ * para que cambiar de tipo en la ficha no cueste ninguna petición; para un
+ * insumo contiene únicamente el propio producto.
+ */
+export interface ProductDetail {
+  bullId: string | null;
+  bullName: string | null;
+  breedName: string | null;
+  /** Media del toro: vídeo, prueba genética y sus imágenes. */
+  bullMedia: ProductMedia[];
+  variants: Product[];
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

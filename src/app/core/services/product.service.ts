@@ -7,6 +7,7 @@ import {
   CreateProductDto,
   PaginatedResponse,
   Product,
+  ProductDetail,
   ProductMedia,
   ProductStatus,
   ProductType,
@@ -15,6 +16,18 @@ import {
   UpdateProductDto,
 } from '../models/product.model';
 import { BullListing, BullListingVariant } from '../models/bull-listing.model';
+
+/** Fila de la vista pública `product_details`: todo lo que la ficha necesita. */
+interface ProductDetailRow {
+  product_id: string;
+  bull_id: string | null;
+  bull_name: string | null;
+  breed_name: string | null;
+  bull_media: MediaRow[];
+  variants: (Omit<ProductRow, 'bulls' | 'product_media' | 'validation_notes'> & {
+    media: MediaRow[];
+  })[];
+}
 
 /** Fila de la vista pública `bull_listings`. */
 interface BullListingRow {
@@ -653,6 +666,51 @@ export class ProductService {
           page,
           limit,
           totalPages: Math.ceil(total / limit),
+        };
+      }),
+    );
+  }
+
+  /**
+   * Ficha pública de producto en **una** petición: el producto, su toro, la
+   * media de ambos y las demás variantes del toro con la suya. Va contra la
+   * vista `product_details` porque `product_media` es polimórfica y PostgREST
+   * no puede embeberla, que es lo que antes obligaba a tres peticiones.
+   */
+  getProductDetail(productId: string): Observable<ProductDetail | null> {
+    const query = this.supabase
+      .from('product_details')
+      .select('*')
+      .eq('product_id', productId)
+      .maybeSingle();
+
+    return from(query).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        if (!data) return null;
+        const row = data as unknown as ProductDetailRow;
+        const bullMedia = (row.bull_media ?? []).map(mapMediaRow);
+        return {
+          bullId: row.bull_id,
+          bullName: row.bull_name,
+          breedName: row.breed_name,
+          bullMedia,
+          variants: (row.variants ?? []).map((v) =>
+            mapProductRow({
+              ...(v as unknown as ProductRow),
+              validation_notes: null,
+              bulls: row.bull_id
+                ? {
+                    id: row.bull_id,
+                    name: row.bull_name ?? '',
+                    breed_id: null,
+                    short_code: null,
+                    breeds: row.breed_name ? { id: '', name: row.breed_name } : null,
+                  }
+                : null,
+              product_media: v.media ?? [],
+            } as unknown as ProductRow),
+          ),
         };
       }),
     );

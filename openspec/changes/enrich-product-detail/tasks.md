@@ -1,3 +1,10 @@
+## 0. Vista `product_details` (una sola petición)
+
+- [x] 0.1 Crear `supabase/migrations/0020_product_details_view.sql`: una fila por producto `ACTIVE`, con `bull_media` y `variants` agregados en jsonb, `left join` sobre `bulls` para que los insumos entren por el mismo camino
+- [x] 0.2 Incluir en cada variante los campos completos de `Product` más su media, para que "Agregar al carrito" no necesite una petición extra
+- [x] 0.3 Repetir la advertencia de RLS de `0018`/`0019` y otorgar `select` a `anon` y `authenticated`
+- [x] 0.4 Aplicar la migración y verificar con la anon key: una fila, `variants` de longitud 2 con los 15 campos, `bull_media` con el `document`, y solo los 2 productos activos de los 3 existentes
+
 ## 1. Pipe de precio compartido
 
 - [x] 1.1 Crear `src/app/shared/pipes/price.pipe.ts`: pipe standalone `price` con `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })`
@@ -6,18 +13,18 @@
 
 ## 2. Servicio: variantes aprobadas
 
-- [x] 2.1 Añadir el filtro por estado a `getStrawProductsByBull()` como **parámetro opcional** `onlyActive`, no fijo
+- [x] 2.1 Añadir el filtro por estado a `getStrawProductsByBull()` como **parámetro opcional** `onlyActive`, no fijo. La ficha dejó de usarlo al pasar a la vista, pero el parámetro se queda: es la forma correcta de la firma
 - [x] 2.2 Sí dependía: `product-form.component.ts` (edición del vendedor) y `product-review.component.ts` (revisión del administrador) necesitan las no aprobadas. Un filtro fijo habría roto ambas, de ahí el parámetro opcional
 
 ## 3. Ficha: reaccionar al parámetro de ruta
 
-- [x] 3.1 Cambiar `route.snapshot.paramMap.get('id')` por una suscripción a `route.paramMap`, para que navegar entre variantes del mismo componente recargue los datos
+- [x] 3.1 Cambiar `route.snapshot.paramMap.get('id')` por una suscripción a `route.paramMap`, que solo vuelve a pedir datos cuando el `id` entrante no está entre las variantes ya cargadas
 - [x] 3.2 Reiniciar el estado local al cambiar de producto: `quantity`, `activeImageUrl`, `addedToCart` y el error
 - [x] 3.3 Comprobar que la suscripción se limpia (`takeUntilDestroyed` o `DestroyRef`)
 
 ## 4. Ficha: vídeo y prueba genética
 
-- [x] 4.1 Añadir `bullVideo` y `bullDocument` como `computed` sobre `product().media`, filtrando por `mediaType` y `entityType === 'bull'`
+- [x] 4.1 Añadir `bullVideoUrl` y `bullDocumentUrl` como `computed` sobre `detail().bullMedia`, y combinar en `images()` las imágenes del producto con las del toro — el vendedor sube las fotos en el toro, y antes se veían porque el filtro no distinguía la entidad
 - [x] 4.2 Renderizar la sección de vídeo con `<video controls preload="metadata">` solo si existe; sin autoplay
 - [x] 4.3 Inyectar `DomSanitizer` y exponer la URL del PDF con `bypassSecurityTrustResourceUrl`, memorizada para no recrearla en cada ciclo de detección
 - [x] 4.4 Renderizar el PDF con `<object type="application/pdf">` y contenido de reserva dentro, más un enlace externo **siempre visible** con `target="_blank" rel="noopener"`
@@ -25,9 +32,9 @@
 
 ## 5. Ficha: selector de variantes y precio
 
-- [x] 5.1 Cargar las pajillas hermanas con `getStrawProductsByBull(p.bull.id)` cuando el producto es `STRAW` y tiene toro
+- [x] 5.1 Cargar toda la ficha con `getProductDetail(productId)`; el estado pasa a ser `detail` + `selectedId`, y `product` es un `computed` sobre `variants`
 - [x] 5.2 Renderizar las variantes con `STRAW_LABELS`, marcando la actual con borde y texto `primary` sobre `primary/10`, como en la tarjeta
-- [x] 5.3 Al elegir otra, `router.navigate(['/catalog', variante.id])`
+- [x] 5.3 Al elegir otra, seleccionarla en memoria y sincronizar la URL con `Location.replaceState('/catalog/<id>')`, sin navegar
 - [x] 5.4 Si solo hay una variante aprobada, conservar la etiqueta estática actual en vez del selector
 - [x] 5.5 Sustituir `\${{ p.price.toFixed(2) }}` y el literal "USD / unidad" por el pipe de precio y "por unidad"
 
@@ -44,6 +51,8 @@
 - [x] 7.2 Comprobado con la anon key: el toro devuelve `image` y `document`; el PDF se descarga público (HTTP 200, `application/pdf`, 274 kB). Ese toro no tiene vídeo, así que esa sección no se puede ver con los datos actuales
 - [x] 7.3 Comprobado: el toro devuelve sus dos pajillas `ACTIVE` (Convencional 30.000 y Sexado Macho 35.000)
 - [ ] 7.4 Probar en dev la ficha del toro que ya tiene PDF: se incrusta, el enlace externo abre el archivo y no hay sección de vídeo — **pendiente del usuario** (requiere navegador)
-- [ ] 7.5 Probar el selector: cambiar de tipo navega, y el precio, el stock y el mínimo de pedido cambian con él — **pendiente del usuario** (requiere navegador)
+- [ ] 7.5 Probar el selector: cambiar de tipo actualiza precio, stock y mínimo **sin recargar y sin peticiones**, y la URL pasa a la variante elegida — **pendiente del usuario** (requiere navegador)
+- [ ] 7.8 Comprobar en la pestaña de red que la carga inicial hace **una** petición a `product_details` — **pendiente del usuario**
+- [ ] 7.9 Abrir la ficha de un insumo y confirmar que carga por el mismo camino, sin selector de variantes — **pendiente del usuario**
 - [ ] 7.6 Probar el recorrido completo de precios: tarjeta → ficha → carrito → checkout muestran el mismo importe con el mismo formato — **pendiente del usuario** (requiere navegador)
 - [ ] 7.7 Probar en móvil (o con el emulador del navegador) que el PDF no incrustado deja el enlace visible y usable — **pendiente del usuario** (requiere navegador)

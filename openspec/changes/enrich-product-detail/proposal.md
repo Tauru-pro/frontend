@@ -8,7 +8,8 @@ Además, la ficha es la única superficie que no deja elegir el tipo de pajilla:
 
 - **Vídeo del toro**: si existe media `video` del toro, la ficha lo reproduce con el reproductor nativo, junto a la galería.
 - **Prueba genética**: si existe media `document` del toro, se muestra incrustada con la primera página visible y un botón para abrirla a pantalla completa o descargarla. El botón es el respaldo real, porque los navegadores móviles a menudo no incrustan PDF.
-- **Selector de tipo de pajilla**: la ficha carga las pajillas hermanas del mismo toro y ofrece las aprobadas como variantes. Elegir una navega a `/catalog/:idDeEsaPajilla`, de modo que cada variante conserva su enlace propio y el precio y el stock siempre corresponden a lo que se ve.
+- **Una sola petición**: la ficha pasa a leer la vista `product_details`, que trae el producto, su toro, la media de ambos y las demás variantes del toro con la suya. Antes eran tres peticiones, y dos de ellas existían solo porque `product_media` es polimórfica y PostgREST no puede embeberla.
+- **Selector de tipo de pajilla**: la ficha ofrece las pajillas aprobadas del mismo toro como variantes. Elegir una actualiza precio, stock y galería **en sitio, sin recargar y sin pedir nada**, y la barra de direcciones se sincroniza con `Location.replaceState` para que el enlace compartido siga apuntando a lo que se ve.
 - **Precio en pesos, formateado**: `$30.000` en vez de `$30000.00 USD / unidad`. Se extrae un `PricePipe` compartido con el formato que ya usa la tarjeta del catálogo (`Intl.NumberFormat('es-CO', COP)`), y se aplica a **todo el flujo de compra**: ficha, tarjeta del catálogo, carrito y checkout.
 - **Agregar al carrito**: ya funciona con selector de cantidad y mínimo de pedido; se conserva tal cual y pasa a respetar la variante seleccionada.
 
@@ -25,4 +26,4 @@ Además, la ficha es la única superficie que no deja elegir el tipo de pajilla:
 - **Código nuevo**: `shared/pipes/price.pipe.ts`.
 - **Código modificado**: `product-detail.component.ts` (vídeo, PDF, selector de variantes, precio), `product-card.component.ts`, `bull-listing-card.component.ts` (pasa a usar el pipe en vez de su formateador propio), `cart.component.html`, `checkout.component.html` y `checkout.component.ts`.
 - **Servicios**: `getStrawProductsByBull()` ya existe y se reutiliza; se le añade el filtro por `status = 'ACTIVE'` para que un vendedor autenticado no vea sus propias variantes sin aprobar entre las opciones públicas.
-- **Sin cambios**: base de datos, políticas, almacenamiento. El bucket `product-media` ya es público y `public_read_active_media` ya expone la media del toro cuando tiene un producto activo.
+- **Base de datos**: nueva vista pública `product_details`. Sin cambios en tablas, políticas ni almacenamiento: el bucket `product-media` ya es público y `public_read_active_media` ya expone la media del toro cuando tiene un producto activo.

@@ -1,5 +1,16 @@
 ## ADDED Requirements
 
+### Requirement: The detail page loads in a single request
+The system SHALL serve everything the detail page needs — the product, its bull, the media of both, and the bull's other approved straws with their own media — in one request, so that no part of the page arrives late and switching variants costs nothing.
+
+#### Scenario: Opening a product detail
+- **WHEN** a buyer opens a product detail page
+- **THEN** the client issues one request for its data
+
+#### Scenario: Product not published
+- **WHEN** the requested product is not `ACTIVE`
+- **THEN** the request returns no row and the page shows its not-found state
+
 ### Requirement: The detail page shows the bull's video when one exists
 When the bull linked to a STRAW product has a video, the detail page SHALL play it with the browser's native player alongside the image gallery. When there is no video, no player and no empty placeholder SHALL be rendered.
 
@@ -31,7 +42,7 @@ When the bull has a PDF document, the detail page SHALL embed it so its first pa
 - **THEN** the page shows no document section
 
 ### Requirement: The detail page lets the buyer switch straw type
-The detail page of a STRAW product SHALL list the approved straws of the same bull as selectable variants and SHALL indicate which one is being viewed. Choosing another variant SHALL navigate to that product's own detail page, so the address always matches the price and stock on screen.
+The detail page of a STRAW product SHALL list the approved straws of the same bull as selectable variants and SHALL indicate which one is being viewed. Choosing another variant SHALL update the page in place, without reloading it and without further requests, and SHALL keep the address bar pointing at the variant on screen so the link stays shareable.
 
 #### Scenario: Bull with several approved straws
 - **WHEN** a buyer opens the detail of a straw whose bull offers three approved types
@@ -39,7 +50,11 @@ The detail page of a STRAW product SHALL list the approved straws of the same bu
 
 #### Scenario: Switching variant
 - **WHEN** the buyer picks a different straw type
-- **THEN** the browser navigates to that straw's detail page, showing its own price, stock and minimum order quantity
+- **THEN** the price, stock and minimum order quantity become that variant's without reloading the page and without issuing any request
+
+#### Scenario: Address after switching
+- **WHEN** the buyer picks a different straw type and then reloads or shares the address
+- **THEN** the address points at the variant that was on screen
 
 #### Scenario: Bull with a single approved straw
 - **WHEN** the bull offers only one approved straw

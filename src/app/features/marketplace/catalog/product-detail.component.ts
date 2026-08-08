@@ -9,11 +9,18 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Location } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CartStore } from '../../../core/store/cart.store';
-import { Product, ProductMedia, StrawType, STRAW_LABELS } from '../../../core/models/product.model';
+import {
+  Product,
+  ProductDetail,
+  ProductMedia,
+  StrawType,
+  STRAW_LABELS,
+} from '../../../core/models/product.model';
 import { PricePipe } from '../../../shared/pipes/price.pipe';
 
 @Component({
@@ -244,37 +251,47 @@ import { PricePipe } from '../../../shared/pipes/price.pipe';
 })
 export default class ProductDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private location = inject(Location);
   private productService = inject(ProductService);
   private cartStore = inject(CartStore);
   private sanitizer = inject(DomSanitizer);
   private destroyRef = inject(DestroyRef);
 
-  product = signal<Product | null>(null);
-  variants = signal<Product[]>([]);
+  /** La fila de `product_details`: el toro, su media y todas las variantes. */
+  private detail = signal<ProductDetail | null>(null);
+  private selectedId = signal<string | null>(null);
+
   loading = signal(true);
   error = signal<string | null>(null);
   activeImageUrl = signal<string | null>(null);
   quantity = signal(1);
   addedToCart = signal(false);
 
-  images = computed<ProductMedia[]>(() =>
-    (this.product()?.media ?? []).filter((m) => m.mediaType === 'image')
+  variants = computed<Product[]>(() => this.detail()?.variants ?? []);
+
+  /** Todo lo que la ficha pinta cuelga de aquí, así que cambiar de variante
+   *  recalcula precio, stock y mínimo de pedido sin tocar la red. */
+  product = computed<Product | null>(
+    () => this.variants().find((v) => v.id === this.selectedId()) ?? null,
   );
 
-  // getProduct() trae la media del producto y la de su toro; el vídeo y el PDF
-  // son siempre del toro.
-  private bullMedia = computed<ProductMedia[]>(() =>
-    (this.product()?.media ?? []).filter((m) => m.entityType === 'bull')
-  );
+  /**
+   * Galería: las imágenes del producto y las del toro juntas. Un vendedor puede
+   * subir la foto en cualquiera de los dos sitios —hoy las sube en el toro—, y
+   * antes se veían todas porque el filtro no distinguía la entidad.
+   */
+  images = computed<ProductMedia[]>(() => [
+    ...(this.product()?.media ?? []).filter((m) => m.mediaType === 'image'),
+    ...(this.detail()?.bullMedia ?? []).filter((m) => m.mediaType === 'image'),
+  ]);
 
   bullVideoUrl = computed<string | null>(() => {
-    const video = this.bullMedia().find((m) => m.mediaType === 'video');
+    const video = (this.detail()?.bullMedia ?? []).find((m) => m.mediaType === 'video');
     return video ? this.mediaUrl(video.storagePath) : null;
   });
 
   bullDocumentUrl = computed<string | null>(() => {
-    const doc = this.bullMedia().find((m) => m.mediaType === 'document');
+    const doc = (this.detail()?.bullMedia ?? []).find((m) => m.mediaType === 'document');
     return doc ? this.mediaUrl(doc.storagePath) : null;
   });
 
@@ -289,42 +306,39 @@ export default class ProductDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Cambiar de variante navega a otra ficha del mismo componente, así que hay
-    // que reaccionar al parámetro: con `snapshot` la página no se recargaría.
+    // Cambiar de variante no navega, pero se puede llegar a otra ficha desde el
+    // catálogo con el componente ya montado, y ahí sí cambia el parámetro.
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       if (!id) {
         this.loading.set(false);
         return;
       }
-      this.loadProduct(id);
+      // Si el producto ya vino en la respuesta actual, seleccionarlo basta.
+      if (this.variants().some((v) => v.id === id)) {
+        this.applySelection(id);
+        return;
+      }
+      this.loadDetail(id);
     });
   }
 
-  private loadProduct(id: string): void {
+  private loadDetail(id: string): void {
     this.loading.set(true);
     this.error.set(null);
-    this.product.set(null);
-    this.variants.set([]);
+    this.detail.set(null);
+    this.selectedId.set(null);
     this.activeImageUrl.set(null);
     this.addedToCart.set(false);
     this.quantity.set(1);
 
-    this.productService.getProduct(id).subscribe({
-      next: (p) => {
-        if (p.status !== 'ACTIVE') {
-          this.loading.set(false);
-          return;
-        }
-        this.product.set(p);
-        this.quantity.set(p.minOrderQuantity);
-        const cover =
-          p.media.find((m) => m.isCover && m.mediaType === 'image') ??
-          p.media.find((m) => m.mediaType === 'image');
-        if (cover) this.activeImageUrl.set(this.mediaUrl(cover.storagePath));
+    this.productService.getProductDetail(id).subscribe({
+      next: (detail) => {
         this.loading.set(false);
-
-        if (p.productType === 'STRAW' && p.bull) this.loadVariants(p.bull.id);
+        // La vista solo expone productos ACTIVE: sin fila, no hay ficha pública.
+        if (!detail) return;
+        this.detail.set(detail);
+        this.applySelection(id);
       },
       error: () => {
         this.error.set('No se pudo cargar el producto.');
@@ -333,17 +347,28 @@ export default class ProductDetailComponent implements OnInit {
     });
   }
 
-  /** Solo las aprobadas: el vendedor no debe ver sus borradores como comprables. */
-  private loadVariants(bullId: string): void {
-    this.productService.getStrawProductsByBull(bullId, true).subscribe({
-      next: (straws) => this.variants.set(straws.filter((s) => s.strawType)),
-      error: () => this.variants.set([]),
-    });
+  /** Pone el foco en una variante ya cargada y reinicia lo que depende de ella. */
+  private applySelection(productId: string): void {
+    const variant = this.variants().find((v) => v.id === productId);
+    if (!variant) return;
+    this.selectedId.set(productId);
+    this.quantity.set(variant.minOrderQuantity);
+    this.addedToCart.set(false);
+
+    const cover =
+      this.images().find((m) => m.isCover) ?? this.images()[0];
+    this.activeImageUrl.set(cover ? this.mediaUrl(cover.storagePath) : null);
   }
 
+  /**
+   * Cambia de variante sin recargar. `Location.replaceState` actualiza la barra
+   * de direcciones **sin** disparar el Router, así que el enlace compartido
+   * apunta a lo que se ve y no se reentra por `paramMap`.
+   */
   selectVariant(variant: Product): void {
-    if (variant.id === this.product()?.id) return;
-    this.router.navigate(['/catalog', variant.id]);
+    if (variant.id === this.selectedId()) return;
+    this.applySelection(variant.id);
+    this.location.replaceState(`/catalog/${variant.id}`);
   }
 
   mediaUrl(storagePath: string): string {
