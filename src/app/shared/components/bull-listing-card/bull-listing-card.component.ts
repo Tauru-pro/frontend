@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { FeaturedStraw, FeaturedStrawVariant } from '../../../core/models/featured.model';
+import { BullListing, BullListingVariant } from '../../../core/models/bull-listing.model';
 import { STRAW_LABELS } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
 import { CartStore } from '../../../core/store/cart.store';
 
 @Component({
-  selector: 'app-featured-straw-card',
+  selector: 'app-bull-listing-card',
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block h-full' },
@@ -81,8 +81,8 @@ import { CartStore } from '../../../core/store/cart.store';
     </div>
   `,
 })
-export class FeaturedStrawCardComponent {
-  item = input.required<FeaturedStraw>();
+export class BullListingCardComponent {
+  item = input.required<BullListing>();
 
   private productService = inject(ProductService);
   private cartStore = inject(CartStore);
@@ -91,18 +91,18 @@ export class FeaturedStrawCardComponent {
   adding = signal(false);
 
   /** La variante elegida, o la primera (la más barata: la vista las ordena por precio). */
-  selected = computed<FeaturedStrawVariant>(() => {
+  selected = computed<BullListingVariant>(() => {
     const straws = this.item().straws;
     return straws.find((s) => s.id === this.chosenId()) ?? straws[0];
   });
 
   outOfStock = computed(() => this.selected().stockQuantity === 0);
 
-  select(variant: FeaturedStrawVariant): void {
+  select(variant: BullListingVariant): void {
     this.chosenId.set(variant.id);
   }
 
-  strawLabel(variant: FeaturedStrawVariant): string {
+  strawLabel(variant: BullListingVariant): string {
     return variant.strawType ? STRAW_LABELS[variant.strawType] : 'Pajilla';
   }
 

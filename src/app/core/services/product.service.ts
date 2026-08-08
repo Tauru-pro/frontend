@@ -14,16 +14,21 @@ import {
   StrawType,
   UpdateProductDto,
 } from '../models/product.model';
-import { FeaturedStraw, FeaturedStrawVariant } from '../models/featured.model';
+import { BullListing, BullListingVariant } from '../models/bull-listing.model';
 
-/** Fila de la vista pública `featured_straws`. */
-interface FeaturedStrawRow {
+/** Fila de la vista pública `bull_listings`. */
+interface BullListingRow {
   bull_id: string;
   bull_name: string;
+  is_featured: boolean;
+  breed_id: string | null;
   breed_name: string | null;
   seller_id: string;
   seller_name: string;
   cover_path: string | null;
+  min_price: number;
+  max_price: number;
+  last_published_at: string;
   straws: {
     id: string;
     name: string;
@@ -586,37 +591,88 @@ export class ProductService {
     if (error) throw new Error(error.message);
   }
 
-  /**
-   * Toros destacados de la portada. Lee la vista pública `featured_straws`, que
-   * ya agrega las pajillas aprobadas de cada toro: una petición, sin N+1, y
-   * accesible sin sesión.
-   */
-  getFeaturedStraws(): Observable<FeaturedStraw[]> {
-    const query = this.supabase.from('featured_straws').select('*');
+  /** Toros destacados de la portada. */
+  getFeaturedBulls(): Observable<BullListing[]> {
+    const query = this.supabase
+      .from('bull_listings')
+      .select('*')
+      .eq('is_featured', true)
+      .order('last_published_at', { ascending: false });
 
     return from(query).pipe(
       map(({ data, error }) => {
         if (error) throw error;
-        return ((data as unknown as FeaturedStrawRow[]) ?? []).map((row) => ({
-          bullId: row.bull_id,
-          bullName: row.bull_name,
-          breedName: row.breed_name,
-          sellerId: row.seller_id,
-          sellerName: row.seller_name,
-          coverUrl: row.cover_path ? this.getMediaPublicUrl(row.cover_path) : null,
-          straws: (row.straws ?? []).map(
-            (s): FeaturedStrawVariant => ({
-              id: s.id,
-              name: s.name,
-              strawType: s.straw_type,
-              price: Number(s.price),
-              minOrderQuantity: s.min_order_quantity,
-              stockQuantity: s.stock_quantity,
-            }),
-          ),
-        }));
+        return ((data as unknown as BullListingRow[]) ?? []).map((row) =>
+          this.mapBullListingRow(row),
+        );
       }),
     );
+  }
+
+  /**
+   * Pestaña de genética del catálogo: una fila por toro, paginada en el
+   * servidor. El filtro de precio se traduce a un solapamiento de intervalos
+   * —`max_price >= min AND min_price <= max`— que es como se expresa "el toro
+   * entra si alguna de sus pajillas cae en el rango".
+   */
+  getCatalogBulls(
+    page = 1,
+    limit = 12,
+    filters: { breedId?: string; minPrice?: number; maxPrice?: number } = {},
+  ): Observable<PaginatedResponse<BullListing>> {
+    const from_ = (page - 1) * limit;
+    const to = from_ + limit - 1;
+
+    let query = this.supabase
+      .from('bull_listings')
+      .select('*', { count: 'exact' })
+      .order('last_published_at', { ascending: false })
+      .range(from_, to);
+
+    if (filters.breedId) query = query.eq('breed_id', filters.breedId);
+    if (filters.minPrice != null) query = query.gte('max_price', filters.minPrice);
+    if (filters.maxPrice != null) query = query.lte('min_price', filters.maxPrice);
+
+    return from(query).pipe(
+      map(({ data, error, count }) => {
+        if (error) throw error;
+        const total = count ?? 0;
+        return {
+          data: ((data as unknown as BullListingRow[]) ?? []).map((row) =>
+            this.mapBullListingRow(row),
+          ),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      }),
+    );
+  }
+
+  private mapBullListingRow(row: BullListingRow): BullListing {
+    return {
+      bullId: row.bull_id,
+      bullName: row.bull_name,
+      isFeatured: row.is_featured,
+      breedId: row.breed_id,
+      breedName: row.breed_name,
+      sellerId: row.seller_id,
+      sellerName: row.seller_name,
+      coverUrl: row.cover_path ? this.getMediaPublicUrl(row.cover_path) : null,
+      minPrice: Number(row.min_price),
+      maxPrice: Number(row.max_price),
+      straws: (row.straws ?? []).map(
+        (s): BullListingVariant => ({
+          id: s.id,
+          name: s.name,
+          strawType: s.straw_type,
+          price: Number(s.price),
+          minOrderQuantity: s.min_order_quantity,
+          stockQuantity: s.stock_quantity,
+        }),
+      ),
+    };
   }
 
   getMediaPublicUrl(storagePath: string): string {

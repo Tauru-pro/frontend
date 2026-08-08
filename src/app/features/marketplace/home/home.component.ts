@@ -3,8 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BreedService } from '../../../core/services/breed.service';
 import { ProductService } from '../../../core/services/product.service';
-import { FeaturedStraw } from '../../../core/models/featured.model';
-import { FeaturedStrawCardComponent } from '../../../shared/components/featured-straw-card/featured-straw-card.component';
+import { BullListing } from '../../../core/models/bull-listing.model';
+import { BullListingCardComponent } from '../../../shared/components/bull-listing-card/bull-listing-card.component';
 
 export interface Product {
   id: number;
@@ -25,7 +25,7 @@ export interface Category {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, FeaturedStrawCardComponent],
+  imports: [RouterLink, BullListingCardComponent],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './home.component.css',
@@ -44,7 +44,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
   categories = signal<Category[]>([]);
 
   // "Semen Destacado": datos reales, un toro por vendedor con destacado.
-  featuredStraws = signal<FeaturedStraw[]>([]);
+  featuredBulls = signal<BullListing[]>([]);
   featuredLoading = signal(true);
 
 
@@ -83,9 +83,9 @@ export default class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.productService.getFeaturedStraws().subscribe({
-      next: (straws) => {
-        this.featuredStraws.set(straws);
+    this.productService.getFeaturedBulls().subscribe({
+      next: (bulls) => {
+        this.featuredBulls.set(bulls);
         this.featuredLoading.set(false);
       },
       error: () => this.featuredLoading.set(false),
