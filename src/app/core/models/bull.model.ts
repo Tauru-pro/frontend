@@ -19,6 +19,8 @@ export interface Bull {
   shortCode: string | null;
   description: string | null;
   status: BullStatus;
+  /** Marcado por el vendedor para aparecer en "Semen Destacado". Uno por vendedor. */
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
   media: BullMedia[];

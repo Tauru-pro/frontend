@@ -24,6 +24,7 @@ interface BullRow {
   short_code: string | null;
   description: string | null;
   status: BullStatus;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
   breeds: { id: string; name: string; purpose: 'MILK' | 'MEAT'; created_at: string; updated_at: string } | null;
@@ -71,6 +72,7 @@ function mapBullRow(row: BullRow): Bull {
     shortCode: row.short_code,
     description: row.description,
     status: row.status,
+    isFeatured: row.is_featured ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     media: (row.product_media ?? []).map(mapMediaRow),
@@ -93,7 +95,7 @@ function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
 }
 
 const BULL_SELECT = `
-  id, tenant_id, name, breed_id, origin, registration_type, code, short_code, description, status, created_at, updated_at,
+  id, tenant_id, name, breed_id, origin, registration_type, code, short_code, description, status, is_featured, created_at, updated_at,
   breeds(id, name, purpose, created_at, updated_at)
 `.trim();
 
@@ -225,6 +227,28 @@ export class BullService {
   async deleteBull(id: string): Promise<void> {
     const { error } = await this.supabase.from('bulls').delete().eq('id', id);
     if (error) throw new Error(error.message);
+  }
+
+  /**
+   * Marca (o desmarca) el toro destacado del vendedor. Va por RPC porque el
+   * cambio implica apagar el destacado anterior y encender el nuevo: hacerlo
+   * como dos updates chocaría contra el índice único o dejaría al vendedor sin
+   * destacado si el segundo falla.
+   */
+  async setFeatured(bullId: string, featured: boolean): Promise<void> {
+    const { error } = await this.supabase.rpc('set_featured_bull', {
+      p_bull_id: bullId,
+      p_featured: featured,
+    });
+    if (!error) return;
+
+    if (error.message?.includes('BULL_NOT_APPROVED')) {
+      throw new Error('El toro necesita al menos una pajilla aprobada para destacarse.');
+    }
+    if (error.message?.includes('NOT_BULL_OWNER')) {
+      throw new Error('No puedes destacar un toro que no es tuyo.');
+    }
+    throw new Error(error.message);
   }
 
   async uploadBullMedia(

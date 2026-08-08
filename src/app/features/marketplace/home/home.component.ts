@@ -2,6 +2,9 @@ import { Component, signal, OnInit, OnDestroy, PLATFORM_ID, inject, ChangeDetect
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BreedService } from '../../../core/services/breed.service';
+import { ProductService } from '../../../core/services/product.service';
+import { FeaturedStraw } from '../../../core/models/featured.model';
+import { FeaturedStrawCardComponent } from '../../../shared/components/featured-straw-card/featured-straw-card.component';
 
 export interface Product {
   id: number;
@@ -22,7 +25,7 @@ export interface Category {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, FeaturedStrawCardComponent],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './home.component.css',
@@ -30,6 +33,7 @@ export interface Category {
 export default class HomeComponent implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private breedService = inject(BreedService);
+  private productService = inject(ProductService);
   private timerInterval: ReturnType<typeof setInterval> | null = null;
 
   hours = signal(10);
@@ -39,14 +43,10 @@ export default class HomeComponent implements OnInit, OnDestroy {
 
   categories = signal<Category[]>([]);
 
-  featuredProducts: Product[] = [
-    { id: 1, name: 'Angus "Blackcap Exc. 1A"', price: 45.00, originalPrice: 60.00, emoji: '🧬', badge: 'Top Gen.', rating: 4.8, reviews: 214 },
-    { id: 2, name: 'Brahman "BR Excellence 908"', price: 38.00, emoji: '🐂', badge: 'Oferta', rating: 4.6, reviews: 128 },
-    { id: 3, name: 'Simmental "SIM Master 1247"', price: 52.00, originalPrice: 70.00, emoji: '🧬', badge: 'Importado', rating: 4.9, reviews: 97 },
-    { id: 4, name: 'Holstein "HOL Supreme 440"', price: 28.00, emoji: '🐄', rating: 4.5, reviews: 183 },
-    { id: 5, name: 'Gyr Puro "Campeão 22"', price: 65.00, originalPrice: 80.00, emoji: '🐃', badge: 'Brasil', rating: 4.7, reviews: 76 },
-    { id: 6, name: 'Brangus "K-Force 109"', price: 42.00, emoji: '🧬', badge: 'Nuevo', rating: 4.4, reviews: 52 },
-  ];
+  // "Semen Destacado": datos reales, un toro por vendedor con destacado.
+  featuredStraws = signal<FeaturedStraw[]>([]);
+  featuredLoading = signal(true);
+
 
   bestSellers: Product[] = [
     { id: 7, name: 'Contenedor Nitrógeno 35L', price: 520.00, originalPrice: 650.00, emoji: '❄️', badge: '20% Off', rating: 4.8, reviews: 342 },
@@ -83,6 +83,14 @@ export default class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.productService.getFeaturedStraws().subscribe({
+      next: (straws) => {
+        this.featuredStraws.set(straws);
+        this.featuredLoading.set(false);
+      },
+      error: () => this.featuredLoading.set(false),
+    });
+
     this.breedService.getAll().subscribe({
       next: (breeds) => {
         this.categories.set(

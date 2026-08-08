@@ -24,6 +24,15 @@ interface ListRow {
   subtitle: string;
   /** Pajillas del toro (solo kind 'straw'). */
   straws: Product[];
+  /** Toro destacado del vendedor (solo kind 'straw'). */
+  isFeatured: boolean;
+  /**
+   * Destacable: alguna pajilla aprobada. No se usa `status`/`repStatus`, que
+   * devuelve el estado *que requiere acción del vendedor* — sería 'REJECTED'
+   * para un toro con una pajilla rechazada y otra aprobada, que sí es
+   * destacable.
+   */
+  canBeFeatured: boolean;
   /** Motivos de rechazo / cambios a mostrar al vendedor. */
   notes: { label: string; note: string }[];
 }
@@ -85,6 +94,17 @@ interface ListRow {
           <div>
             <span class="font-medium text-gray-900 max-w-[200px] truncate block">{{ row.name }}</span>
             <span class="text-xs text-gray-400">{{ row.subtitle }}</span>
+            @if (row.isFeatured) {
+              <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent">
+                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                Destacado
+              </span>
+              @if (!row.canBeFeatured) {
+                <p class="text-[10px] text-orange-600 mt-0.5">Sin pajilla aprobada: no se muestra en la portada</p>
+              }
+            }
           </div>
         </ng-template>
 
@@ -124,6 +144,30 @@ interface ListRow {
 
         <ng-template tableCell="actions" let-row>
           <div class="flex items-center gap-2 justify-end">
+            <!-- Destacado: solo toros, y solo con al menos una pajilla aprobada -->
+            @if (row.kind === 'straw') {
+              <button
+                type="button"
+                (click)="toggleFeatured(row)"
+                [disabled]="!row.canBeFeatured || featuringId() === row.id"
+                [class]="'p-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ' +
+                  (row.isFeatured ? 'text-accent hover:bg-accent/10' : 'text-gray-400 hover:text-accent hover:bg-gray-100')"
+                [title]="!row.canBeFeatured
+                  ? 'Necesita al menos una pajilla aprobada'
+                  : row.isFeatured
+                    ? 'Quitar de destacados'
+                    : 'Destacar en la portada'"
+              >
+                <svg
+                  class="w-4 h-4"
+                  [attr.fill]="row.isFeatured ? 'currentColor' : 'none'"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                </svg>
+              </button>
+            }
             @if (row.status === 'DRAFT' || row.status === 'CHANGES_REQUESTED' || row.status === 'REJECTED') {
               <button
                 type="button"
@@ -245,6 +289,7 @@ export default class ProductListComponent implements OnInit {
   confirmDelete = signal<ListRow | null>(null);
   deleting = signal(false);
   submittingId = signal<string | null>(null);
+  featuringId = signal<string | null>(null);
   errorMsg = signal<string | null>(null);
 
   rows = computed(() => {
@@ -281,6 +326,8 @@ export default class ProductListComponent implements OnInit {
             status: this.repStatus(listing.straws),
             subtitle: `${listing.straws.length} tipo(s) de pajilla`,
             straws: listing.straws,
+            isFeatured: listing.bull.isFeatured ?? false,
+            canBeFeatured: listing.straws.some((s) => s.status === 'ACTIVE'),
             notes: listing.straws
               .filter((s) => s.validationNotes && (s.status === 'REJECTED' || s.status === 'CHANGES_REQUESTED'))
               .map((s) => ({ label: STRAW_LABELS[s.strawType!] ?? '', note: s.validationNotes! })),
@@ -298,6 +345,8 @@ export default class ProductListComponent implements OnInit {
           status: p.status,
           subtitle: 'Insumo',
           straws: [],
+          isFeatured: false,
+          canBeFeatured: false,
           notes:
             p.validationNotes && (p.status === 'REJECTED' || p.status === 'CHANGES_REQUESTED')
               ? [{ label: '', note: p.validationNotes }]
@@ -344,6 +393,26 @@ export default class ProductListComponent implements OnInit {
       this.errorMsg.set('No se pudo enviar a revisión. Intenta de nuevo.');
     } finally {
       this.submittingId.set(null);
+    }
+  }
+
+  /**
+   * Destaca o quita el toro. La RPC apaga el destacado anterior del vendedor,
+   * así que basta con recargar para que la marca se mueva en la interfaz.
+   */
+  async toggleFeatured(row: ListRow): Promise<void> {
+    if (row.kind !== 'straw' || !row.canBeFeatured) return;
+    this.featuringId.set(row.id);
+    this.errorMsg.set(null);
+    try {
+      await this.bullService.setFeatured(row.id, !row.isFeatured);
+      this.loadData();
+    } catch (err) {
+      this.errorMsg.set(
+        err instanceof Error ? err.message : 'No se pudo actualizar el destacado. Intenta de nuevo.',
+      );
+    } finally {
+      this.featuringId.set(null);
     }
   }
 

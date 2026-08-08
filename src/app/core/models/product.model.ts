@@ -41,6 +41,8 @@ export interface ProductBull {
   breedId?: string;
   breedName?: string;
   shortCode?: string | null;
+  /** El toro destacado del vendedor. Solo relevante en vistas del vendedor. */
+  isFeatured?: boolean;
 }
 
 export interface CatalogFilters {

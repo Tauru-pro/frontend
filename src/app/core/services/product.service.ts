@@ -14,6 +14,25 @@ import {
   StrawType,
   UpdateProductDto,
 } from '../models/product.model';
+import { FeaturedStraw, FeaturedStrawVariant } from '../models/featured.model';
+
+/** Fila de la vista pública `featured_straws`. */
+interface FeaturedStrawRow {
+  bull_id: string;
+  bull_name: string;
+  breed_name: string | null;
+  seller_id: string;
+  seller_name: string;
+  cover_path: string | null;
+  straws: {
+    id: string;
+    name: string;
+    straw_type: StrawType | null;
+    price: number;
+    min_order_quantity: number;
+    stock_quantity: number;
+  }[];
+}
 
 interface MediaRow {
   id: string;
@@ -70,6 +89,7 @@ function mapProductRow(row: ProductRow): Product {
         breedId: bullRaw.breed_id,
         breedName: (bullRaw.breeds as { id: string; name: string } | null | undefined)?.name,
         shortCode: bullRaw.short_code,
+        isFeatured: (bullRaw as { is_featured?: boolean }).is_featured ?? false,
       }
     : null;
   return {
@@ -132,7 +152,7 @@ const PRODUCT_SELECT = `
   id, tenant_id, product_type, name, slug, description, price,
   bull_id, straw_type, min_order_quantity, stock_quantity,
   status, validation_notes, created_at, updated_at,
-  bulls(id, name, breed_id, short_code, breeds(id, name))
+  bulls(id, name, breed_id, short_code, is_featured, breeds(id, name))
 `.trim();
 
 const CATALOG_SELECT_BASE = `
@@ -564,6 +584,39 @@ export class ProductService {
 
     const { error } = await this.supabase.from('product_media').delete().eq('id', mediaId);
     if (error) throw new Error(error.message);
+  }
+
+  /**
+   * Toros destacados de la portada. Lee la vista pública `featured_straws`, que
+   * ya agrega las pajillas aprobadas de cada toro: una petición, sin N+1, y
+   * accesible sin sesión.
+   */
+  getFeaturedStraws(): Observable<FeaturedStraw[]> {
+    const query = this.supabase.from('featured_straws').select('*');
+
+    return from(query).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        return ((data as unknown as FeaturedStrawRow[]) ?? []).map((row) => ({
+          bullId: row.bull_id,
+          bullName: row.bull_name,
+          breedName: row.breed_name,
+          sellerId: row.seller_id,
+          sellerName: row.seller_name,
+          coverUrl: row.cover_path ? this.getMediaPublicUrl(row.cover_path) : null,
+          straws: (row.straws ?? []).map(
+            (s): FeaturedStrawVariant => ({
+              id: s.id,
+              name: s.name,
+              strawType: s.straw_type,
+              price: Number(s.price),
+              minOrderQuantity: s.min_order_quantity,
+              stockQuantity: s.stock_quantity,
+            }),
+          ),
+        }));
+      }),
+    );
   }
 
   getMediaPublicUrl(storagePath: string): string {
