@@ -27,27 +27,72 @@
       </div>
       }
 
-      <!-- Price range filter -->
+      <!-- Precio: tramos derivados de lo que hay a la venta, más rango libre -->
       <div>
-        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Precio (USD)</p>
+        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Precio</p>
+
+        @if (priceBands().length > 0) {
+        <div class="space-y-1 mb-3">
+          @for (band of priceBands(); track band.label) {
+          <a
+            [routerLink]="['/catalog']"
+            [queryParams]="{ min: band.min, max: band.max, page: null }"
+            queryParamsHandling="merge"
+            class="block text-sm transition-colors"
+            [class]="minPrice() === band.min && maxPrice() === band.max
+              ? 'text-secondary font-semibold'
+              : 'text-gray-600 hover:text-secondary'"
+          >
+            {{ band.label }}
+          </a>
+          }
+        </div>
+        }
+
         <div class="flex gap-2 items-center">
-          <input type="number" placeholder="Mín" class="form-input text-sm w-full" [value]="minPrice()"
-            (input)="minPrice.set($any($event.target).valueAsNumber || null)" min="0" />
+          <input
+            type="number"
+            placeholder="Mínimo"
+            class="form-input text-sm w-full min-w-0"
+            [value]="draftMin()"
+            (input)="draftMin.set($any($event.target).valueAsNumber || null)"
+            (keyup.enter)="applyPrice()"
+            min="0"
+          />
           <span class="text-gray-300 text-sm flex-shrink-0">–</span>
-          <input type="number" placeholder="Máx" class="form-input text-sm w-full" [value]="maxPrice()"
-            (input)="maxPrice.set($any($event.target).valueAsNumber || null)" min="0" />
+          <input
+            type="number"
+            placeholder="Máximo"
+            class="form-input text-sm w-full min-w-0"
+            [value]="draftMax()"
+            (input)="draftMax.set($any($event.target).valueAsNumber || null)"
+            (keyup.enter)="applyPrice()"
+            min="0"
+          />
+          <button
+            type="button"
+            (click)="applyPrice()"
+            [disabled]="!canApplyPrice()"
+            aria-label="Aplicar rango de precio"
+            class="w-8 h-8 flex-shrink-0 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center transition-colors hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:text-gray-400"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex flex-col gap-2 pt-1">
-        <button (click)="applyFilters()" class="btn-primary py-2 text-sm w-full">
-          Aplicar filtros
-        </button>
-        <button (click)="clearFilters()" class="btn-primary-outline py-2 text-sm w-full">
-          Limpiar
-        </button>
-      </div>
+      <!-- Solo cuando hay algo que limpiar -->
+      @if (hasActiveFilters()) {
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="text-xs font-medium text-gray-400 hover:text-secondary transition-colors"
+      >
+        Limpiar todo
+      </button>
+      }
     </div>
   </aside>
 

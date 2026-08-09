@@ -8,7 +8,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../core/services/product.service';
 import { BreedService } from '../../../core/services/breed.service';
@@ -18,6 +18,7 @@ import { Breed } from '../../../core/models/breed.model';
 import { ProductCardComponent } from './product-card.component';
 import { BullListingCardComponent } from '../../../shared/components/bull-listing-card/bull-listing-card.component';
 import { BreedFilterComponent } from '../../../shared/components/breed-filter/breed-filter.component';
+import { formatPrice } from '../../../shared/pipes/price.pipe';
 
 /**
  * Genética e insumos son unidades distintas —un toro agrupa varias pajillas, un
@@ -26,6 +27,22 @@ import { BreedFilterComponent } from '../../../shared/components/breed-filter/br
  * de cada página entre dos consultas paginadas.
  */
 export type CatalogSection = 'GENETICS' | 'SUPPLIES';
+
+/** Un tramo de precio de los que se ofrecen como atajo. */
+export interface PriceBand {
+  label: string;
+  min: number | null;
+  max: number | null;
+}
+
+/**
+ * Redondea a una cifra legible según la magnitud del rango: con 5.000 de ancho
+ * los cortes van a miles, con 500.000 a cienmiles. Evita tramos como "$ 31.667".
+ */
+function niceRound(value: number, span: number): number {
+  const step = Math.max(1, Math.pow(10, Math.floor(Math.log10(Math.max(span, 1)))));
+  return Math.round(value / step) * step;
+}
 
 /** Un parámetro ausente o no numérico deja el filtro sin aplicar. */
 function toNumberOrNull(value: string | null): number | null {
@@ -36,7 +53,13 @@ function toNumberOrNull(value: string | null): number | null {
 
 @Component({
   selector: 'app-catalog',
-  imports: [FormsModule, ProductCardComponent, BullListingCardComponent, BreedFilterComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    ProductCardComponent,
+    BullListingCardComponent,
+    BreedFilterComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './catalog.component.html',
 })
@@ -59,8 +82,16 @@ export default class CatalogComponent implements OnInit {
   totalItems = signal(0);
 
   selectedBreed = signal<string>('');
+  // Aplicado: el reflejo de la URL.
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
+  // Borrador: lo que hay escrito en los campos y aún no se ha aplicado. Vive
+  // aparte porque, si compartiera señal con lo aplicado, "Limpiar" no podría
+  // vaciarlo cuando la navegación no llega a cambiar la URL.
+  draftMin = signal<number | null>(null);
+  draftMax = signal<number | null>(null);
+
+  priceBounds = signal<{ min: number; max: number } | null>(null);
 
   isGenetics = computed(() => this.section() === 'GENETICS');
   /** La raza solo aplica a la genética: un insumo no tiene toro. */
@@ -73,6 +104,36 @@ export default class CatalogComponent implements OnInit {
       ? `${this.totalItems()} ${this.totalItems() === 1 ? 'toro encontrado' : 'toros encontrados'}`
       : `${this.totalItems()} ${this.totalItems() === 1 ? 'producto encontrado' : 'productos encontrados'}`,
   );
+
+  /**
+   * Tres tramos derivados de los precios reales. Sin resultados, o con un solo
+   * precio en el catálogo, no hay nada que partir y no se ofrece ninguno.
+   */
+  priceBands = computed<PriceBand[]>(() => {
+    const bounds = this.priceBounds();
+    if (!bounds || bounds.max <= bounds.min) return [];
+    const span = bounds.max - bounds.min;
+    const low = niceRound(bounds.min + span / 3, span);
+    const high = niceRound(bounds.min + (span * 2) / 3, span);
+    if (low >= high) return [];
+    return [
+      { label: `Hasta ${formatPrice(low)}`, min: null, max: low },
+      { label: `${formatPrice(low)} a ${formatPrice(high)}`, min: low, max: high },
+      { label: `Más de ${formatPrice(high)}`, min: high, max: null },
+    ];
+  });
+
+  hasActiveFilters = computed(
+    () => !!this.selectedBreed() || this.minPrice() != null || this.maxPrice() != null,
+  );
+
+  /** Un rango invertido devuelve cero resultados sin explicar por qué. */
+  canApplyPrice = computed(() => {
+    const min = this.draftMin();
+    const max = this.draftMax();
+    if (min == null && max == null) return false;
+    return min == null || max == null || min <= max;
+  });
 
   readonly limit = 12;
   /** Tantos esqueletos como resultados va a traer la página, para no reflowear. */
@@ -92,8 +153,11 @@ export default class CatalogComponent implements OnInit {
       this.selectedBreed.set(q.get('breed') ?? '');
       this.minPrice.set(toNumberOrNull(q.get('min')));
       this.maxPrice.set(toNumberOrNull(q.get('max')));
+      this.draftMin.set(this.minPrice());
+      this.draftMax.set(this.maxPrice());
       this.currentPage.set(Number(q.get('page')) || 1);
       this.load();
+      this.loadPriceBounds();
     });
   }
 
@@ -180,12 +244,33 @@ export default class CatalogComponent implements OnInit {
       });
   }
 
-  applyFilters(): void {
-    this.navigateWithParams({ page: 1 });
+  /** Aplica el rango escrito en los campos. */
+  applyPrice(): void {
+    if (!this.canApplyPrice()) return;
+    this.navigateWithParams({ min: this.draftMin(), max: this.draftMax(), page: 1 });
   }
 
+  /**
+   * Resetea el borrador aquí mismo en vez de esperar a la suscripción: si la
+   * URL de destino coincide con la actual, Angular ignora la navegación y
+   * `queryParamMap` nunca reemite, así que el campo se quedaría escrito.
+   */
   clearFilters(): void {
+    this.draftMin.set(null);
+    this.draftMax.set(null);
     this.navigateWithParams({ breed: '', min: null, max: null, page: 1 });
+  }
+
+  /** Los tramos relevantes son los de lo que se está viendo. */
+  private loadPriceBounds(): void {
+    if (!this.isGenetics()) {
+      this.priceBounds.set(null);
+      return;
+    }
+    this.productService.getCatalogPriceBounds(this.selectedBreed() || undefined).subscribe({
+      next: (bounds) => this.priceBounds.set(bounds),
+      error: () => this.priceBounds.set(null),
+    });
   }
 
   goToPage(page: number): void {

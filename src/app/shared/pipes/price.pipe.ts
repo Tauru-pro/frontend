@@ -6,6 +6,11 @@ const FORMATTER = new Intl.NumberFormat('es-CO', {
   maximumFractionDigits: 0,
 });
 
+/** El mismo formato, para componer cadenas fuera de una plantilla. */
+export function formatPrice(value: number | null | undefined): string {
+  return FORMATTER.format(value ?? 0);
+}
+
 /**
  * Formato único de precio para todo el recorrido de compra — tarjeta, ficha,
  * carrito y checkout. Antes cada superficie hacía su propio `toFixed(2)` con un
@@ -15,6 +20,6 @@ const FORMATTER = new Intl.NumberFormat('es-CO', {
 @Pipe({ name: 'price' })
 export class PricePipe implements PipeTransform {
   transform(value: number | null | undefined): string {
-    return FORMATTER.format(value ?? 0);
+    return formatPrice(value);
   }
 }

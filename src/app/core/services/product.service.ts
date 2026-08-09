@@ -721,6 +721,31 @@ export class ProductService {
     );
   }
 
+  /**
+   * Precio mínimo y máximo del catálogo, para derivar tramos de filtro que
+   * correspondan a lo que realmente hay a la venta.
+   *
+   * Reduce en cliente sobre dos números por fila. Con el volumen actual sobra;
+   * si el catálogo llegara a superar el tope de 1000 filas de PostgREST habría
+   * que agregarlo en servidor (una vista con `min()`/`max()` o una RPC).
+   */
+  getCatalogPriceBounds(breedSlug?: string): Observable<{ min: number; max: number } | null> {
+    let query = this.supabase.from('bull_listings').select('min_price, max_price');
+    if (breedSlug) query = query.eq('breed_slug', breedSlug);
+
+    return from(query).pipe(
+      map(({ data, error }) => {
+        if (error) throw error;
+        const rows = (data as unknown as { min_price: number; max_price: number }[]) ?? [];
+        if (rows.length === 0) return null;
+        return {
+          min: Math.min(...rows.map((r) => Number(r.min_price))),
+          max: Math.max(...rows.map((r) => Number(r.max_price))),
+        };
+      }),
+    );
+  }
+
   private mapBullListingRow(row: BullListingRow): BullListing {
     return {
       bullId: row.bull_id,
