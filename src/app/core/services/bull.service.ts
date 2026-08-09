@@ -27,7 +27,7 @@ interface BullRow {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
-  breeds: { id: string; name: string; purpose: 'MILK' | 'MEAT'; created_at: string; updated_at: string } | null;
+  breeds: { id: string; name: string; slug: string; purpose: 'MILK' | 'MEAT'; created_at: string; updated_at: string } | null;
   product_media: MediaRow[];
 }
 
@@ -64,8 +64,8 @@ function mapBullRow(row: BullRow): Bull {
     name: row.name,
     breedId: row.breed_id ?? '',
     breed: row.breeds
-      ? { id: row.breeds.id, name: row.breeds.name, purpose: row.breeds.purpose, createdAt: row.breeds.created_at, updatedAt: row.breeds.updated_at }
-      : { id: '', name: '', purpose: 'MEAT' as const, createdAt: '', updatedAt: '' },
+      ? { id: row.breeds.id, name: row.breeds.name, slug: row.breeds.slug, purpose: row.breeds.purpose, createdAt: row.breeds.created_at, updatedAt: row.breeds.updated_at }
+      : { id: '', name: '', slug: '', purpose: 'MEAT' as const, createdAt: '', updatedAt: '' },
     origin: row.origin ?? 'NATIONAL',
     registrationType: row.registration_type,
     code: row.code,
@@ -96,7 +96,7 @@ function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
 
 const BULL_SELECT = `
   id, tenant_id, name, breed_id, origin, registration_type, code, short_code, description, status, is_featured, created_at, updated_at,
-  breeds(id, name, purpose, created_at, updated_at)
+  breeds(id, name, slug, purpose, created_at, updated_at)
 `.trim();
 
 const MEDIA_SELECT = `id, entity_type, entity_id, media_type, storage_path, mime_type, sort_order, is_cover, created_at`;

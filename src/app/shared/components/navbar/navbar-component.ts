@@ -1,11 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Category } from '../../../features/marketplace/home/home.component';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserStore } from '../../../core/store/user.store';
 
 import { HasRoleDirective } from '../../directives/has-role.directive';
 import { CartStore } from '../../../core/store/cart.store';
+
+/** Categorías simuladas del buscador de la barra superior. No son las razas. */
+interface Category {
+  name: string;
+  icon: string;
+  slug: string;
+}
 
 @Component({
   selector: 'app-navbar',

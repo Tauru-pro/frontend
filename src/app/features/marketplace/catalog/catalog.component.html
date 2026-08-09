@@ -16,17 +16,14 @@
 
       <h2 class="font-bold text-primary text-sm uppercase tracking-widest">Filtros</h2>
 
-      <!-- Breed filter (only for STRAW) -->
+      <!-- Razas (solo genética): la misma lista que la portada -->
       @if (showBreedFilter()) {
       <div>
         <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Raza</p>
-        <select class="form-input text-sm" [value]="selectedBreed()"
-          (change)="selectedBreed.set($any($event.target).value)">
-          <option value="">Todas las razas</option>
-          @for (breed of breeds(); track breed.id) {
-          <option [value]="breed.id">{{ breed.name }}</option>
-          }
-        </select>
+        <app-breed-filter
+          [breeds]="breeds()"
+          [activeSlug]="selectedBreed() || null"
+          [showAll]="true" />
       </div>
       }
 
@@ -80,17 +77,18 @@
       }
     </div>
 
+    <!-- Razas en móvil: chips con scroll, para no empujar los resultados -->
+    @if (showBreedFilter()) {
+    <div class="lg:hidden mb-3">
+      <app-breed-filter
+        [breeds]="breeds()"
+        [activeSlug]="selectedBreed() || null"
+        layout="chips" />
+    </div>
+    }
+
     <!-- Mobile filters -->
     <div class="lg:hidden mb-4 flex gap-2 flex-wrap">
-      @if (showBreedFilter()) {
-      <select class="form-input text-sm flex-1" [value]="selectedBreed()"
-        (change)="selectedBreed.set($any($event.target).value); applyFilters()">
-        <option value="">Todas las razas</option>
-        @for (breed of breeds(); track breed.id) {
-        <option [value]="breed.id">{{ breed.name }}</option>
-        }
-      </select>
-      }
       <button (click)="clearFilters()" class="btn-primary-outline px-4 py-2 text-sm">
         Limpiar
       </button>

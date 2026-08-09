@@ -6,6 +6,7 @@ import { SupabaseClientService } from '../auth/supabase-client';
 interface BreedRow {
   id: string;
   name: string;
+  slug: string;
   purpose: Breed['purpose'];
   created_at: string;
   updated_at: string;
@@ -15,6 +16,7 @@ function mapBreedRow(row: BreedRow): Breed {
   return {
     id: row.id,
     name: row.name,
+    slug: row.slug,
     purpose: row.purpose,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

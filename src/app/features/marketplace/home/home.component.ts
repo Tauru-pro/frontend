@@ -5,6 +5,8 @@ import { BreedService } from '../../../core/services/breed.service';
 import { ProductService } from '../../../core/services/product.service';
 import { BullListing } from '../../../core/models/bull-listing.model';
 import { BullListingCardComponent } from '../../../shared/components/bull-listing-card/bull-listing-card.component';
+import { BreedFilterComponent } from '../../../shared/components/breed-filter/breed-filter.component';
+import { Breed } from '../../../core/models/breed.model';
 
 export interface Product {
   id: number;
@@ -17,15 +19,9 @@ export interface Product {
   reviews: number;
 }
 
-export interface Category {
-  name: string;
-  icon: string;
-  slug: string;
-}
-
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, BullListingCardComponent],
+  imports: [RouterLink, BullListingCardComponent, BreedFilterComponent],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './home.component.css',
@@ -41,7 +37,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
   seconds = signal(30);
   cartCount = signal(2);
 
-  categories = signal<Category[]>([]);
+  breeds = signal<Breed[]>([]);
 
   // "Semen Destacado": datos reales, un toro por vendedor con destacado.
   featuredBulls = signal<BullListing[]>([]);
@@ -92,15 +88,7 @@ export default class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.breedService.getAll().subscribe({
-      next: (breeds) => {
-        this.categories.set(
-          breeds.map((b) => ({
-            name: b.name,
-            icon: '',
-            slug: b.id,
-          }))
-        );
-      },
+      next: (breeds) => this.breeds.set(breeds),
     });
 
     if (isPlatformBrowser(this.platformId)) {

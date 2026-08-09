@@ -36,6 +36,7 @@ interface BullListingRow {
   is_featured: boolean;
   breed_id: string | null;
   breed_name: string | null;
+  breed_slug: string | null;
   seller_id: string;
   seller_name: string;
   cover_path: string | null;
@@ -639,7 +640,7 @@ export class ProductService {
   getCatalogBulls(
     page = 1,
     limit = 12,
-    filters: { breedId?: string; minPrice?: number; maxPrice?: number } = {},
+    filters: { breedSlug?: string; minPrice?: number; maxPrice?: number } = {},
   ): Observable<PaginatedResponse<BullListing>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
@@ -650,7 +651,7 @@ export class ProductService {
       .order('last_published_at', { ascending: false })
       .range(from_, to);
 
-    if (filters.breedId) query = query.eq('breed_id', filters.breedId);
+    if (filters.breedSlug) query = query.eq('breed_slug', filters.breedSlug);
     if (filters.minPrice != null) query = query.gte('max_price', filters.minPrice);
     if (filters.maxPrice != null) query = query.lte('min_price', filters.maxPrice);
 
@@ -723,6 +724,7 @@ export class ProductService {
       isFeatured: row.is_featured,
       breedId: row.breed_id,
       breedName: row.breed_name,
+      breedSlug: row.breed_slug,
       sellerId: row.seller_id,
       sellerName: row.seller_name,
       coverUrl: row.cover_path ? this.getMediaPublicUrl(row.cover_path) : null,

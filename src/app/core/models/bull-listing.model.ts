@@ -22,6 +22,7 @@ export interface BullListing {
   isFeatured: boolean;
   breedId: string | null;
   breedName: string | null;
+  breedSlug: string | null;
   sellerId: string;
   sellerName: string;
   coverUrl: string | null;
