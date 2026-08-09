@@ -75,6 +75,8 @@ export default class CatalogComponent implements OnInit {
   );
 
   readonly limit = 12;
+  /** Tantos esqueletos como resultados va a traer la página, para no reflowear. */
+  readonly skeletons = Array.from({ length: 12 });
 
   ngOnInit(): void {
     this.breedService.getAll().subscribe({
