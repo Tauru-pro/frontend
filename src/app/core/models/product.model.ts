@@ -82,6 +82,9 @@ export interface ProductDetail {
   bullId: string | null;
   bullName: string | null;
   breedName: string | null;
+  sellerId: string;
+  /** Nombre comercial de la tienda que publica el producto. */
+  sellerName: string;
   /** Media del toro: vídeo, prueba genética y sus imágenes. */
   bullMedia: ProductMedia[];
   variants: Product[];

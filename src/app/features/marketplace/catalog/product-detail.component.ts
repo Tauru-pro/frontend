@@ -28,9 +28,10 @@ import { PricePipe } from '../../../shared/pipes/price.pipe';
   standalone: true,
   imports: [RouterLink, PricePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'w-full min-w-0' },
   template: `
     <!-- Breadcrumb -->
-    <div class="max-w-5xl mx-auto px-4 py-4">
+    <div class="py-4">
       <nav class="flex items-center gap-2 text-xs text-gray-400">
         <a routerLink="/" class="hover:text-secondary transition-colors">Inicio</a>
         <span>›</span>
@@ -40,7 +41,7 @@ import { PricePipe } from '../../../shared/pipes/price.pipe';
       </nav>
     </div>
 
-    <div class="max-w-5xl mx-auto px-4 pb-14">
+    <div class="pb-14">
 
       <!-- Loading -->
       @if (loading()) {
@@ -124,6 +125,11 @@ import { PricePipe } from '../../../shared/pipes/price.pipe';
                 <p class="text-sm text-gray-400 mt-1">
                   Toro: <span class="font-semibold text-gray-600">{{ p.bull.name }}</span>
                   @if (p.bull.breedName) { · <span class="text-gray-500">{{ p.bull.breedName }}</span> }
+                </p>
+              }
+              @if (detail(); as d) {
+                <p class="text-sm text-gray-400 mt-0.5">
+                  Vendido por <span class="font-semibold text-gray-600">{{ d.sellerName }}</span>
                 </p>
               }
               @if (variants().length > 1) {
@@ -258,7 +264,7 @@ export default class ProductDetailComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   /** La fila de `product_details`: el toro, su media y todas las variantes. */
-  private detail = signal<ProductDetail | null>(null);
+  protected detail = signal<ProductDetail | null>(null);
   private selectedId = signal<string | null>(null);
 
   loading = signal(true);

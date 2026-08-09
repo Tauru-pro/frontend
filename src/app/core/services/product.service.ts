@@ -23,6 +23,8 @@ interface ProductDetailRow {
   bull_id: string | null;
   bull_name: string | null;
   breed_name: string | null;
+  seller_id: string;
+  seller_name: string;
   bull_media: MediaRow[];
   variants: (Omit<ProductRow, 'bulls' | 'product_media' | 'validation_notes'> & {
     media: MediaRow[];
@@ -695,6 +697,8 @@ export class ProductService {
           bullId: row.bull_id,
           bullName: row.bull_name,
           breedName: row.breed_name,
+          sellerId: row.seller_id,
+          sellerName: row.seller_name,
           bullMedia,
           variants: (row.variants ?? []).map((v) =>
             mapProductRow({
