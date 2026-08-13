@@ -529,11 +529,16 @@ export class ProductService {
     if (error) throw new Error(error.message);
   }
 
-  /** Reenvío del vendedor: vuelve a PENDING_VALIDATION y limpia el motivo previo. */
-  async submitForValidation(id: string): Promise<void> {
+  /**
+   * Publica el producto directamente: pasa a ACTIVE sin cola de revisión.
+   * Solo funciona si el vendedor ya está verificado (seller_profiles.status =
+   * 'ACTIVE') — si no, el trigger `enforce_product_publish_gate` rechaza el
+   * UPDATE y este método relanza ese error para que la UI lo muestre.
+   */
+  async publishProduct(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('products')
-      .update({ status: 'PENDING_VALIDATION', validation_notes: null })
+      .update({ status: 'ACTIVE', validation_notes: null })
       .eq('id', id);
     if (error) throw new Error(error.message);
   }

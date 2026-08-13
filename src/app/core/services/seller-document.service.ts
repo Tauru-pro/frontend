@@ -15,6 +15,7 @@ interface SellerDocumentRow {
   mime_type: string | null;
   original_name: string | null;
   status: SellerDocumentStatus;
+  rejection_reason: string | null;
   uploaded_at: string;
 }
 
@@ -27,6 +28,7 @@ function mapRow(row: SellerDocumentRow): SellerDocument {
     mimeType: row.mime_type,
     originalName: row.original_name,
     status: row.status,
+    rejectionReason: row.rejection_reason,
     uploadedAt: row.uploaded_at,
   };
 }
@@ -80,6 +82,7 @@ export class SellerDocumentService {
           mime_type: file.type,
           original_name: file.name,
           status: 'PENDING_REVIEW',
+          rejection_reason: null,
           uploaded_at: new Date().toISOString(),
         },
         { onConflict: 'seller_id,doc_type' },
@@ -104,5 +107,51 @@ export class SellerDocumentService {
       .createSignedUrl(storagePath, expiresIn);
     if (error) throw new Error(error.message);
     return data.signedUrl;
+  }
+
+  /** Documentos legales de un vendedor específico (ADMIN/SUPER_ADMIN, vía RLS). */
+  async getDocumentsForSeller(sellerId: string): Promise<SellerDocument[]> {
+    const { data, error } = await this.supabase
+      .from('seller_documents')
+      .select('*')
+      .eq('seller_id', sellerId)
+      .order('doc_type', { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as SellerDocumentRow[]).map(mapRow);
+  }
+
+  /**
+   * Decisión de revisión del admin (aprobar / rechazar) sobre un documento legal.
+   * Se ejecuta en la edge function `seller-document-validate`, que actualiza el
+   * documento con service_role, recalcula la verificación del vendedor y notifica
+   * por correo.
+   */
+  private async validateDocument(
+    documentId: string,
+    decision: 'APPROVED' | 'REJECTED',
+    reason?: string,
+  ): Promise<void> {
+    const { error } = await this.supabase.functions.invoke('seller-document-validate', {
+      body: { documentId, decision, reason },
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async approveDocument(documentId: string): Promise<void> {
+    return this.validateDocument(documentId, 'APPROVED');
+  }
+
+  async rejectDocument(documentId: string, reason: string): Promise<void> {
+    return this.validateDocument(documentId, 'REJECTED', reason);
+  }
+
+  /** Cantidad de documentos en PENDING_REVIEW, para el badge del sidebar del admin. */
+  async getPendingReviewCount(): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('seller_documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'PENDING_REVIEW');
+    if (error) throw new Error(error.message);
+    return count ?? 0;
   }
 }

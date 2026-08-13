@@ -92,6 +92,16 @@ export class UserService {
     };
   }
 
+  async getSellerById(id: string): Promise<SellerProfile> {
+    const { data, error } = await this.supabase
+      .from('seller_profiles')
+      .select('*, profiles!inner(email, created_at)')
+      .eq('id', id)
+      .single();
+    if (error) throw new Error(error.message);
+    return mapSellerProfileWithOwnerRow(data as unknown as SellerProfileWithOwnerRow);
+  }
+
   async createUser(dto: CreateUserDto): Promise<void> {
     const { error } = await this.supabase.functions.invoke('admin-create-user', { body: dto });
     if (error) {

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { BullService } from '../../../core/services/bull.service';
+import { UserStore } from '../../../core/store/user.store';
 import { Product, ProductStatus, ProductType, STRAW_LABELS } from '../../../core/models/product.model';
 import {
   DataTableComponent,
@@ -39,7 +40,7 @@ interface ListRow {
 
 @Component({
   selector: 'app-product-list',
-  imports: [DataTableComponent, TableCellDirective, TableEmptyDirective],
+  imports: [DataTableComponent, TableCellDirective, TableEmptyDirective, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -60,6 +61,18 @@ interface ListRow {
           Nuevo Producto
         </button>
       </div>
+
+      @if (!isVerified()) {
+        <div class="bg-accent/10 border border-accent/20 rounded-2xl px-4 py-3 flex items-center gap-3 text-sm text-gray-700">
+          <svg class="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>
+            Puedes seguir creando productos, pero para publicarlos en el marketplace primero debes
+            <a routerLink="/seller/legal-documents" class="font-semibold text-primary hover:underline">completar tu verificación legal</a>.
+          </span>
+        </div>
+      }
 
       @if (errorMsg()) {
         <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
@@ -171,12 +184,12 @@ interface ListRow {
             @if (row.status === 'DRAFT' || row.status === 'CHANGES_REQUESTED' || row.status === 'REJECTED') {
               <button
                 type="button"
-                (click)="submitForReview(row)"
-                [disabled]="submittingId() === row.id"
-                class="px-2.5 py-1 text-xs font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-white disabled:opacity-50 transition-colors"
-                title="Enviar para revisión"
+                (click)="publish(row)"
+                [disabled]="!isVerified() || submittingId() === row.id"
+                class="px-2.5 py-1 text-xs font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary disabled:cursor-not-allowed transition-colors"
+                [title]="isVerified() ? 'Publicar en el catálogo' : 'Completa tu verificación legal para poder publicar'"
               >
-                {{ row.status === 'DRAFT' ? 'Enviar' : 'Reenviar' }}
+                Publicar
               </button>
             }
             <button
@@ -270,6 +283,9 @@ export default class ProductListComponent implements OnInit {
   protected router = inject(Router);
   private productService = inject(ProductService);
   private bullService = inject(BullService);
+  private userStore = inject(UserStore);
+
+  isVerified = computed(() => this.userStore.user()?.sellerProfile?.status === 'ACTIVE');
 
   private readonly pageSize = 10;
 
@@ -376,21 +392,22 @@ export default class ProductListComponent implements OnInit {
     }
   }
 
-  async submitForReview(row: ListRow): Promise<void> {
+  async publish(row: ListRow): Promise<void> {
+    if (!this.isVerified()) return;
     this.submittingId.set(row.id);
     this.errorMsg.set(null);
     try {
-      const resubmittable: ProductStatus[] = ['DRAFT', 'CHANGES_REQUESTED', 'REJECTED'];
+      const publishable: ProductStatus[] = ['DRAFT', 'CHANGES_REQUESTED', 'REJECTED'];
       const targetIds =
         row.kind === 'straw'
-          ? row.straws.filter((s) => resubmittable.includes(s.status)).map((s) => s.id)
+          ? row.straws.filter((s) => publishable.includes(s.status)).map((s) => s.id)
           : [row.id];
       for (const id of targetIds) {
-        await this.productService.submitForValidation(id);
+        await this.productService.publishProduct(id);
       }
       this.loadData();
     } catch {
-      this.errorMsg.set('No se pudo enviar a revisión. Intenta de nuevo.');
+      this.errorMsg.set('No se pudo publicar. Intenta de nuevo.');
     } finally {
       this.submittingId.set(null);
     }

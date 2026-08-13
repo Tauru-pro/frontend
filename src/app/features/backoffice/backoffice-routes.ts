@@ -6,6 +6,7 @@ export default <Routes>[
   { path: `${RoutesApp.users}/new`, canActivate: [superAdminGuard], loadComponent: () => import('./users/user-form.component') },
   { path: `${RoutesApp.users}/:id/edit`, canActivate: [superAdminGuard], loadComponent: () => import('./users/user-form.component') },
   { path: RoutesApp.sellers, loadComponent: () => import('./sellers/sellers.component') },
+  { path: `${RoutesApp.sellers}/:id`, loadComponent: () => import('./sellers/seller-review.component') },
   { path: RoutesApp.pickupPoints, loadComponent: () => import('./pickup-points/pickup-points.component') },
   { path: `${RoutesApp.pickupPoints}/new`, loadComponent: () => import('./pickup-points/pickup-point-form.component') },
   { path: `${RoutesApp.pickupPoints}/:id/edit`, loadComponent: () => import('./pickup-points/pickup-point-form.component') },

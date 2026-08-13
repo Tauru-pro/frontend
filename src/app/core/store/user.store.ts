@@ -24,7 +24,10 @@ interface ProfileRow {
   role: UserProfile['role'];
   status: UserProfile['status'];
   created_at: string;
-  seller_profiles: SellerProfileRow[] | null;
+  // seller_profiles.user_id carries a UNIQUE constraint (0006), so PostgREST
+  // embeds it as a to-one object, not an array — unlike customer_profiles
+  // below, which has no such constraint and stays to-many.
+  seller_profiles: SellerProfileRow | null;
   customer_profiles: CustomerProfileRow[] | null;
 }
 
@@ -41,7 +44,7 @@ interface CustomerProfileRow {
 }
 
 function mapProfileRow(row: ProfileRow): UserProfile {
-  const sellerRow = row.seller_profiles?.[0];
+  const sellerRow = row.seller_profiles;
   const customerRow = row.customer_profiles?.[0];
   return {
     id: row.id,

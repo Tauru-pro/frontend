@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   OnInit,
@@ -9,8 +10,10 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { SellerDocumentService } from '../../../core/services/seller-document.service';
+import { UserStore } from '../../../core/store/user.store';
 import {
   SellerDocument,
+  SellerDocumentStatus,
   SellerDocumentType,
   SELLER_DOCUMENT_LABELS,
 } from '../../../core/models/seller-document.model';
@@ -38,21 +41,37 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
         </div>
       </div>
 
-      <!-- Explicación / consentimiento -->
-      <div class="bg-primary/5 border border-primary/15 rounded-2xl p-5 flex gap-4">
-        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
+      @if (isVerified()) {
+        <!-- Perfil verificado -->
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-5 flex gap-4">
+          <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="text-sm text-gray-600 leading-relaxed">
+            <p class="font-semibold text-gray-800 mb-1">Perfil verificado</p>
+            Tus documentos legales fueron aprobados. Ya puedes publicar tus productos directamente en el
+            marketplace, sin esperar aprobación adicional.
+          </div>
         </div>
-        <div class="text-sm text-gray-600 leading-relaxed">
-          <p class="font-semibold text-gray-800 mb-1">Para empezar a vender debes acreditarte</p>
-          Sube los documentos legales que te acreditan como vendedor: tu <strong>RUT</strong> y el
-          <strong>certificado de representación legal</strong> de tu empresa. Tus documentos son privados y
-          solo el equipo de TAUVO puede revisarlos. Puedes hacerlo ahora u <strong>omitir y subirlos más
-          tarde</strong> desde tu configuración.
+      } @else {
+        <!-- Explicación / consentimiento -->
+        <div class="bg-primary/5 border border-primary/15 rounded-2xl p-5 flex gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="text-sm text-gray-600 leading-relaxed">
+            <p class="font-semibold text-gray-800 mb-1">Para empezar a vender debes acreditarte</p>
+            Sube los documentos legales que te acreditan como vendedor: tu <strong>RUT</strong> y el
+            <strong>certificado de representación legal</strong> de tu empresa. Tus documentos son privados y
+            solo el equipo de TAUVO puede revisarlos. Puedes hacerlo ahora u <strong>omitir y subirlos más
+            tarde</strong> desde tu configuración.
+          </div>
         </div>
-      </div>
+      }
 
       @if (errorMsg()) {
         <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">{{ errorMsg() }}</div>
@@ -72,8 +91,13 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
               @if (uploaded('RUT'); as doc) {
                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span class="text-xs text-gray-600 truncate max-w-[220px]">{{ doc.originalName ?? 'documento' }}</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-50 text-yellow-700">En revisión</span>
+                  <span [class]="'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ' + docStatusClass(doc.status)">
+                    {{ docStatusLabel(doc.status) }}
+                  </span>
                 </div>
+                @if (doc.status === 'REJECTED' && doc.rejectionReason) {
+                  <p class="text-xs text-red-600 mt-1.5 leading-snug">{{ doc.rejectionReason }}</p>
+                }
               } @else if (pending('RUT'); as f) {
                 <div class="flex items-center gap-2 mt-1.5">
                   <span class="text-xs text-primary truncate max-w-[220px]">{{ f.name }}</span>
@@ -87,9 +111,11 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
               @if (uploaded('RUT')) {
                 <button type="button" (click)="view('RUT')" class="px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors">Ver</button>
               }
-              <button type="button" (click)="pickRut()" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                {{ uploaded('RUT') || pending('RUT') ? 'Reemplazar' : 'Subir' }}
-              </button>
+              @if (uploaded('RUT')?.status !== 'APPROVED') {
+                <button type="button" (click)="pickRut()" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                  {{ uploaded('RUT') || pending('RUT') ? 'Reemplazar' : 'Subir' }}
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -102,8 +128,13 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
               @if (uploaded('LEGAL_REP'); as doc) {
                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span class="text-xs text-gray-600 truncate max-w-[220px]">{{ doc.originalName ?? 'documento' }}</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-50 text-yellow-700">En revisión</span>
+                  <span [class]="'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ' + docStatusClass(doc.status)">
+                    {{ docStatusLabel(doc.status) }}
+                  </span>
                 </div>
+                @if (doc.status === 'REJECTED' && doc.rejectionReason) {
+                  <p class="text-xs text-red-600 mt-1.5 leading-snug">{{ doc.rejectionReason }}</p>
+                }
               } @else if (pending('LEGAL_REP'); as f) {
                 <div class="flex items-center gap-2 mt-1.5">
                   <span class="text-xs text-primary truncate max-w-[220px]">{{ f.name }}</span>
@@ -117,9 +148,11 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
               @if (uploaded('LEGAL_REP')) {
                 <button type="button" (click)="view('LEGAL_REP')" class="px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors">Ver</button>
               }
-              <button type="button" (click)="pickLegal()" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                {{ uploaded('LEGAL_REP') || pending('LEGAL_REP') ? 'Reemplazar' : 'Subir' }}
-              </button>
+              @if (uploaded('LEGAL_REP')?.status !== 'APPROVED') {
+                <button type="button" (click)="pickLegal()" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                  {{ uploaded('LEGAL_REP') || pending('LEGAL_REP') ? 'Reemplazar' : 'Subir' }}
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -127,16 +160,18 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
         <input #rutInput type="file" [accept]="accept" class="hidden" (change)="onFileSelected('RUT', $event)" />
         <input #legalInput type="file" [accept]="accept" class="hidden" (change)="onFileSelected('LEGAL_REP', $event)" />
 
-        <div class="flex flex-col sm:flex-row gap-3 justify-end pt-2">
-          <button type="button" (click)="skip()" [disabled]="saving()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-40">
-            Omitir y subir más tarde
-          </button>
-          <button type="button" (click)="save()" [disabled]="saving() || !hasPending()"
-            class="btn-primary px-6 py-2.5 text-sm disabled:opacity-50">
-            {{ saving() ? 'Guardando…' : 'Guardar y continuar' }}
-          </button>
-        </div>
+        @if (!isVerified() || hasPending()) {
+          <div class="flex flex-col sm:flex-row gap-3 justify-end pt-2">
+            <button type="button" (click)="skip()" [disabled]="saving()"
+              class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-40">
+              Omitir y subir más tarde
+            </button>
+            <button type="button" (click)="save()" [disabled]="saving() || !hasPending()"
+              class="btn-primary px-6 py-2.5 text-sm disabled:opacity-50">
+              {{ saving() ? 'Guardando…' : 'Guardar y continuar' }}
+            </button>
+          </div>
+        }
       }
     </div>
   `,
@@ -144,9 +179,12 @@ const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 export default class SellerLegalDocumentsComponent implements OnInit {
   private service = inject(SellerDocumentService);
   private router = inject(Router);
+  private userStore = inject(UserStore);
 
   protected readonly labels = SELLER_DOCUMENT_LABELS;
   protected readonly accept = ACCEPT;
+
+  isVerified = computed(() => this.userStore.user()?.sellerProfile?.status === 'ACTIVE');
 
   private rutInputRef = viewChild<ElementRef<HTMLInputElement>>('rutInput');
   private legalInputRef = viewChild<ElementRef<HTMLInputElement>>('legalInput');
@@ -170,6 +208,24 @@ export default class SellerLegalDocumentsComponent implements OnInit {
 
   uploaded(type: SellerDocumentType): SellerDocument | undefined {
     return this.documents().find((d) => d.docType === type);
+  }
+
+  docStatusClass(status: SellerDocumentStatus): string {
+    const map: Record<SellerDocumentStatus, string> = {
+      PENDING_REVIEW: 'bg-yellow-50 text-yellow-700',
+      APPROVED: 'bg-green-50 text-green-700',
+      REJECTED: 'bg-red-50 text-red-700',
+    };
+    return map[status] ?? 'bg-gray-100 text-gray-600';
+  }
+
+  docStatusLabel(status: SellerDocumentStatus): string {
+    const map: Record<SellerDocumentStatus, string> = {
+      PENDING_REVIEW: 'En revisión',
+      APPROVED: 'Aprobado',
+      REJECTED: 'Rechazado',
+    };
+    return map[status] ?? status;
   }
 
   pending(type: SellerDocumentType): File | undefined {

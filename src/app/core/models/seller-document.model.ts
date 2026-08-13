@@ -10,6 +10,7 @@ export interface SellerDocument {
   mimeType: string | null;
   originalName: string | null;
   status: SellerDocumentStatus;
+  rejectionReason: string | null;
   uploadedAt: string;
 }
 

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../../core/services/user.service';
 import { SellerProfile, SellerStatus } from '../../../core/models/user.model';
 import {
@@ -11,7 +11,7 @@ import {
 
 @Component({
   selector: 'app-sellers',
-  imports: [DataTableComponent, TableEmptyDirective, TableCellDirective],
+  imports: [DataTableComponent, TableEmptyDirective, TableCellDirective, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -69,6 +69,15 @@ import {
           <span class="text-gray-400 text-xs">{{ formatDate(s.createdAt) }}</span>
         </ng-template>
 
+        <ng-template tableCell="actions" let-s>
+          <a
+            [routerLink]="['/admin/sellers', s.id]"
+            class="px-2.5 py-1 text-xs font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
+          >
+            Revisar
+          </a>
+        </ng-template>
+
         <ng-template tableEmpty>
           <div class="py-16 flex flex-col items-center text-center px-6">
             <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
@@ -94,6 +103,7 @@ export default class SellersComponent implements OnInit {
     { key: 'phone', label: 'Teléfono' },
     { key: 'status', label: 'Estado' },
     { key: 'createdAt', label: 'Registrado' },
+    { key: 'actions', label: '', headerClass: 'px-4 py-3 w-24' },
   ];
 
   sellers = signal<SellerProfile[]>([]);

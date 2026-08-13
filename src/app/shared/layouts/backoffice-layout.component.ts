@@ -8,12 +8,14 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { from } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { NavItem } from '../interfaces';
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { UserStore } from '../../core/store/user.store';
 import { ProductService } from '../../core/services/product.service';
+import { SellerDocumentService } from '../../core/services/seller-document.service';
 
 @Component({
   selector: 'app-backoffice-layout',
@@ -33,6 +35,10 @@ export class BackofficeLayoutComponent {
 
   private pendingCount = isPlatformBrowser(inject(PLATFORM_ID))
     ? toSignal(inject(ProductService).getPendingCount(), { initialValue: 0 })
+    : signal(0);
+
+  private pendingDocsCount = isPlatformBrowser(inject(PLATFORM_ID))
+    ? toSignal(from(inject(SellerDocumentService).getPendingReviewCount()), { initialValue: 0 })
     : signal(0);
 
   private svg(raw: string): SafeHtml {
@@ -122,10 +128,10 @@ export class BackofficeLayoutComponent {
 
   navItems = computed<NavItem[]>(() => {
     if (this.userStore.user()?.role === 'SELLER') return this.sellerNavItems;
-    return this.adminNavItems.map(item =>
-      item.path === '/admin/products'
-        ? { ...item, badge: this.pendingCount() }
-        : item,
-    );
+    return this.adminNavItems.map(item => {
+      if (item.path === '/admin/products') return { ...item, badge: this.pendingCount() };
+      if (item.path === '/admin/sellers') return { ...item, badge: this.pendingDocsCount() };
+      return item;
+    });
   });
 }

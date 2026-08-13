@@ -14,6 +14,7 @@ import { form, FormField, submit, required, minLength, validate } from '@angular
 import { ProductService } from '../../../core/services/product.service';
 import { BullService } from '../../../core/services/bull.service';
 import { BreedService } from '../../../core/services/breed.service';
+import { UserStore } from '../../../core/store/user.store';
 import {
   CreateProductDto,
   ProductMedia,
@@ -97,6 +98,18 @@ const PDF_MIME_TYPES: MimeType[] = ['application/pdf'];
           </p>
         </div>
       </div>
+
+      @if (!isVerified()) {
+        <div class="bg-accent/10 border border-accent/20 rounded-2xl px-4 py-3 flex items-center gap-3 text-sm text-gray-700">
+          <svg class="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>
+            Puedes guardar este producto como borrador, pero para publicarlo primero debes
+            <a routerLink="/seller/legal-documents" class="font-semibold text-primary hover:underline">completar tu verificación legal</a>.
+          </span>
+        </div>
+      }
 
       <!-- Step indicator (navegable solo en modo edición) -->
       <div class="flex items-center px-1">
@@ -975,8 +988,11 @@ export default class ProductFormComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
   private bullService = inject(BullService);
   private breedService = inject(BreedService);
+  private userStore = inject(UserStore);
 
   protected readonly strawLabels = STRAW_LABELS;
+
+  isVerified = computed(() => this.userStore.user()?.sellerProfile?.status === 'ACTIVE');
 
   productType = signal<ProductType | ''>('');
   currentStep = signal(1);

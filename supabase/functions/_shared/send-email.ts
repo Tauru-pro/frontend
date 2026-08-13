@@ -104,6 +104,28 @@ export function productChangesRequested(
   return { subject: `«${itemName}» necesita cambios`, html: shell('product-changes', body) };
 }
 
+export function sellerDocumentRejected(
+  name: string,
+  docLabel: string,
+  reason: string,
+): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">Revisión de tu documento</h1>
+    <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#64748b;">Hola ${name}, tu documento <strong>«${docLabel}»</strong> fue <strong style="color:#ef4444;">rechazado</strong> durante la revisión.</p>
+    ${notesBlock('Motivo del rechazo', reason)}
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">Puedes subir un nuevo documento desde tu panel.</p>
+    ${button(`${APP_URL}/seller/legal-documents`, 'Subir documento', '#f59e0b')}`;
+  return { subject: `Tu documento «${docLabel}» fue rechazado`, html: shell('seller-document-rejected', body) };
+}
+
+export function sellerVerified(name: string): { subject: string; html: string } {
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#060d1a;">¡Ya estás verificado, ${name}! ✅</h1>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#64748b;">Tus documentos legales fueron aprobados. Ya puedes publicar tus productos directamente en el catálogo de Tauru Market, sin esperar aprobación adicional.</p>
+    ${button(`${APP_URL}/seller/products`, 'Ir a mis productos', '#00bf63')}`;
+  return { subject: 'Tu cuenta de proveedor fue verificada', html: shell('seller-verified', body) };
+}
+
 export function nameFromClaims(claims: Record<string, unknown>): string {
   const meta = (claims['user_metadata'] as Record<string, unknown> | undefined) ?? {};
   const full = (meta['full_name'] as string | undefined)?.trim();
