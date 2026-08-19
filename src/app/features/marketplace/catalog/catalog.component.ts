@@ -10,6 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { ProductService } from '../../../core/services/product.service';
 import { BreedService } from '../../../core/services/breed.service';
 import { Product } from '../../../core/models/product.model';
@@ -57,6 +58,7 @@ function toNumberOrNull(value: string | null): number | null {
   imports: [
     FormsModule,
     RouterLink,
+    NgTemplateOutlet,
     ProductCardComponent,
     BullListingCardComponent,
     BreedFilterComponent,
@@ -92,6 +94,9 @@ export default class CatalogComponent implements OnInit {
   // vaciarlo cuando la navegación no llega a cambiar la URL.
   draftMin = signal<number | null>(null);
   draftMax = signal<number | null>(null);
+
+  /** Panel de filtros desplegable en mobile — en desktop el sidebar siempre está visible. */
+  mobileFiltersOpen = signal(false);
 
   priceBounds = signal<{ min: number; max: number } | null>(null);
 
@@ -261,6 +266,25 @@ export default class CatalogComponent implements OnInit {
   applyPrice(): void {
     if (!this.canApplyPrice()) return;
     this.navigateWithParams({ min: this.draftMin(), max: this.draftMax(), page: 1 });
+  }
+
+  /** Con separador de miles (`300.000`), para que el input muestre lo mismo que `formatPrice`. */
+  formatDraftValue(value: number | null): string {
+    return value != null ? value.toLocaleString('es-CO') : '';
+  }
+
+  onDraftMinInput(event: Event): void {
+    this.draftMin.set(this.parsePriceInput(event));
+  }
+
+  onDraftMaxInput(event: Event): void {
+    this.draftMax.set(this.parsePriceInput(event));
+  }
+
+  /** Descarta todo lo que no sea dígito (puntos de miles, letras pegadas) y deja un número o `null`. */
+  private parsePriceInput(event: Event): number | null {
+    const digits = (event.target as HTMLInputElement).value.replace(/\D/g, '');
+    return digits ? Number(digits) : null;
   }
 
   /**
