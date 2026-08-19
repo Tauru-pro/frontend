@@ -9,7 +9,6 @@ import {
   TableColumn,
 } from '../../../shared/components/data-table/data-table.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-pickup-points',
@@ -52,11 +51,20 @@ import { firstValueFrom } from 'rxjs';
         </ng-template>
 
         <ng-template tableCell="location" let-item>
-          <span class="text-sm text-gray-600">{{ item.city?.name }}, {{ item.state?.name }}</span>
+          <span class="text-sm text-gray-600">{{ item.city?.name }}, {{ item.city?.state?.name }}</span>
         </ng-template>
 
         <ng-template tableCell="address" let-item>
           <span class="text-sm text-gray-500 truncate max-w-[200px] block">{{ item.address }}</span>
+        </ng-template>
+
+        <ng-template tableCell="status" let-item>
+          <span
+            class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold"
+            [class]="item.status === 'ACTIVE' ? 'bg-secondary/10 text-secondary' : 'bg-gray-100 text-gray-500'"
+          >
+            {{ item.status === 'ACTIVE' ? 'Activo' : 'Inactivo' }}
+          </span>
         </ng-template>
 
         <ng-template tableCell="actions" let-item>
@@ -66,6 +74,15 @@ import { firstValueFrom } from 'rxjs';
               class="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
             >
               Editar
+            </button>
+            <button
+              (click)="onToggleStatus(item)"
+              class="px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors"
+              [class]="item.status === 'ACTIVE'
+                ? 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                : 'text-secondary border-secondary/30 hover:bg-secondary/5'"
+            >
+              {{ item.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
             </button>
             <button
               (click)="onDelete(item)"
@@ -103,6 +120,7 @@ export default class PickupPointsComponent implements OnInit {
     { key: 'name',     label: 'Nombre',     headerClass: 'px-6 py-3', cellClass: 'px-6 py-4' },
     { key: 'location', label: 'Ubicación' },
     { key: 'address',  label: 'Dirección' },
+    { key: 'status',   label: 'Estado' },
     { key: 'actions',  label: '' },
   ];
 
@@ -142,10 +160,20 @@ export default class PickupPointsComponent implements OnInit {
   async onDelete(item: PickupPoint): Promise<void> {
     if (!confirm(`¿Eliminar el punto "${item.name}"?`)) return;
     try {
-      await firstValueFrom(this.service.delete(item.id));
+      await this.service.delete(item.id);
       this.load();
     } catch {
       this.errorMsg.set('No se pudo eliminar el punto. Intenta de nuevo.');
+    }
+  }
+
+  async onToggleStatus(item: PickupPoint): Promise<void> {
+    const next = item.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await this.service.setStatus(item.id, next);
+      this.load();
+    } catch {
+      this.errorMsg.set('No se pudo cambiar el estado del punto. Intenta de nuevo.');
     }
   }
 }

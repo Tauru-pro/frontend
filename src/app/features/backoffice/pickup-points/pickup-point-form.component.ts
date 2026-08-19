@@ -1,11 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -13,13 +13,13 @@ import {
   submit,
   required,
 } from '@angular/forms/signals';
-import { firstValueFrom } from 'rxjs';
 import { PickupPointService } from '../../../core/services/pickup-point.service';
 import { CreatePickupPointDto } from '../../../core/models/pickup-point.model';
 import {
   LocationSelectComponent,
   LocationSelection,
 } from '../../../shared/components/location-select/location-select.component';
+import { MapPickerComponent, MapCoordinates } from '../../../shared/components/map-picker/map-picker.component';
 
 interface PickupPointFormModel {
   name: string;
@@ -30,7 +30,7 @@ interface PickupPointFormModel {
 
 @Component({
   selector: 'app-pickup-point-form',
-  imports: [RouterLink, FormField, LocationSelectComponent],
+  imports: [RouterLink, FormField, LocationSelectComponent, MapPickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="max-w-2xl mx-auto space-y-6">
@@ -119,30 +119,36 @@ interface PickupPointFormModel {
             </div>
           </div>
 
-          <!-- Coordenadas (opcionales) -->
+          <!-- Ubicación en el mapa -->
           <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">
-              Coordenadas <span class="text-gray-400 font-normal normal-case">(opcional)</span>
-            </h2>
+            <h2 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Ubicación en el mapa</h2>
+
+            <app-map-picker
+              [latitude]="mapLatitude()"
+              [longitude]="mapLongitude()"
+              [searchQuery]="mapSearchQuery()"
+              (locationChange)="onMapLocationChange($event)"
+            />
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Latitud</label>
                 <input
-                  type="number"
-                  step="any"
-                  [formField]="pointForm.latitude"
-                  placeholder="Ej. 4.7110"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  type="text"
+                  readonly
+                  [value]="model().latitude"
+                  placeholder="Se completa al elegir en el mapa"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-500 bg-gray-50 placeholder-gray-300 cursor-not-allowed"
                 />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Longitud</label>
                 <input
-                  type="number"
-                  step="any"
-                  [formField]="pointForm.longitude"
-                  placeholder="Ej. -74.0721"
-                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                  type="text"
+                  readonly
+                  [value]="model().longitude"
+                  placeholder="Se completa al elegir en el mapa"
+                  class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-500 bg-gray-50 placeholder-gray-300 cursor-not-allowed"
                 />
               </div>
             </div>
@@ -199,6 +205,17 @@ export default class PickupPointFormComponent implements OnInit {
   initialCityId = signal<string | null>(null);
   selectedCityId = signal<string | null>(null);
   showLocationErrors = signal(false);
+  /** Texto a geocodificar en el mapa, armado cuando cambia depto/ciudad. */
+  mapSearchQuery = signal<string | null>(null);
+
+  mapLatitude = computed(() => {
+    const v = this.model().latitude;
+    return v ? parseFloat(v) : null;
+  });
+  mapLongitude = computed(() => {
+    const v = this.model().longitude;
+    return v ? parseFloat(v) : null;
+  });
 
   model = signal<PickupPointFormModel>({
     name: '',
@@ -221,8 +238,26 @@ export default class PickupPointFormComponent implements OnInit {
     }
   }
 
+  /** Distingue la preselección automática en edición (no debe pisar coordenadas ya guardadas) de un cambio real del admin. */
+  private locationInitialized = false;
+
   onLocationChange(selection: LocationSelection | null): void {
     this.selectedCityId.set(selection?.cityId ?? null);
+    const isInitialEditLoad = this.isEdit() && !this.locationInitialized;
+    this.locationInitialized = true;
+
+    if (isInitialEditLoad && this.mapLatitude() != null && this.mapLongitude() != null) {
+      return;
+    }
+    this.mapSearchQuery.set(selection ? `${selection.cityName}, ${selection.stateName}, Colombia` : null);
+  }
+
+  onMapLocationChange(coords: MapCoordinates): void {
+    this.model.update((m) => ({
+      ...m,
+      latitude: String(coords.lat),
+      longitude: String(coords.lng),
+    }));
   }
 
   private loadPoint(id: string): void {
@@ -265,19 +300,14 @@ export default class PickupPointFormComponent implements OnInit {
         };
 
         if (this.isEdit()) {
-          await firstValueFrom(this.service.update(this.pointId()!, dto));
+          await this.service.update(this.pointId()!, dto);
         } else {
-          await firstValueFrom(this.service.create(dto));
+          await this.service.create(dto);
         }
 
         this.router.navigate(['/admin/pickup-points']);
-      } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        if (status === 409) {
-          this.errorMsg.set('Ya existe un punto con ese nombre.');
-        } else {
-          this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
-        }
+      } catch {
+        this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');
       } finally {
         this.saving.set(false);
       }

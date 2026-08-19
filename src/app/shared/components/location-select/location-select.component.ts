@@ -17,6 +17,9 @@ export interface LocationSelection {
   countryId: string;
   stateId: string;
   cityId: string;
+  countryName: string;
+  stateName: string;
+  cityName: string;
 }
 
 const DEFAULT_COUNTRY_ISO2 = 'CO';
@@ -203,6 +206,17 @@ export class LocationSelectComponent implements OnInit {
     const countryId = this.selectedCountryId();
     const stateId = this.selectedStateId();
     const cityId = this.selectedCityId();
-    this.selectionChange.emit(countryId && stateId && cityId ? { countryId, stateId, cityId } : null);
+    if (!countryId || !stateId || !cityId) {
+      this.selectionChange.emit(null);
+      return;
+    }
+    this.selectionChange.emit({
+      countryId,
+      stateId,
+      cityId,
+      countryName: this.countries().find((c) => c.id === countryId)?.name ?? '',
+      stateName: this.states().find((s) => s.id === stateId)?.name ?? '',
+      cityName: this.cities().find((c) => c.id === cityId)?.name ?? '',
+    });
   }
 }
