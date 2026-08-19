@@ -79,6 +79,9 @@ import { PricePipe } from '../../pipes/price.pipe';
         >
           {{ adding() ? 'Agregando…' : 'Agregar' }}
         </button>
+        @if (addError()) {
+          <p class="text-[11px] text-red-500 mt-1.5 text-center">{{ addError() }}</p>
+        }
       </div>
     </div>
   `,
@@ -91,6 +94,7 @@ export class BullListingCardComponent {
 
   private chosenId = signal<string | null>(null);
   adding = signal(false);
+  addError = signal<string | null>(null);
   /** Si el `<img>` falla al cargar (red, CDN), cae al emoji en vez de quedar con el ícono roto. */
   imageFailed = signal(false);
 
@@ -119,11 +123,12 @@ export class BullListingCardComponent {
     const variant = this.selected();
     if (variant.stockQuantity === 0) return;
     this.adding.set(true);
+    this.addError.set(null);
     try {
       const product = await firstValueFrom(this.productService.getProduct(variant.id));
       this.cartStore.addItem(product, variant.minOrderQuantity);
     } catch {
-      /* el carrito ya muestra sus propios errores; no se bloquea la portada */
+      this.addError.set('Este producto ya no está disponible. Actualiza la página e inténtalo de nuevo.');
     } finally {
       this.adding.set(false);
     }
