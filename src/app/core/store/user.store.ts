@@ -37,10 +37,16 @@ interface CustomerProfileRow {
   full_name: string | null;
   phone: string | null;
   phone_country_code: string | null;
+  address: string | null;
   herd_size: string | null;
   buyer_type: string | null;
   whatsapp: string | null;
   whatsapp_country_code: string | null;
+  cities: {
+    id: string;
+    name: string;
+    states: { id: string; name: string } | null;
+  } | null;
 }
 
 function mapProfileRow(row: ProfileRow): UserProfile {
@@ -61,6 +67,10 @@ function mapProfileRow(row: ProfileRow): UserProfile {
           fullName: customerRow.full_name ?? '',
           phone: customerRow.phone ?? undefined,
           phoneCountryCode: customerRow.phone_country_code ?? undefined,
+          address: customerRow.address ?? undefined,
+          city: customerRow.cities
+            ? { id: customerRow.cities.id, name: customerRow.cities.name, state: customerRow.cities.states ?? { id: '', name: '' } }
+            : undefined,
           herdSize: customerRow.herd_size ?? undefined,
           buyerType: customerRow.buyer_type ?? undefined,
           whatsapp: customerRow.whatsapp ?? undefined,
@@ -88,7 +98,7 @@ export const UserStore = signalStore(
 
           const { data, error } = await supabase
             .from('profiles')
-            .select(`*, seller_profiles(*, ${SELLER_CITY_EMBED}), customer_profiles(*)`)
+            .select(`*, seller_profiles(*, ${SELLER_CITY_EMBED}), customer_profiles(*, ${SELLER_CITY_EMBED})`)
             .eq('id', authUser.id)
             .single();
           if (error) throw error;

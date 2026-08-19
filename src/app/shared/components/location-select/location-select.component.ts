@@ -31,17 +31,26 @@ const DEFAULT_COUNTRY_ISO2 = 'CO';
   host: { class: 'block' },
   template: `
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <app-search-select
-        label="País"
-        [required]="true"
-        placeholder="Buscar país"
-        errorMessage="El país es requerido"
-        [options]="countryOptions()"
-        [value]="selectedCountryId()"
-        [loading]="countriesLoading()"
-        [showError]="showErrors"
-        (valueChange)="onCountryChange($event)"
-      />
+      @if (lockCountry) {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">País</label>
+          <div class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-700 flex items-center gap-2">
+            <span>🇨🇴</span><span>Colombia</span>
+          </div>
+        </div>
+      } @else {
+        <app-search-select
+          label="País"
+          [required]="true"
+          placeholder="Buscar país"
+          errorMessage="El país es requerido"
+          [options]="countryOptions()"
+          [value]="selectedCountryId()"
+          [loading]="countriesLoading()"
+          [showError]="showErrors"
+          (valueChange)="onCountryChange($event)"
+        />
+      }
       <app-search-select
         label="Departamento/Estado"
         [required]="true"
@@ -75,6 +84,8 @@ export class LocationSelectComponent implements OnInit {
   /** Only the city is stored on records; country and state are resolved from it. */
   @Input() initialCityId: string | null = null;
   @Input() showErrors = false;
+  /** País fijo en Colombia: oculta el selector y no se puede cambiar ni llamando a `onCountryChange` directamente. */
+  @Input() lockCountry = false;
   @Output() selectionChange = new EventEmitter<LocationSelection | null>();
 
   private countries = signal<Country[]>([]);
@@ -121,6 +132,9 @@ export class LocationSelectComponent implements OnInit {
   }
 
   onCountryChange(countryId: string | null): void {
+    // Con lockCountry no hay UI para disparar esto, pero se guarda igual acá
+    // por si alguien llama al método directo (consola, etc.) — no debe hacer nada.
+    if (this.lockCountry) return;
     this.selectedCountryId.set(countryId);
     this.selectedStateId.set(null);
     this.selectedCityId.set(null);

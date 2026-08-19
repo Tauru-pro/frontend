@@ -43,18 +43,33 @@
               [value]="buyerEmail()"
               (input)="buyerEmail.set($any($event.target).value)" />
           </div>
-          <app-phone-input label="Teléfono" (valueChange)="onPhoneChange($event)" />
+          <app-phone-input
+            label="Teléfono"
+            [required]="true"
+            [showError]="showContactErrors()"
+            [dialCode]="prefillPhoneCode()"
+            [number]="prefillPhoneNumber()"
+            (valueChange)="onPhoneChange($event)" />
         </div>
 
         <app-location-select
+          [lockCountry]="true"
+          [initialCityId]="initialCityId()"
           [showErrors]="showLocationErrors()"
           (selectionChange)="onLocationChange($event)" />
 
         <div>
-          <label class="block text-xs font-semibold text-gray-500 mb-1.5">Dirección</label>
+          <label class="block text-xs font-semibold text-gray-500 mb-1.5">
+            Dirección <span class="text-red-400">*</span>
+          </label>
           <input type="text" class="form-input" placeholder="Calle, número, barrio"
+            [class.border-red-300]="showLocationErrors() && !buyerAddress().trim()"
+            [class.focus:ring-red-100]="showLocationErrors() && !buyerAddress().trim()"
             [value]="buyerAddress()"
             (input)="buyerAddress.set($any($event.target).value)" />
+          @if (showLocationErrors() && !buyerAddress().trim()) {
+            <p class="text-red-400 text-xs mt-1.5">La dirección es requerida</p>
+          }
         </div>
       </div>
     }
@@ -199,7 +214,12 @@
         <div class="flex items-center gap-3">
           <div class="relative flex-shrink-0">
             <div class="w-14 h-14 rounded-xl overflow-hidden bg-surface-muted border border-gray-100 flex items-center justify-center text-2xl">
-              {{ item.product.productType === 'STRAW' ? '🧫' : '📦' }}
+              @if (!failedImageIds().has(item.product.id) && coverUrl(item.product); as url) {
+                <img [src]="url" [alt]="item.product.name" class="w-full h-full object-cover"
+                  (error)="onImageError(item.product.id)" />
+              } @else {
+                {{ item.product.productType === 'STRAW' ? '🧫' : '📦' }}
+              }
             </div>
             <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">
               {{ item.quantity }}

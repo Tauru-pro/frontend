@@ -7,6 +7,8 @@ export interface CustomerPersonalData {
   phoneCountryCode?: string;
   whatsapp?: string;
   whatsappCountryCode?: string;
+  cityId?: string;
+  address?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,6 +38,8 @@ export class CustomerProfileService {
       phone_country_code: data.phone ? (data.phoneCountryCode ?? null) : null,
       whatsapp: data.whatsapp ?? null,
       whatsapp_country_code: data.whatsapp ? (data.whatsappCountryCode ?? null) : null,
+      city_id: data.cityId ?? null,
+      address: data.address ?? null,
     };
 
     if (existing) {

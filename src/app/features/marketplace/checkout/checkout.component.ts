@@ -2,17 +2,23 @@ import {
   Component,
   signal,
   computed,
+  effect,
   inject,
   OnInit,
+  PLATFORM_ID,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CartStore } from '../../../core/store/cart.store';
 import { PickupPointService } from '../../../core/services/pickup-point.service';
 import { PickupPoint } from '../../../core/models/pickup-point.model';
-import { ProductType, StrawType } from '../../../core/models/product.model';
+import { Product, ProductType, StrawType } from '../../../core/models/product.model';
+import { ProductService } from '../../../core/services/product.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserStore } from '../../../core/store/user.store';
 import { LocationSelectComponent, LocationSelection } from '../../../shared/components/location-select/location-select.component';
 import {
   PhoneInputComponent,
@@ -32,6 +38,25 @@ const TYPE_LABELS: Record<ProductType, string> = {
   SUPPLIES: 'Insumo',
 };
 
+const CHECKOUT_STORAGE_KEY = 'tauru_checkout_form';
+
+/**
+ * Lo justo para sobrevivir una recarga de página en medio del checkout — no
+ * la lista de puntos de recogida ni el costo de envío, que se vuelven a pedir.
+ */
+interface CheckoutFormState {
+  currentStep: 1 | 2;
+  buyerFullName: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  prefillPhoneNumber: string;
+  prefillPhoneCode: string | null;
+  selectedCityId: string | null;
+  buyerAddress: string;
+  notes: string;
+  selectedPickupPointId: string | null;
+}
+
 @Component({
   selector: 'app-checkout',
   standalone: true,
@@ -44,6 +69,10 @@ export default class CheckoutComponent implements OnInit {
   private router = inject(Router);
   private orderService = inject(OrderService);
   private pickupPointService = inject(PickupPointService);
+  private productService = inject(ProductService);
+  private authService = inject(AuthService);
+  private userStore = inject(UserStore);
+  private platformId = inject(PLATFORM_ID);
   cartStore = inject(CartStore);
 
   currentStep = signal<1 | 2>(1);
@@ -57,8 +86,19 @@ export default class CheckoutComponent implements OnInit {
   buyerCity = signal('');
   buyerAddress = signal('');
 
+  // Seed values for the child inputs — the live signals above are what's
+  // actually submitted; app-phone-input/app-location-select only report
+  // changes on user interaction, so precarga needs both (see onInit).
+  prefillPhoneNumber = signal('');
+  prefillPhoneCode = signal<string | null>(null);
+  initialCityId = signal<string | null>(null);
+
   selectedCityId = signal<string | null>(null);
   showLocationErrors = signal(false);
+  showContactErrors = signal(false);
+
+  /** Punto de recogida a re-seleccionar apenas lleguen los puntos del departamento restaurado — se consume una sola vez. */
+  private pendingRestoredPickupPointId: string | null = null;
 
   // Step 2 — pickup point
   pickupPoints = signal<PickupPoint[]>([]);
@@ -78,22 +118,115 @@ export default class CheckoutComponent implements OnInit {
     return cost !== null ? this.cartStore.total() + cost : this.cartStore.total();
   });
 
-  ngOnInit(): void {
-    if (this.cartStore.items().length === 0) {
-      this.router.navigate(['/cart']);
+  constructor() {
+    // Autoguardado: cualquier cambio en estos signals reescribe sessionStorage,
+    // sin tener que acordarse de llamar "guardar" en cada handler.
+    if (isPlatformBrowser(this.platformId)) {
+      effect(() => {
+        const state: CheckoutFormState = {
+          currentStep: this.currentStep(),
+          buyerFullName: this.buyerFullName(),
+          buyerEmail: this.buyerEmail(),
+          buyerPhone: this.buyerPhone(),
+          prefillPhoneNumber: this.prefillPhoneNumber(),
+          prefillPhoneCode: this.prefillPhoneCode(),
+          selectedCityId: this.selectedCityId(),
+          buyerAddress: this.buyerAddress(),
+          notes: this.notes(),
+          selectedPickupPointId: this.selectedPickupPointId(),
+        };
+        sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(state));
+      });
     }
+  }
+
+  /** @returns true si había un formulario guardado y se restauró. */
+  private restoreState(): boolean {
+    const raw = sessionStorage.getItem(CHECKOUT_STORAGE_KEY);
+    if (!raw) return false;
+    try {
+      const state = JSON.parse(raw) as CheckoutFormState;
+      this.buyerFullName.set(state.buyerFullName ?? '');
+      this.buyerEmail.set(state.buyerEmail ?? '');
+      this.buyerPhone.set(state.buyerPhone ?? '');
+      this.prefillPhoneNumber.set(state.prefillPhoneNumber ?? '');
+      this.prefillPhoneCode.set(state.prefillPhoneCode ?? null);
+      this.buyerAddress.set(state.buyerAddress ?? '');
+      this.notes.set(state.notes ?? '');
+      if (state.selectedCityId) {
+        this.selectedCityId.set(state.selectedCityId);
+        this.initialCityId.set(state.selectedCityId);
+        this.buyerCity.set(state.selectedCityId);
+      }
+      this.pendingRestoredPickupPointId = state.selectedPickupPointId ?? null;
+      this.currentStep.set(state.currentStep === 2 ? 2 : 1);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async ngOnInit(): Promise<void> {
+    const isBrowser = isPlatformBrowser(this.platformId);
+    const restored = isBrowser && this.restoreState();
+
+    if (isBrowser && this.cartStore.items().length === 0) {
+      this.router.navigate(['/cart']);
+      return;
+    }
+
+    if (!restored && this.authService.currentUser()) {
+      if (!this.userStore.user()) await this.userStore.loadUser();
+      const u = this.userStore.user();
+      if (u) {
+        this.buyerFullName.set(u.fullName ?? '');
+        this.buyerEmail.set(u.email);
+
+        const phone = u.customerProfile?.phone ?? '';
+        const phoneCode = u.customerProfile?.phoneCountryCode ?? null;
+        this.prefillPhoneNumber.set(phone);
+        this.prefillPhoneCode.set(phoneCode);
+        if (phone && phoneCode) this.buyerPhone.set(`${phoneCode}${phone}`);
+
+        const city = u.customerProfile?.city;
+        if (city) {
+          this.selectedCityId.set(city.id);
+          this.initialCityId.set(city.id);
+          this.buyerCity.set(city.id);
+        }
+        this.buyerAddress.set(u.customerProfile?.address ?? '');
+      }
+    }
+  }
+
+  coverUrl(product: Product): string | null {
+    const cover =
+      product.media.find((m) => m.isCover && m.mediaType === 'image') ??
+      product.media.find((m) => m.mediaType === 'image');
+    return cover ? this.productService.getMediaPublicUrl(cover.storagePath) : null;
+  }
+
+  /** Si el `<img>` falla al cargar (red, CDN), cae al emoji en vez de quedar con el ícono roto. */
+  failedImageIds = signal<Set<string>>(new Set());
+
+  onImageError(productId: string): void {
+    this.failedImageIds.update((s) => new Set(s).add(productId));
   }
 
   next(): void {
     this.stepError.set(null);
     if (this.currentStep() === 1) {
-      if (!this.buyerFullName().trim() || !this.buyerEmail().trim()) {
-        this.stepError.set('Por favor completa los campos requeridos.');
-        return;
-      }
-      if (!this.selectedCityId()) {
-        this.showLocationErrors.set(true);
-        this.stepError.set('Por favor selecciona tu departamento y municipio.');
+      const missingContact =
+        !this.buyerFullName().trim() || !this.buyerEmail().trim() || !this.buyerPhone().trim();
+      const missingLocation = !this.selectedCityId() || !this.buyerAddress().trim();
+      if (missingContact || missingLocation) {
+        this.showContactErrors.set(missingContact);
+        this.showLocationErrors.set(missingLocation);
+        this.stepError.set(
+          missingLocation
+            ? 'Por favor selecciona tu departamento, municipio y dirección.'
+            : 'Por favor completa los campos requeridos.',
+        );
         return;
       }
     }
@@ -110,13 +243,21 @@ export default class CheckoutComponent implements OnInit {
   }
 
   // The checkout API stores a single phone field, so the two parts travel joined.
+  // Also re-seeds prefillPhoneNumber/Code: step 1 vive dentro de un @if, así que
+  // ir al paso 2 y volver destruye y recrea app-phone-input — sin esto, el
+  // número tipeado se perdía visualmente al volver (aunque buyerPhone seguía bien).
   onPhoneChange(value: PhoneValue | null): void {
     this.buyerPhone.set(value?.e164 ?? '');
+    this.prefillPhoneNumber.set(value?.number ?? '');
+    this.prefillPhoneCode.set(value?.dialCode ?? null);
   }
 
   onLocationChange(selection: LocationSelection | null): void {
     this.selectedCityId.set(selection?.cityId ?? null);
     this.buyerCity.set(selection?.cityId ?? '');
+    // Mismo motivo que onPhoneChange: re-seedear para que sobreviva a que
+    // app-location-select se destruya y recree al ir y volver del paso 2.
+    this.initialCityId.set(selection?.cityId ?? null);
 
     const stateId = selection?.stateId ?? null;
     this.pickupPoints.set([]);
@@ -129,6 +270,12 @@ export default class CheckoutComponent implements OnInit {
         next: (points) => {
           this.pickupPoints.set(points);
           this.pickupPointsLoading.set(false);
+
+          const restoredId = this.pendingRestoredPickupPointId;
+          this.pendingRestoredPickupPointId = null;
+          if (restoredId && points.some((p) => p.id === restoredId)) {
+            this.selectPickupPoint(restoredId);
+          }
         },
         error: () => this.pickupPointsLoading.set(false),
       });
@@ -174,6 +321,7 @@ export default class CheckoutComponent implements OnInit {
         } as any)
       );
       this.cartStore.clear();
+      if (isPlatformBrowser(this.platformId)) sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
       window.location.href = order.paymentUrl;
     } catch {
       this.stepError.set('No se pudo crear la orden. Por favor intenta de nuevo.');

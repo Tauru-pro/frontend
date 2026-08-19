@@ -21,6 +21,7 @@ export interface CustomerProfile {
   phone?: string;
   phoneCountryCode?: string;
   city?: City;
+  address?: string;
   herdSize?: string;
   buyerType?: string;
   whatsapp?: string;

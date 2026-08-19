@@ -6,10 +6,14 @@ import {
   PhoneInputComponent,
   PhoneValue,
 } from '../../../shared/components/phone-input/phone-input.component';
+import {
+  LocationSelectComponent,
+  LocationSelection,
+} from '../../../shared/components/location-select/location-select.component';
 
 @Component({
   selector: 'app-profile',
-  imports: [RouterLink, PhoneInputComponent],
+  imports: [RouterLink, PhoneInputComponent, LocationSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'w-full' },
   template: `
@@ -62,6 +66,26 @@ import {
           />
         </div>
 
+        <div>
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dirección</h3>
+          <div class="space-y-4">
+            <app-location-select
+              [initialCityId]="initialCityId()"
+              (selectionChange)="onLocationChange($event)"
+            />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">Dirección</label>
+              <input
+                type="text"
+                [value]="address()"
+                (input)="address.set($any($event.target).value)"
+                placeholder="Calle, número, barrio"
+                class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-end">
           <button type="button" (click)="onSave()" [disabled]="saving() || !fullName().trim()" class="btn-primary px-5 py-2.5 text-sm disabled:opacity-50">
             {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
@@ -105,6 +129,9 @@ export default class ProfileComponent implements OnInit {
   initialPhoneCode = signal<string | null>(null);
   initialWhatsapp = signal('');
   initialWhatsappCode = signal<string | null>(null);
+  address = signal('');
+  selectedCityId = signal<string | null>(null);
+  initialCityId = signal<string | null>(null);
   saving = signal(false);
   errorMsg = signal<string | null>(null);
   successMsg = signal<string | null>(null);
@@ -121,6 +148,13 @@ export default class ProfileComponent implements OnInit {
     this.initialPhoneCode.set(this.phoneCode());
     this.initialWhatsapp.set(this.whatsapp());
     this.initialWhatsappCode.set(this.whatsappCode());
+    this.address.set(u?.customerProfile?.address ?? '');
+    this.selectedCityId.set(u?.customerProfile?.city?.id ?? null);
+    this.initialCityId.set(u?.customerProfile?.city?.id ?? null);
+  }
+
+  onLocationChange(selection: LocationSelection | null): void {
+    this.selectedCityId.set(selection?.cityId ?? null);
   }
 
   onPhoneChange(value: PhoneValue | null): void {
@@ -146,6 +180,8 @@ export default class ProfileComponent implements OnInit {
         phoneCountryCode: this.phoneCode() ?? undefined,
         whatsapp: this.whatsapp().trim() || undefined,
         whatsappCountryCode: this.whatsappCode() ?? undefined,
+        cityId: this.selectedCityId() ?? undefined,
+        address: this.address().trim() || undefined,
       });
       await this.userStore.loadUser();
       this.successMsg.set('Datos actualizados correctamente.');
