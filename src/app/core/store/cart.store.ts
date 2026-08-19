@@ -9,6 +9,7 @@ import {
   patchState,
 } from '@ngrx/signals';
 import { Product } from '../models/product.model';
+import { ToastService } from '../services/toast.service';
 
 export interface CartItem {
   product: Product;
@@ -52,6 +53,7 @@ export const CartStore = signalStore(
   withMethods((store) => {
     const platformId = inject(PLATFORM_ID);
     const isBrowser = isPlatformBrowser(platformId);
+    const toastService = inject(ToastService);
 
     return {
       addItem(product: Product, qty = 1): void {
@@ -69,6 +71,7 @@ export const CartStore = signalStore(
         }
         patchState(store, { items: updated });
         saveToStorage(updated, isBrowser);
+        toastService.show('Producto agregado al carrito');
       },
 
       updateQuantity(productId: string, qty: number): void {

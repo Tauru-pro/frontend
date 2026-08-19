@@ -9,7 +9,7 @@ export default <Routes>[
     { path: `${RoutesApp.catalog}/bull/:id`, loadComponent: () => import('./bull-detail/bull-detail.component') },
     { path: `${RoutesApp.catalog}/:id`, loadComponent: () => import('./catalog/product-detail.component') },
     { path: RoutesApp.cart, loadComponent: () => import('./cart/cart.component') },
-    { path: RoutesApp.checkout, loadComponent: () => import('./checkout/checkout.component') },
+    { path: RoutesApp.checkout, canActivate: [authGuard], loadComponent: () => import('./checkout/checkout.component') },
     { path: RoutesApp.profile, canActivate: [authGuard], loadComponent: () => import('./profile/profile.component') },
     { path: RoutesApp.becomeSeller, canActivate: [becomeSellerGuard], loadComponent: () => import('./become-seller/become-seller.component') },
     { path: 'terms/:audience', loadComponent: () => import('./terms/terms-page.component') },

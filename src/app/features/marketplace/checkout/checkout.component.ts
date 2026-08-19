@@ -80,7 +80,7 @@ export default class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.cartStore.items().length === 0) {
-      this.router.navigate(['/carrito']);
+      this.router.navigate(['/cart']);
     }
   }
 
@@ -103,7 +103,7 @@ export default class CheckoutComponent implements OnInit {
   back(): void {
     this.stepError.set(null);
     if (this.currentStep() === 1) {
-      this.router.navigate(['/carrito']);
+      this.router.navigate(['/cart']);
     } else {
       this.currentStep.set(1);
     }
