@@ -3,7 +3,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { UserStore } from '../store/user.store';
-import { roleHomeCommands } from '../auth/navigate-by-role';
+import { postAuthCommands } from '../auth/navigate-by-role';
 
 // Guest-only routes (sign-in / sign-up): an authenticated user is redirected to
 // their role's home instead of seeing login/registration.
@@ -19,5 +19,5 @@ export const guestGuard: CanActivateFn = async () => {
   if (!user) return true; // not authenticated → allow login/register
 
   if (!userStore.user()) await userStore.loadUser();
-  return router.createUrlTree(roleHomeCommands(userStore.user()?.role));
+  return router.createUrlTree(postAuthCommands(userStore.user()?.role));
 };
