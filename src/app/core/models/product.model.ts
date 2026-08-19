@@ -50,6 +50,7 @@ export interface CatalogFilters {
   breedId?: string;
   minPrice?: number;
   maxPrice?: number;
+  search?: string;
 }
 
 export interface Product {

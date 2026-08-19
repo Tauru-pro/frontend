@@ -1,17 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserStore } from '../../../core/store/user.store';
 
 import { HasRoleDirective } from '../../directives/has-role.directive';
 import { CartStore } from '../../../core/store/cart.store';
-
-/** Categorías simuladas del buscador de la barra superior. No son las razas. */
-interface Category {
-  name: string;
-  icon: string;
-  slug: string;
-}
+import { sanitizeSearchTerm } from '../../utils/search-term';
 
 @Component({
   selector: 'app-navbar',
@@ -37,32 +31,30 @@ interface Category {
 -->
     <!-- ===== HEADER ===== -->
     <header class="bg-primary text-white py-3 sticky top-0 z-50 shadow-xl">
-      <div class="max-w-[1400px] mx-auto px-4 flex items-center gap-5">
+      <div class="max-w-[1400px] mx-auto px-4 flex flex-wrap items-center gap-3 md:gap-5">
         <!-- Logo -->
         <a href="/" class="flex-shrink-0">
           <img
             src="/brand/logotipo.png"
             alt="TAUVO — The Bulls Marketplace"
-            class="h-14 w-auto rounded-md"
+            class="h-10 md:h-14 w-auto rounded-md"
           />
         </a>
 
-        <!-- Search -->
-        <div class="flex-1 flex rounded-lg overflow-hidden border border-white/10 max-w-2xl mx-4">
-          <select
-            class="bg-secondary text-white text-sm font-medium px-3 py-2.5 outline-none cursor-pointer flex-shrink-0"
-          >
-            <option>All Categories</option>
-            @for (cat of categories.slice(1); track cat.slug) {
-              <option>{{ cat.name }}</option>
-            }
-          </select>
+        <!-- Search: fila completa debajo del logo en mobile, inline desde md -->
+        <div
+          class="w-full order-3 md:order-2 md:w-auto md:flex-1 flex rounded-lg overflow-hidden border border-white/10 md:max-w-2xl md:mx-4"
+        >
           <input
             type="text"
-            placeholder="Search for fresh groceries, products..."
-            class="flex-1 px-4 py-2.5 text-primary text-sm outline-none min-w-0"
+            [value]="searchTerm()"
+            (input)="onSearchInput($event)"
+            (keyup.enter)="search()"
+            placeholder="Buscar por nombre o código del toro (ej. 117/2)"
+            class="flex-1 px-4 py-2.5 bg-white text-primary placeholder-gray-400 text-sm outline-none min-w-0"
           />
           <button
+            (click)="search()"
             class="bg-secondary hover:bg-secondary-dark px-5 py-2.5 text-white transition-colors flex-shrink-0"
           >
             <svg
@@ -83,7 +75,7 @@ interface Category {
         </div>
 
         <!-- Icons -->
-        <div class="flex items-center gap-4 ml-auto flex-shrink-0">
+        <div class="flex items-center gap-3 md:gap-4 ml-auto flex-shrink-0 order-2 md:order-3">
           <!-- Account -->
           @if (!isAuthenticated()) {
             <a
@@ -217,7 +209,7 @@ interface Category {
           }
 
           <!-- Cart -->
-          <a routerLink="/cart" class="flex items-center gap-3 btn-secondary px-4 py-2">
+          <a routerLink="/cart" class="flex items-center gap-2 sm:gap-3 btn-secondary px-3 sm:px-4 py-2">
             <div class="relative">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -304,18 +296,16 @@ export class NavbarComponent {
     return role === 'ADMIN' || role === 'SUPER_ADMIN' ? '/admin/dashboard' : '/seller';
   });
 
-  categories: Category[] = [
-    { name: 'All Categories', icon: '🏪', slug: 'all' },
-    { name: 'Semen de Toro', icon: '🧬', slug: 'bull-semen' },
-    { name: 'Insumos de IA', icon: '💉', slug: 'ia-supplies' },
-    { name: 'Nitrógeno Líquido', icon: '❄️', slug: 'nitrogen' },
-    { name: 'Equipos de IA', icon: '🔬', slug: 'equipment' },
-    { name: 'Genética Importada', icon: '🌎', slug: 'imported' },
-    { name: 'Razas Criollas', icon: '🐂', slug: 'creole' },
-    { name: 'Reproductores Brahman', icon: '🐃', slug: 'brahman' },
-    { name: 'Suplementos', icon: '💊', slug: 'supplements' },
-    { name: 'Certificados', icon: '📋', slug: 'certificates' },
-  ];
+  searchTerm = signal('');
+
+  onSearchInput(event: Event): void {
+    this.searchTerm.set(sanitizeSearchTerm((event.target as HTMLInputElement).value));
+  }
+
+  search(): void {
+    const term = sanitizeSearchTerm(this.searchTerm()).trim();
+    this.router.navigate(['/catalog'], { queryParams: term ? { q: term } : {} });
+  }
 
   async logout() {
     await this.authService.logout();

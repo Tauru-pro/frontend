@@ -104,7 +104,12 @@
       <div>
         <h1 class="text-2xl font-bold text-primary">Catálogo de Productos</h1>
         @if (!loading() && !error()) {
-        <p class="text-sm text-gray-400 mt-0.5">{{ resultsLabel() }}</p>
+        <p class="text-sm text-gray-400 mt-0.5">
+          {{ resultsLabel() }}
+          @if (search()) {
+          <span>para "<span class="font-medium text-gray-600">{{ search() }}</span>"</span>
+          }
+        </p>
         }
       </div>
     </div>

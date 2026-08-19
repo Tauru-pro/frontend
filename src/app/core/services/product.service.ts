@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, forkJoin, from, map, Observable, of, switchMap } from 'rxjs';
 import { SupabaseClientService } from '../auth/supabase-client';
 import { getJwtClaim } from '../auth/jwt-claims';
+import { sanitizeSearchTerm } from '../../shared/utils/search-term';
 import {
   CatalogFilters,
   CreateProductDto,
@@ -35,6 +36,7 @@ interface ProductDetailRow {
 interface BullListingRow {
   bull_id: string;
   bull_name: string;
+  bull_short_code: string | null;
   is_featured: boolean;
   breed_id: string | null;
   breed_name: string | null;
@@ -155,6 +157,17 @@ function groupMediaById(rows: MediaRow[]): Map<string, MediaRow[]> {
     map.get(m.entity_id)!.push(m);
   }
   return map;
+}
+
+/**
+ * Convierte un término de búsqueda en un patrón `ilike`, o `null` si no queda
+ * nada útil tras sanear. Escapa `%`/`_`/`\` por las dudas (el allowlist de
+ * `sanitizeSearchTerm` ya los excluye, pero el servicio no confía en que el
+ * llamador haya saneado antes de llegar acá).
+ */
+function toIlikePattern(term: string): string | null {
+  const clean = sanitizeSearchTerm(term).trim().replace(/[%_\\]/g, '\\$&');
+  return clean ? `%${clean}%` : null;
 }
 
 function toSlug(name: string): string {
@@ -289,7 +302,7 @@ export class ProductService {
   ): Observable<PaginatedResponse<Product>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
-    const { productType, breedId, minPrice, maxPrice } = filters;
+    const { productType, breedId, minPrice, maxPrice, search } = filters;
 
     const bullJoin = breedId
       ? 'bulls!inner(id, name, breed_id, breeds(id, name))'
@@ -307,6 +320,11 @@ export class ProductService {
     if (breedId) query = (query as any).eq('bulls.breed_id', breedId);
     if (minPrice != null) query = query.gte('price', minPrice);
     if (maxPrice != null) query = query.lte('price', maxPrice);
+    // Los insumos (SUPPLIES) no tienen toro asociado: solo el nombre aplica.
+    if (search) {
+      const pattern = toIlikePattern(search);
+      if (pattern) query = query.ilike('name', pattern);
+    }
 
     return from(query).pipe(
       switchMap(({ data, error, count }) => {
@@ -647,7 +665,7 @@ export class ProductService {
   getCatalogBulls(
     page = 1,
     limit = 12,
-    filters: { breedSlug?: string; minPrice?: number; maxPrice?: number } = {},
+    filters: { breedSlug?: string; minPrice?: number; maxPrice?: number; search?: string } = {},
   ): Observable<PaginatedResponse<BullListing>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
@@ -661,6 +679,10 @@ export class ProductService {
     if (filters.breedSlug) query = query.eq('breed_slug', filters.breedSlug);
     if (filters.minPrice != null) query = query.gte('max_price', filters.minPrice);
     if (filters.maxPrice != null) query = query.lte('min_price', filters.maxPrice);
+    if (filters.search) {
+      const pattern = toIlikePattern(filters.search);
+      if (pattern) query = query.or(`bull_name.ilike.${pattern},bull_short_code.ilike.${pattern}`);
+    }
 
     return from(query).pipe(
       map(({ data, error, count }) => {
@@ -755,6 +777,7 @@ export class ProductService {
     return {
       bullId: row.bull_id,
       bullName: row.bull_name,
+      shortCode: row.bull_short_code,
       isFeatured: row.is_featured,
       breedId: row.breed_id,
       breedName: row.breed_name,

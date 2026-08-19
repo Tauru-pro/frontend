@@ -19,6 +19,7 @@ import { ProductCardComponent } from './product-card.component';
 import { BullListingCardComponent } from '../../../shared/components/bull-listing-card/bull-listing-card.component';
 import { BreedFilterComponent } from '../../../shared/components/breed-filter/breed-filter.component';
 import { formatPrice } from '../../../shared/pipes/price.pipe';
+import { sanitizeSearchTerm } from '../../../shared/utils/search-term';
 
 /**
  * Genética e insumos son unidades distintas —un toro agrupa varias pajillas, un
@@ -82,6 +83,7 @@ export default class CatalogComponent implements OnInit {
   totalItems = signal(0);
 
   selectedBreed = signal<string>('');
+  search = signal<string>('');
   // Aplicado: el reflejo de la URL.
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
@@ -124,7 +126,11 @@ export default class CatalogComponent implements OnInit {
   });
 
   hasActiveFilters = computed(
-    () => !!this.selectedBreed() || this.minPrice() != null || this.maxPrice() != null,
+    () =>
+      !!this.selectedBreed() ||
+      this.minPrice() != null ||
+      this.maxPrice() != null ||
+      !!this.search(),
   );
 
   /** Un rango invertido devuelve cero resultados sin explicar por qué. */
@@ -151,6 +157,8 @@ export default class CatalogComponent implements OnInit {
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((q) => {
       this.section.set(q.get('section') === 'supplies' ? 'SUPPLIES' : 'GENETICS');
       this.selectedBreed.set(q.get('breed') ?? '');
+      // Saneado también acá, no solo en el navbar: la URL es editable a mano.
+      this.search.set(sanitizeSearchTerm(q.get('q') ?? '').trim());
       this.minPrice.set(toNumberOrNull(q.get('min')));
       this.maxPrice.set(toNumberOrNull(q.get('max')));
       this.draftMin.set(this.minPrice());
@@ -175,12 +183,14 @@ export default class CatalogComponent implements OnInit {
   private navigateWithParams(overrides: {
     section?: CatalogSection;
     breed?: string;
+    search?: string;
     min?: number | null;
     max?: number | null;
     page?: number;
   }): void {
     const section = overrides.section ?? this.section();
     const breed = overrides.breed ?? this.selectedBreed();
+    const search = overrides.search ?? this.search();
     const min = overrides.min !== undefined ? overrides.min : this.minPrice();
     const max = overrides.max !== undefined ? overrides.max : this.maxPrice();
     const page = overrides.page ?? this.currentPage();
@@ -189,6 +199,7 @@ export default class CatalogComponent implements OnInit {
     const queryParams: Record<string, string | number> = {};
     if (section === 'SUPPLIES') queryParams['section'] = 'supplies';
     if (breed) queryParams['breed'] = breed;
+    if (search) queryParams['q'] = search;
     if (min != null) queryParams['min'] = min;
     if (max != null) queryParams['max'] = max;
     if (page > 1) queryParams['page'] = page;
@@ -208,6 +219,7 @@ export default class CatalogComponent implements OnInit {
         breedSlug: this.selectedBreed() || undefined,
         minPrice: this.minPrice() ?? undefined,
         maxPrice: this.maxPrice() ?? undefined,
+        search: this.search() || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -229,6 +241,7 @@ export default class CatalogComponent implements OnInit {
         productType: 'SUPPLIES',
         minPrice: this.minPrice() ?? undefined,
         maxPrice: this.maxPrice() ?? undefined,
+        search: this.search() || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -258,7 +271,7 @@ export default class CatalogComponent implements OnInit {
   clearFilters(): void {
     this.draftMin.set(null);
     this.draftMax.set(null);
-    this.navigateWithParams({ breed: '', min: null, max: null, page: 1 });
+    this.navigateWithParams({ breed: '', search: '', min: null, max: null, page: 1 });
   }
 
   /** Los tramos relevantes son los de lo que se está viendo. */

@@ -19,6 +19,7 @@ export interface BullListingVariant {
 export interface BullListing {
   bullId: string;
   bullName: string;
+  shortCode: string | null;
   isFeatured: boolean;
   breedId: string | null;
   breedName: string | null;
