@@ -26,6 +26,8 @@ export interface BullListing {
   breedSlug: string | null;
   sellerId: string;
   sellerName: string;
+  sellerStateId: string | null;
+  sellerStateName: string | null;
   coverUrl: string | null;
   minPrice: number;
   maxPrice: number;

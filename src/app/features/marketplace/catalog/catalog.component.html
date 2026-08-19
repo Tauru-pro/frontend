@@ -24,6 +24,16 @@
         [activeSlug]="selectedBreed() || null"
         [showAll]="true" />
     </div>
+
+    <!-- Departamento del vendedor (solo genética): mismo gate que raza -->
+    <div>
+      <p class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Departamento</p>
+      <app-search-select
+        placeholder="Buscar departamento"
+        [options]="departmentOptions()"
+        [value]="selectedDepartment()"
+        (valueChange)="onDepartmentChange($event)" />
+    </div>
     }
 
     <!-- Precio: tramos derivados de lo que hay a la venta, más rango libre -->

@@ -43,6 +43,8 @@ interface BullListingRow {
   breed_slug: string | null;
   seller_id: string;
   seller_name: string;
+  seller_state_id: string | null;
+  seller_state_name: string | null;
   cover_path: string | null;
   min_price: number;
   max_price: number;
@@ -665,7 +667,13 @@ export class ProductService {
   getCatalogBulls(
     page = 1,
     limit = 12,
-    filters: { breedSlug?: string; minPrice?: number; maxPrice?: number; search?: string } = {},
+    filters: {
+      breedSlug?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      search?: string;
+      department?: string;
+    } = {},
   ): Observable<PaginatedResponse<BullListing>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
@@ -679,6 +687,7 @@ export class ProductService {
     if (filters.breedSlug) query = query.eq('breed_slug', filters.breedSlug);
     if (filters.minPrice != null) query = query.gte('max_price', filters.minPrice);
     if (filters.maxPrice != null) query = query.lte('min_price', filters.maxPrice);
+    if (filters.department) query = query.eq('seller_state_name', filters.department);
     if (filters.search) {
       const pattern = toIlikePattern(filters.search);
       if (pattern) query = query.or(`bull_name.ilike.${pattern},bull_short_code.ilike.${pattern}`);
@@ -784,6 +793,8 @@ export class ProductService {
       breedSlug: row.breed_slug,
       sellerId: row.seller_id,
       sellerName: row.seller_name,
+      sellerStateId: row.seller_state_id,
+      sellerStateName: row.seller_state_name,
       coverUrl: row.cover_path ? this.getMediaPublicUrl(row.cover_path) : null,
       minPrice: Number(row.min_price),
       maxPrice: Number(row.max_price),

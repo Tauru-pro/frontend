@@ -11,14 +11,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
+import { of, switchMap } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { BreedService } from '../../../core/services/breed.service';
+import { LocationService } from '../../../core/services/location.service';
 import { Product } from '../../../core/models/product.model';
 import { BullListing } from '../../../core/models/bull-listing.model';
 import { Breed } from '../../../core/models/breed.model';
+import { State } from '../../../core/models/location.model';
 import { ProductCardComponent } from './product-card.component';
 import { BullListingCardComponent } from '../../../shared/components/bull-listing-card/bull-listing-card.component';
 import { BreedFilterComponent } from '../../../shared/components/breed-filter/breed-filter.component';
+import { SearchSelectComponent, SelectOption } from '../../../shared/components/search-select/search-select.component';
 import { formatPrice } from '../../../shared/pipes/price.pipe';
 import { sanitizeSearchTerm } from '../../../shared/utils/search-term';
 
@@ -62,6 +66,7 @@ function toNumberOrNull(value: string | null): number | null {
     ProductCardComponent,
     BullListingCardComponent,
     BreedFilterComponent,
+    SearchSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './catalog.component.html',
@@ -69,6 +74,7 @@ function toNumberOrNull(value: string | null): number | null {
 export default class CatalogComponent implements OnInit {
   private productService = inject(ProductService);
   private breedService = inject(BreedService);
+  private locationService = inject(LocationService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -78,6 +84,7 @@ export default class CatalogComponent implements OnInit {
   bulls = signal<BullListing[]>([]);
   products = signal<Product[]>([]);
   breeds = signal<Breed[]>([]);
+  departments = signal<State[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   currentPage = signal(1);
@@ -85,6 +92,7 @@ export default class CatalogComponent implements OnInit {
   totalItems = signal(0);
 
   selectedBreed = signal<string>('');
+  selectedDepartment = signal<string>('');
   search = signal<string>('');
   // Aplicado: el reflejo de la URL.
   minPrice = signal<number | null>(null);
@@ -130,9 +138,21 @@ export default class CatalogComponent implements OnInit {
     ];
   });
 
+  /**
+   * "Todos los departamentos" va como primera opción de la lista, no como un
+   * estado aparte: así `app-search-select` siempre tiene una opción que calza
+   * con `selectedDepartment()` (que es `''` cuando no hay filtro) y la muestra
+   * de entrada, sin necesitar un botón de "limpiar" propio del select.
+   */
+  departmentOptions = computed<SelectOption[]>(() => [
+    { id: '', label: 'Todos los departamentos' },
+    ...this.departments().map((d) => ({ id: d.name, label: d.name })),
+  ]);
+
   hasActiveFilters = computed(
     () =>
       !!this.selectedBreed() ||
+      !!this.selectedDepartment() ||
       this.minPrice() != null ||
       this.maxPrice() != null ||
       !!this.search(),
@@ -155,6 +175,15 @@ export default class CatalogComponent implements OnInit {
       next: (b) => this.breeds.set(b),
     });
 
+    // El catálogo es de un solo país, así que se acota a Colombia acá en vez
+    // de exponer un selector de país (mismo enfoque que shipping-rate-form).
+    this.locationService
+      .getCountryByIso2('CO')
+      .pipe(switchMap((country) => (country ? this.locationService.getStates(country.id) : of([]))))
+      .subscribe({
+        next: (states) => this.departments.set(states),
+      });
+
     // La URL es la fuente de verdad y este es el **único** punto de carga: la
     // interfaz navega, la suscripción aplica y consulta. Un flujo en una sola
     // dirección evita cargar dos veces y hace que el enlace sea compartible,
@@ -162,6 +191,7 @@ export default class CatalogComponent implements OnInit {
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((q) => {
       this.section.set(q.get('section') === 'supplies' ? 'SUPPLIES' : 'GENETICS');
       this.selectedBreed.set(q.get('breed') ?? '');
+      this.selectedDepartment.set(q.get('department') ?? '');
       // Saneado también acá, no solo en el navbar: la URL es editable a mano.
       this.search.set(sanitizeSearchTerm(q.get('q') ?? '').trim());
       this.minPrice.set(toNumberOrNull(q.get('min')));
@@ -174,20 +204,26 @@ export default class CatalogComponent implements OnInit {
     });
   }
 
-  /** Cambia de pestaña conservando el precio; la raza no aplica a insumos. */
+  /** Cambia de pestaña conservando el precio; raza y departamento no aplican a insumos. */
   selectSection(section: CatalogSection): void {
     if (this.section() === section) return;
     this.navigateWithParams({
       section,
       breed: section === 'SUPPLIES' ? '' : this.selectedBreed(),
+      department: section === 'SUPPLIES' ? '' : this.selectedDepartment(),
       page: 1,
     });
+  }
+
+  onDepartmentChange(departmentId: string | null): void {
+    this.navigateWithParams({ department: departmentId || '', page: 1 });
   }
 
   /** Escribe el estado en la URL; la suscripción se encarga de recargar. */
   private navigateWithParams(overrides: {
     section?: CatalogSection;
     breed?: string;
+    department?: string;
     search?: string;
     min?: number | null;
     max?: number | null;
@@ -195,6 +231,7 @@ export default class CatalogComponent implements OnInit {
   }): void {
     const section = overrides.section ?? this.section();
     const breed = overrides.breed ?? this.selectedBreed();
+    const department = overrides.department ?? this.selectedDepartment();
     const search = overrides.search ?? this.search();
     const min = overrides.min !== undefined ? overrides.min : this.minPrice();
     const max = overrides.max !== undefined ? overrides.max : this.maxPrice();
@@ -204,6 +241,7 @@ export default class CatalogComponent implements OnInit {
     const queryParams: Record<string, string | number> = {};
     if (section === 'SUPPLIES') queryParams['section'] = 'supplies';
     if (breed) queryParams['breed'] = breed;
+    if (department) queryParams['department'] = department;
     if (search) queryParams['q'] = search;
     if (min != null) queryParams['min'] = min;
     if (max != null) queryParams['max'] = max;
@@ -225,6 +263,7 @@ export default class CatalogComponent implements OnInit {
         minPrice: this.minPrice() ?? undefined,
         maxPrice: this.maxPrice() ?? undefined,
         search: this.search() || undefined,
+        department: this.selectedDepartment() || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -295,7 +334,7 @@ export default class CatalogComponent implements OnInit {
   clearFilters(): void {
     this.draftMin.set(null);
     this.draftMax.set(null);
-    this.navigateWithParams({ breed: '', search: '', min: null, max: null, page: 1 });
+    this.navigateWithParams({ breed: '', department: '', search: '', min: null, max: null, page: 1 });
   }
 
   /** Los tramos relevantes son los de lo que se está viendo. */
