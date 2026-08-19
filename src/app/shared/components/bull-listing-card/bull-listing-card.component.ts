@@ -17,11 +17,12 @@ import { PricePipe } from '../../pipes/price.pipe';
 
       <!-- Imagen -->
       <a [routerLink]="['/catalog', selected().id]" class="block bg-surface-muted h-40 flex items-center justify-center overflow-hidden flex-shrink-0">
-        @if (item().coverUrl) {
+        @if (!imageFailed() && item().coverUrl; as url) {
           <img
-            [src]="item().coverUrl!"
+            [src]="url"
             [alt]="item().bullName"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            (error)="imageFailed.set(true)"
           />
         } @else {
           <span class="text-6xl select-none group-hover:scale-110 transition-transform duration-300">🧫</span>
@@ -90,6 +91,8 @@ export class BullListingCardComponent {
 
   private chosenId = signal<string | null>(null);
   adding = signal(false);
+  /** Si el `<img>` falla al cargar (red, CDN), cae al emoji en vez de quedar con el ícono roto. */
+  imageFailed = signal(false);
 
   /** La variante elegida, o la primera (la más barata: la vista las ordena por precio). */
   selected = computed<BullListingVariant>(() => {

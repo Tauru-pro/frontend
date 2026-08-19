@@ -65,8 +65,9 @@
         <div class="flex items-center gap-4 pr-8 md:pr-0">
           <div
             class="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-surface-muted flex items-center justify-center">
-            @if (coverUrl(item.product); as url) {
-              <img [src]="url" [alt]="item.product.name" class="w-full h-full object-cover" />
+            @if (!failedImageIds().has(item.product.id) && coverUrl(item.product); as url) {
+              <img [src]="url" [alt]="item.product.name" class="w-full h-full object-cover"
+                (error)="onImageError(item.product.id)" />
             } @else {
               <span class="text-3xl">{{ item.product.productType === 'STRAW' ? '🧫' : '📦' }}</span>
             }

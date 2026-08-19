@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Product, ProductType, STRAW_LABELS } from '../../../core/models/product.model';
 import { ProductService } from '../../../core/services/product.service';
@@ -19,9 +19,10 @@ const TYPE_LABELS: Record<ProductType, string> = {
 
       <!-- Image -->
       <div class="relative bg-surface-muted h-48 flex items-center justify-center overflow-hidden flex-shrink-0">
-        @if (coverUrl()) {
-          <img [src]="coverUrl()!" [alt]="product().name"
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        @if (!imageFailed() && coverUrl(); as url) {
+          <img [src]="url" [alt]="product().name"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            (error)="imageFailed.set(true)" />
         } @else {
           <span class="text-7xl select-none group-hover:scale-110 transition-transform duration-300">
             {{ product().productType === 'STRAW' ? '🧫' : '📦' }}
@@ -80,6 +81,9 @@ export class ProductCardComponent {
       this.product().media.find((m) => m.mediaType === 'image');
     return cover ? this.productService.getMediaPublicUrl(cover.storagePath) : null;
   });
+
+  /** Si el `<img>` falla al cargar (red, CDN), cae al emoji en vez de quedar con el ícono roto. */
+  imageFailed = signal(false);
 
   typeLabel = computed(() => TYPE_LABELS[this.product().productType]);
 

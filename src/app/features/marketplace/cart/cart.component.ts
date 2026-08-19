@@ -1,4 +1,4 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
 import { Product, ProductType, StrawType } from '../../../core/models/product.model';
@@ -35,6 +35,13 @@ export default class CartComponent {
       product.media.find((m) => m.isCover && m.mediaType === 'image') ??
       product.media.find((m) => m.mediaType === 'image');
     return cover ? this.productService.getMediaPublicUrl(cover.storagePath) : null;
+  }
+
+  /** Si el `<img>` falla al cargar (red, CDN), cae al emoji en vez de quedar con el ícono roto. */
+  failedImageIds = signal<Set<string>>(new Set());
+
+  onImageError(productId: string): void {
+    this.failedImageIds.update((s) => new Set(s).add(productId));
   }
 
   productTypeLabel(type: ProductType): string {
