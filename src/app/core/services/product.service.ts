@@ -304,18 +304,23 @@ export class ProductService {
   ): Observable<PaginatedResponse<Product>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
-    const { productType, breedId, minPrice, maxPrice, search } = filters;
+    const { productType, breedId, minPrice, maxPrice, search, sort } = filters;
 
     const bullJoin = breedId
       ? 'bulls!inner(id, name, breed_id, breeds(id, name))'
       : 'bulls(id, name, breed_id, breeds(id, name))';
     const selectStr = `${CATALOG_SELECT_BASE}, ${bullJoin}`;
 
+    const [orderColumn, orderAscending] =
+      sort === 'price_asc' ? (['price', true] as const)
+      : sort === 'price_desc' ? (['price', false] as const)
+      : (['created_at', false] as const);
+
     let query = this.supabase
       .from('products')
       .select(selectStr, { count: 'exact' })
       .eq('status', 'ACTIVE')
-      .order('created_at', { ascending: false })
+      .order(orderColumn, { ascending: orderAscending })
       .range(from_, to);
 
     if (productType) query = query.eq('product_type', productType);
@@ -673,15 +678,21 @@ export class ProductService {
       maxPrice?: number;
       search?: string;
       department?: string;
+      sort?: 'price_asc' | 'price_desc';
     } = {},
   ): Observable<PaginatedResponse<BullListing>> {
     const from_ = (page - 1) * limit;
     const to = from_ + limit - 1;
 
+    const [orderColumn, orderAscending] =
+      filters.sort === 'price_asc' ? (['min_price', true] as const)
+      : filters.sort === 'price_desc' ? (['min_price', false] as const)
+      : (['last_published_at', false] as const);
+
     let query = this.supabase
       .from('bull_listings')
       .select('*', { count: 'exact' })
-      .order('last_published_at', { ascending: false })
+      .order(orderColumn, { ascending: orderAscending })
       .range(from_, to);
 
     if (filters.breedSlug) query = query.eq('breed_slug', filters.breedSlug);

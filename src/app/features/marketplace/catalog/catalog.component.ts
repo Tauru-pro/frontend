@@ -57,6 +57,13 @@ function toNumberOrNull(value: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+export type CatalogSort = '' | 'price_asc' | 'price_desc';
+
+/** Cualquier valor fuera de los dos válidos cae en "sin ordenar" (orden por defecto). */
+function toCatalogSort(value: string | null): CatalogSort {
+  return value === 'price_asc' || value === 'price_desc' ? value : '';
+}
+
 @Component({
   selector: 'app-catalog',
   imports: [
@@ -94,6 +101,7 @@ export default class CatalogComponent implements OnInit {
   selectedBreed = signal<string>('');
   selectedDepartment = signal<string>('');
   search = signal<string>('');
+  sort = signal<CatalogSort>('');
   // Aplicado: el reflejo de la URL.
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
@@ -192,6 +200,7 @@ export default class CatalogComponent implements OnInit {
       this.section.set(q.get('section') === 'supplies' ? 'SUPPLIES' : 'GENETICS');
       this.selectedBreed.set(q.get('breed') ?? '');
       this.selectedDepartment.set(q.get('department') ?? '');
+      this.sort.set(toCatalogSort(q.get('sort')));
       // Saneado también acá, no solo en el navbar: la URL es editable a mano.
       this.search.set(sanitizeSearchTerm(q.get('q') ?? '').trim());
       this.minPrice.set(toNumberOrNull(q.get('min')));
@@ -219,12 +228,17 @@ export default class CatalogComponent implements OnInit {
     this.navigateWithParams({ department: departmentId || '', page: 1 });
   }
 
+  onSortChange(value: string): void {
+    this.navigateWithParams({ sort: toCatalogSort(value), page: 1 });
+  }
+
   /** Escribe el estado en la URL; la suscripción se encarga de recargar. */
   private navigateWithParams(overrides: {
     section?: CatalogSection;
     breed?: string;
     department?: string;
     search?: string;
+    sort?: CatalogSort;
     min?: number | null;
     max?: number | null;
     page?: number;
@@ -233,6 +247,7 @@ export default class CatalogComponent implements OnInit {
     const breed = overrides.breed ?? this.selectedBreed();
     const department = overrides.department ?? this.selectedDepartment();
     const search = overrides.search ?? this.search();
+    const sort = overrides.sort ?? this.sort();
     const min = overrides.min !== undefined ? overrides.min : this.minPrice();
     const max = overrides.max !== undefined ? overrides.max : this.maxPrice();
     const page = overrides.page ?? this.currentPage();
@@ -243,6 +258,7 @@ export default class CatalogComponent implements OnInit {
     if (breed) queryParams['breed'] = breed;
     if (department) queryParams['department'] = department;
     if (search) queryParams['q'] = search;
+    if (sort) queryParams['sort'] = sort;
     if (min != null) queryParams['min'] = min;
     if (max != null) queryParams['max'] = max;
     if (page > 1) queryParams['page'] = page;
@@ -264,6 +280,7 @@ export default class CatalogComponent implements OnInit {
         maxPrice: this.maxPrice() ?? undefined,
         search: this.search() || undefined,
         department: this.selectedDepartment() || undefined,
+        sort: this.sort() || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -286,6 +303,7 @@ export default class CatalogComponent implements OnInit {
         minPrice: this.minPrice() ?? undefined,
         maxPrice: this.maxPrice() ?? undefined,
         search: this.search() || undefined,
+        sort: this.sort() || undefined,
       })
       .subscribe({
         next: (res) => {

@@ -51,6 +51,7 @@ export interface CatalogFilters {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  sort?: 'price_asc' | 'price_desc';
 }
 
 export interface Product {

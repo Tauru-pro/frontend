@@ -124,7 +124,7 @@
   <div class="flex-1 min-w-0">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-primary">Catálogo de Productos</h1>
         @if (!loading() && !error()) {
@@ -136,6 +136,16 @@
         </p>
         }
       </div>
+
+      <select
+        class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all w-full sm:w-auto flex-shrink-0"
+        [value]="sort()"
+        (change)="onSortChange($any($event.target).value)"
+      >
+        <option value="">Más recientes</option>
+        <option value="price_asc">Precio: menor a mayor</option>
+        <option value="price_desc">Precio: mayor a menor</option>
+      </select>
     </div>
 
     <!-- Secciones: la genética se agrupa por toro, los insumos van sueltos -->
