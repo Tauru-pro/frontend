@@ -9,7 +9,7 @@ import { TermsAudience, TermsDocument } from '../../../core/models/terms.model';
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="max-w-3xl mx-auto px-4 py-10">
+    <div class="max-w-3xl mx-auto py-10">
       <nav class="flex items-center gap-2 text-xs text-gray-400 mb-6">
         <a routerLink="/" class="hover:text-secondary transition-colors">Inicio</a>
         <span>›</span>
