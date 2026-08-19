@@ -1,7 +1,8 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../core/store/cart.store';
-import { ProductType, StrawType } from '../../../core/models/product.model';
+import { Product, ProductType, StrawType } from '../../../core/models/product.model';
+import { ProductService } from '../../../core/services/product.service';
 import { PricePipe } from '../../../shared/pipes/price.pipe';
 
 const STRAW_LABELS: Record<StrawType, string> = {
@@ -25,8 +26,16 @@ const TYPE_LABELS: Record<ProductType, string> = {
 })
 export default class CartComponent {
   cartStore = inject(CartStore);
+  private productService = inject(ProductService);
 
   grandTotal = computed(() => this.cartStore.total());
+
+  coverUrl(product: Product): string | null {
+    const cover =
+      product.media.find((m) => m.isCover && m.mediaType === 'image') ??
+      product.media.find((m) => m.mediaType === 'image');
+    return cover ? this.productService.getMediaPublicUrl(cover.storagePath) : null;
+  }
 
   productTypeLabel(type: ProductType): string {
     return TYPE_LABELS[type];

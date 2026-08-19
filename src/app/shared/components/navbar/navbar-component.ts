@@ -6,6 +6,7 @@ import { UserStore } from '../../../core/store/user.store';
 import { HasRoleDirective } from '../../directives/has-role.directive';
 import { CartStore } from '../../../core/store/cart.store';
 import { sanitizeSearchTerm } from '../../utils/search-term';
+import { formatPrice } from '../../pipes/price.pipe';
 
 @Component({
   selector: 'app-navbar',
@@ -285,7 +286,7 @@ export class NavbarComponent {
   private userStore = inject(UserStore);
   private router = inject(Router);
   cartStore = inject(CartStore);
-  cartTotalDisplay = computed(() => '$' + this.cartStore.total().toFixed(2));
+  cartTotalDisplay = computed(() => formatPrice(this.cartStore.total()));
 
   // navLinks = ['Home', 'Shop', 'Deals', 'New Arrivals', 'About', 'Blog'];
 
