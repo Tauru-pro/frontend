@@ -6,7 +6,7 @@
 - [x] 1.2 In the same migration, add a `security definer` SQL function `public.get_shipping_estimate(p_pickup_point_id uuid, p_items jsonb)` returning `(seller_id, seller_name, origin_state_id, origin_state_name, shipping_cost)` — one row per distinct seller in the cart, joining each seller's main `branches` row → `cities` → `states` as origin, the pickup point's `cities` → `states` as destination, and `shipping_rates` for the cost (`coalesce(base_rate, 0)` when no rate is configured for that pair). Grant `execute` to `authenticated` (buyer-facing preview) — this is the single source of truth both the preview and `create-checkout` call, so the formula never drifts between the two.
 - [x] 1.3 Rewrite `core/models/shipping-rate.model.ts`/`core/services/shipping-rate.service.ts` to use `supabase-js` (`from('shipping_rates')...`) instead of `HttpClient`/`apiUrl`, following the `PickupPointService` pattern (row mapper, `origin`/`destination` joined via `states(id, name)`).
 - [x] 1.4 Update `features/backoffice/shipping-rates/shipping-rates.component.ts` and `shipping-rate-form.component.ts` only as needed for the rewritten service's return types/error shapes (e.g. Postgres unique-violation instead of HTTP 409 for a duplicate origin/destination pair).
-- [ ] 1.5 Manually verify: admin can create/edit/delete rates; a buyer (authenticated, non-admin) can call `get_shipping_estimate` via RPC but cannot write to `shipping_rates` directly.
+- [x] 1.5 Manually verify: admin can create/edit/delete rates; a buyer (authenticated, non-admin) can call `get_shipping_estimate` via RPC but cannot write to `shipping_rates` directly. Verified against the live project with a temporary test buyer JWT: RPC call succeeded, direct `POST /rest/v1/shipping_rates` returned `403` (RLS violation).
 
 ## 2. Database schema
 
@@ -15,7 +15,7 @@
 - [x] 2.3 Write `supabase/migrations/0033_webhook_events_schema.sql`: `webhook_events` (id, provider, event_type, event_id, transaction_id, payload jsonb, checksum, environment, received_at, processed_at, processing_status, error_message) with the dedupe unique index from design Decision 7; RLS enabled with no client-facing policies (service_role only).
 - [x] 2.4 Write `supabase/migrations/0034_order_status_history.sql`: `order_status_history` (id, order_id, from_status, to_status, reason, source, metadata jsonb, created_at) plus an `AFTER UPDATE OF status ON orders` trigger that inserts a row automatically; RLS read-only for the owning buyer.
 - [x] 2.5 Write `supabase/migrations/0035_order_state_transition_guards.sql`: `BEFORE UPDATE` triggers on `orders` and `payments` that raise an exception on any transition out of a terminal status (per design Decision 5), plus `alter publication supabase_realtime add table orders, payments;`.
-- [ ] 2.6 Apply migrations to the local/dev Supabase project and manually verify RLS: as an authenticated buyer, confirm `select` on another user's `orders` row returns nothing, and confirm `insert`/`update` on `orders`/`payments` from the client (anon/authenticated key) is rejected.
+- [x] 2.6 Apply migrations to the local/dev Supabase project and manually verify RLS: as an authenticated buyer, confirm `select` on another user's `orders` row returns nothing, and confirm `insert`/`update` on `orders`/`payments` from the client (anon/authenticated key) is rejected. Migrations applied via `supabase db push`. Verified live: cross-user `select` on `orders` → `[]`; direct `update` on another user's order → 0 rows affected; direct `insert` into `payments` → `403` RLS violation.
 
 ## 3. Shared Edge Function utilities
 
@@ -31,7 +31,7 @@
 - [x] 4.2 Scaffold `supabase/functions/create-checkout/index.ts` (JWT required; client built with the anon key + the request's `Authorization` header forwarded, so `auth.uid()` resolves inside the RPC; CORS headers matching `product-validate`'s pattern).
 - [x] 4.3 Call `create_order_with_items` via `.rpc(...)`; on its returned `(order_id, payment_id, reference, currency, total, is_existing)`, compute the Wompi integrity signature via `_shared/wompi-signature.ts` using `WOMPI_INTEGRITY_SECRET`.
 - [x] 4.4 Return the response shape from design Decision 4 (`orderId`, `paymentId`, `reference`, `currency`, `amountInCents`, `publicKey`, `integritySignature`, `redirectUrl`) — verify no secret is present in the response body.
-- [ ] 4.5 Deploy (`supabase functions deploy create-checkout`) and manually test: unavailable product, insufficient stock, price-tampering attempt, duplicate idempotency key.
+- [x] 4.5 Deploy (`supabase functions deploy create-checkout`) and manually test: unavailable product, insufficient stock, price-tampering attempt, duplicate idempotency key. All four verified live via a temporary test buyer: DRAFT product → `409 PRODUCT_UNAVAILABLE`; quantity beyond stock → `409 INSUFFICIENT_STOCK`; a spoofed `unitPrice` in the request was ignored (`amountInCents` reflected the real server-side price); same `idempotencyKey` sent twice returned the same `orderId`/`amountInCents` both times.
 
 ## 5. `wompi-webhook` Edge Function
 
@@ -44,25 +44,25 @@
 - [x] 5.7 On valid `APPROVED`: call `_shared/order-transitions.ts` to atomically move `payments` `CREATED|PENDING → APPROVED` and `orders` `PAYMENT_PROCESSING → PAID`, setting `approved_at`/`paid_at`.
 - [x] 5.8 On valid `DECLINED`/`ERROR`/`VOIDED`: transition `payments` accordingly and `orders → PAYMENT_FAILED`, restore reserved stock for the order's items.
 - [x] 5.9 Mark `webhook_events.processed_at`/`processing_status = 'PROCESSED'` at the end; respond `200`.
-- [ ] 5.10 Deploy and register the sandbox webhook URL in the Wompi dashboard; manually test duplicate delivery, out-of-order `APPROVED`-then-`DECLINED`, and checksum tampering.
+- [x] 5.10 Deploy and register the sandbox webhook URL in the Wompi dashboard; manually test duplicate delivery, out-of-order `APPROVED`-then-`DECLINED`, and checksum tampering. Deployed and registered (real sandbox payments processed correctly end to end, including the `ENVIRONMENT_MISMATCH`/ambiguous-column bugfixes found along the way). Duplicate delivery: replayed one real captured `webhook_events.payload` 5× — exactly one row, one effective change each time. Checksum tampering: a forged checksum returned `401` and logged `CHECKSUM_INVALID` without touching `orders`/`payments`. Out-of-order `APPROVED`-then-`DECLINED`: verified at the RPC layer (`apply_payment_failed` on an already-`APPROVED` payment returned `false`, no state change) rather than via two literal webhook HTTP calls, since forging a second valid-checksum event for the same transaction isn't possible without the real `WOMPI_EVENTS_SECRET`.
 
 ## 6. `get-payment-status` and `retry-payment` Edge Functions
 
 - [x] 6.1 Implement `supabase/functions/get-payment-status/index.ts` (`GET`, JWT required, anon key + forwarded `Authorization` header so RLS scopes the read to the caller's own order/payments).
 - [x] 6.2 Write `supabase/migrations/0038_retry_payment_function.sql`: `security definer` RPC `retry_payment(p_order_id)` — same atomic-transaction rationale as `create_order_with_items` — verifying the order belongs to `auth.uid()` and its payment is in a terminal failure state (`DECLINED`/`ERROR`/`VOIDED`/`EXPIRED`), inserting a new `payment_attempts` row with a fresh, never-reused reference, and transitioning `orders` back to `PAYMENT_PROCESSING`.
 - [x] 6.3 Implement `supabase/functions/retry-payment/index.ts`: call `retry_payment` via `.rpc(...)` (anon key + forwarded JWT), compute a new Wompi integrity signature, and return the same response shape as `create-checkout`.
-- [ ] 6.4 Deploy both and manually test retry-after-decline end to end against sandbox.
+- [x] 6.4 Deploy both and manually test retry-after-decline end to end against sandbox. Deployed; the ambiguous-`payment_id`-column bug found during live testing was fixed (migration `0040`). Verified via a full live cycle: declined a test payment → order `PAYMENT_FAILED` → called `retry-payment` → new `payment_attempts` row (`attempt_number = 2`, fresh reference) with a valid new integrity signature → approved that attempt → order reached `PAID`, both attempts preserved in history.
 
 ## 7. Scheduled reconciliation and expiration
 
-- [ ] 7.1 Confirm whether `pg_cron`/`pg_net` are enabled on this Supabase project (design Open Question); if unavailable, plan an external scheduler (e.g. GitHub Actions cron) instead.
+- [x] 7.1 Confirm whether `pg_cron`/`pg_net` are enabled on this Supabase project (design Open Question); if unavailable, plan an external scheduler (e.g. GitHub Actions cron) instead. Both were available but not enabled; enabled via `create extension pg_cron`/`create extension pg_net`. Open Question resolved — no external scheduler needed.
 - [x] 7.2 Implement `supabase/functions/expire-orders/index.ts`: find `PENDING_PAYMENT` orders past `expires_at`, transition to `EXPIRED`, restore stock.
 - [x] 7.3 Implement `supabase/functions/reconcile-payments/index.ts`: find `payments` stuck `PENDING`/`CREATED` beyond a threshold, call `_shared/wompi-client.ts` to fetch the live transaction, and apply `_shared/order-transitions.ts` with the same validation as the webhook path.
-- [ ] 7.4 Schedule both (via `pg_cron` calling the function URL through `pg_net`, or the external scheduler chosen in 7.1).
+- [x] 7.4 Schedule both (via `pg_cron` calling the function URL through `pg_net`, or the external scheduler chosen in 7.1). Scheduled: `expire-orders-every-5-min` (`*/5 * * * *`) and `reconcile-payments-every-15-min` (`*/15 * * * *`), both calling the deployed function URL via `net.http_post` with the `service_role` key stored in Supabase Vault (`service_role_key`) rather than embedded in plaintext in `cron.job.command`.
 
 ## 8. Supabase secrets and environment separation
 
-- [ ] 8.1 Set sandbox secrets via `supabase secrets set`: `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`, `WOMPI_ENVIRONMENT=SANDBOX`, `WOMPI_API_URL`.
+- [x] 8.1 Set sandbox secrets via `supabase secrets set`: `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`, `WOMPI_ENVIRONMENT=SANDBOX`, `WOMPI_API_URL`. Confirmed working via live sandbox payments processing correctly end to end.
 - [x] 8.2 Document the production cutover step (separate secret values + separate webhook URL registration) in `supabase/README.md`, to be executed only when explicitly requested — not part of this implementation pass.
 
 ## 9. Frontend: models and services
@@ -95,14 +95,14 @@
 
 ## 13. End-to-end verification against the resilience matrix
 
-- [ ] 13.1 Double-click "Pagar": confirm exactly one order/payment is created.
-- [ ] 13.2 Two tabs checking out the same cart: confirm no duplicate order for the same idempotency key.
-- [ ] 13.3 Refresh mid-checkout and mid-payment: confirm the flow resumes the same order.
-- [ ] 13.4 Abandon the Wompi Widget: confirm the order stays `PENDING_PAYMENT` and can be retried or left to expire.
-- [ ] 13.5 Approve a payment then close the browser before redirect: confirm the webhook still marks the order `PAID` and it's visible in "Mis compras" on next visit.
-- [ ] 13.6 Send the same webhook event multiple times: confirm one effective change.
-- [ ] 13.7 Send a webhook with a tampered checksum: confirm no DB change and a `401`/`403`.
-- [ ] 13.8 Send a webhook with a mismatched amount and a mismatched reference (separately): confirm both are flagged for review and never auto-approved.
-- [ ] 13.9 Send `APPROVED` followed by a delayed `DECLINED` for the same transaction: confirm the payment stays `APPROVED`.
-- [ ] 13.10 Let a `PENDING_PAYMENT` order pass `expires_at` without payment: confirm it transitions to `EXPIRED` and stock is restored.
-- [ ] 13.11 Retry a `DECLINED` payment: confirm a new attempt/reference is used and the order can reach `PAID`.
+- [x] 13.1 Double-click "Pagar": confirm exactly one order/payment is created. Tested with genuine concurrency (3 simultaneous `create-checkout` requests, same idempotency key, fired in parallel via background curl processes — not just sequential calls). **Found a real bug**: the losing request(s) got a raw `500 INTERNAL_ERROR` instead of the existing order — the idempotency check was "SELECT existing, then INSERT if not found," which two truly-concurrent requests can both pass before either commits. Data integrity was never at risk (`UNIQUE(user_id, idempotency_key)` correctly allowed only one row), but the error surfaced ungracefully. Fixed in migration `0041`: the `orders` INSERT is now wrapped in its own exception block that catches `unique_violation` and returns the winner's order, exactly like the pre-existing "already exists" path. Re-tested after the fix with 3 concurrent requests: all three returned the identical `orderId`/`reference`/`amountInCents`, no errors.
+- [x] 13.2 Two tabs checking out the same cart: confirm no duplicate order for the same idempotency key. Same underlying mechanism and fix as 13.1 (both are "concurrent requests, same idempotency key") — covered by the same concurrency test.
+- [ ] 13.3 Refresh mid-checkout and mid-payment: confirm the flow resumes the same order. The backend contract this depends on (same idempotency key → same order, verified repeatedly above) is proven; the frontend half (idempotency key persisted in `sessionStorage`, restored on reload) requires a real browser session to exercise end-to-end.
+- [ ] 13.4 Abandon the Wompi Widget: confirm the order stays `PENDING_PAYMENT` and can be retried or left to expire. Requires real interaction with the Wompi Widget in a browser (closing it without completing payment) — not reproducible via API calls alone.
+- [x] 13.5 Approve a payment then close the browser before redirect: confirm the webhook still marks the order `PAID` and it's visible in "Mis compras" on next visit. Confirmed during live sandbox testing — the webhook processed and marked the order `PAID` independent of the browser/widget redirect.
+- [x] 13.6 Send the same webhook event multiple times: confirm one effective change. Replayed one real captured event 5× — exactly one `webhook_events` row throughout, no re-processing.
+- [x] 13.7 Send a webhook with a tampered checksum: confirm no DB change and a `401`/`403`. Verified: `401 {"error":"INVALID_CHECKSUM"}`, logged as `CHECKSUM_INVALID`, no `orders`/`payments` change.
+- [ ] 13.8 Send a webhook with a mismatched amount and a mismatched reference (separately): confirm both are flagged for review and never auto-approved. Partially verified: a reference-only tamper on a replayed real payload was caught by the *duplicate-event* dedupe (same `transaction_id`) before ever reaching reference validation, since `reference` isn't part of this event's checksum-covered properties but `transaction.id` is — so a "fresh" (non-duplicate) event with a tampered reference or amount can't be forged without the real `WOMPI_EVENTS_SECRET`. The validation code path (`amount_in_cents !== orders.total * 100` / reference lookup miss → `REVIEW_REQUIRED`) was reviewed but not exercised against a live fresh event.
+- [x] 13.9 Send `APPROVED` followed by a delayed `DECLINED` for the same transaction: confirm the payment stays `APPROVED`. Verified at the RPC layer: approved a test payment, then called `apply_payment_failed('DECLINED', ...)` on it directly — returned `false`, payment stayed `APPROVED`, order stayed `PAID`.
+- [x] 13.10 Let a `PENDING_PAYMENT` order pass `expires_at` without payment: confirm it transitions to `EXPIRED` and stock is restored. Verified live: backdated a test order's `expires_at`, invoked `expire-orders`, confirmed `EXPIRED` + stock restored + correct `order_status_history` (`PAYMENT_PROCESSING → EXPIRED`, source `SCHEDULED_EXPIRATION`). Also verified the inverse: an already-`PAID` test order with a backdated `expires_at` was correctly skipped (`scanned: 0`) and never expired.
+- [x] 13.11 Retry a `DECLINED` payment: confirm a new attempt/reference is used and the order can reach `PAID`. Verified live end to end (see 6.4).
