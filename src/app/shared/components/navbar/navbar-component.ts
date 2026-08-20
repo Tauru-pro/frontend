@@ -124,6 +124,26 @@ import { formatPrice } from '../../pipes/price.pipe';
                 class="absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg py-1 min-w-[180px] invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 z-50"
               >
                 <a
+                  routerLink="/orders"
+                  class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                    />
+                  </svg>
+                  Mis compras
+                </a>
+                <a
                   routerLink="/profile"
                   class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                 >

@@ -5,7 +5,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   form,
@@ -244,8 +243,8 @@ export default class ShippingRateFormComponent implements OnInit {
 
         this.router.navigate(['/admin/shipping-rates']);
       } catch (err) {
-        const status = (err as HttpErrorResponse)?.status;
-        if (status === 409) {
+        const code = (err as { code?: string })?.code;
+        if (code === '23505') {
           this.errorMsg.set('Ya existe una tarifa para ese origen y destino.');
         } else {
           this.errorMsg.set('Ocurrió un error al guardar. Intenta de nuevo.');

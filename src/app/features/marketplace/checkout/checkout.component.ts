@@ -11,7 +11,6 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 import { CartStore } from '../../../core/store/cart.store';
 import { PickupPointService } from '../../../core/services/pickup-point.service';
 import { PickupPoint } from '../../../core/models/pickup-point.model';
@@ -26,6 +25,8 @@ import {
 } from '../../../shared/components/phone-input/phone-input.component';
 import { PricePipe } from '../../../shared/pipes/price.pipe';
 import { OrderService } from '../../../core/services/order.service';
+import { WompiCheckoutService } from '../../../core/services/wompi-checkout.service';
+import { CheckoutCartItem } from '../../../core/models/order.model';
 
 const STRAW_LABELS: Record<StrawType, string> = {
   CONVENTIONAL: 'Convencional',
@@ -55,6 +56,8 @@ interface CheckoutFormState {
   buyerAddress: string;
   notes: string;
   selectedPickupPointId: string | null;
+  /** Reused across retries/refreshes of the same checkout attempt so create-checkout can dedupe (design.md Decision 3). */
+  idempotencyKey: string | null;
 }
 
 @Component({
@@ -68,6 +71,7 @@ interface CheckoutFormState {
 export default class CheckoutComponent implements OnInit {
   private router = inject(Router);
   private orderService = inject(OrderService);
+  private wompiCheckout = inject(WompiCheckoutService);
   private pickupPointService = inject(PickupPointService);
   private productService = inject(ProductService);
   private authService = inject(AuthService);
@@ -109,6 +113,8 @@ export default class CheckoutComponent implements OnInit {
   shippingCost = signal<number | null>(null);
   shippingCostLoading = signal(false);
 
+  idempotencyKey = signal<string | null>(null);
+
   selectedPickupPoint = computed(() =>
     this.pickupPoints().find((p) => p.id === this.selectedPickupPointId()) ?? null
   );
@@ -134,6 +140,7 @@ export default class CheckoutComponent implements OnInit {
           buyerAddress: this.buyerAddress(),
           notes: this.notes(),
           selectedPickupPointId: this.selectedPickupPointId(),
+          idempotencyKey: this.idempotencyKey(),
         };
         sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(state));
       });
@@ -159,6 +166,7 @@ export default class CheckoutComponent implements OnInit {
         this.buyerCity.set(state.selectedCityId);
       }
       this.pendingRestoredPickupPointId = state.selectedPickupPointId ?? null;
+      this.idempotencyKey.set(state.idempotencyKey ?? null);
       this.currentStep.set(state.currentStep === 2 ? 2 : 1);
       return true;
     } catch {
@@ -230,6 +238,7 @@ export default class CheckoutComponent implements OnInit {
         return;
       }
     }
+    if (!this.idempotencyKey()) this.idempotencyKey.set(crypto.randomUUID());
     this.currentStep.set(2);
   }
 
@@ -282,12 +291,16 @@ export default class CheckoutComponent implements OnInit {
     }
   }
 
+  private cartItems(): CheckoutCartItem[] {
+    return this.cartStore.items().map((i) => ({ productId: i.product.id, quantity: i.quantity }));
+  }
+
   selectPickupPoint(id: string): void {
     this.selectedPickupPointId.set(id);
     this.stepError.set(null);
     this.shippingCost.set(null);
     this.shippingCostLoading.set(true);
-    this.orderService.getShippingEstimate(id).subscribe({
+    this.orderService.getShippingEstimate(id, this.cartItems()).subscribe({
       next: (res) => {
         this.shippingCost.set(res.totalShipping);
         this.shippingCostLoading.set(false);
@@ -304,25 +317,31 @@ export default class CheckoutComponent implements OnInit {
     this.stepError.set(null);
     this.submitting.set(true);
     try {
-      const items = this.cartStore.items().map((i) => ({
-        productId: i.product.id,
-        quantity: i.quantity,
-      }));
-      const order = await firstValueFrom(
-        this.orderService.checkoutFromCart({
-          buyerFullName: this.buyerFullName(),
-          buyerEmail: this.buyerEmail(),
-          buyerPhone: this.buyerPhone() || undefined,
-          buyerCity: this.buyerCity() || undefined,
-          buyerAddress: this.buyerAddress() || undefined,
-          pickupPointId: this.selectedPickupPointId()!,
-          notes: this.notes() || undefined,
-          items,
-        } as any)
-      );
-      this.cartStore.clear();
+      if (!this.idempotencyKey()) this.idempotencyKey.set(crypto.randomUUID());
+
+      const intent = await this.orderService.checkoutFromCart({
+        idempotencyKey: this.idempotencyKey()!,
+        pickupPointId: this.selectedPickupPointId()!,
+        items: this.cartItems(),
+        buyerFullName: this.buyerFullName(),
+        buyerEmail: this.buyerEmail(),
+        buyerPhone: this.buyerPhone() || undefined,
+        buyerAddress: this.buyerAddress() || undefined,
+        notes: this.notes() || undefined,
+      });
+
+      // The order now exists server-side (or was resumed via the idempotency
+      // key) — checkout's job is done. The cart is intentionally NOT cleared
+      // here: only a confirmed PAID outcome on /checkout/result clears it
+      // (proposal §21 — redirect/widget is UX only, never proof of payment).
       if (isPlatformBrowser(this.platformId)) sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      window.location.href = order.paymentUrl;
+
+      await this.wompiCheckout.open(intent, () => {
+        // Widget closed (paid, declined, or simply dismissed) — never trust
+        // this result directly; hand off to the page that confirms the real
+        // outcome via get-payment-status / Realtime.
+        this.router.navigate(['/checkout/result'], { queryParams: { orderId: intent.orderId } });
+      });
     } catch {
       this.stepError.set('No se pudo crear la orden. Por favor intenta de nuevo.');
     } finally {
