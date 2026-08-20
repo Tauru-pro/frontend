@@ -13,6 +13,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'seller/products/bull/:bullId/edit', renderMode: RenderMode.Server },
   { path: 'seller/products/:id/edit', renderMode: RenderMode.Server },
   { path: 'seller/inventory/:itemId', renderMode: RenderMode.Server },
+  { path: 'seller/orders/:id', renderMode: RenderMode.Server },
   { path: 'admin/inventory', renderMode: RenderMode.Server },
   { path: '**', renderMode: RenderMode.Server },
 ];
