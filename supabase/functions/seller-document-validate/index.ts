@@ -124,8 +124,20 @@ Deno.serve(async (req) => {
           .from('seller_profiles')
           .update({ status: 'ACTIVE' })
           .eq('id', document.seller_id);
-        if (verifyErr) return json({ error: verifyErr.message }, 500);
-        justVerified = true;
+        if (verifyErr) {
+          // enforce_segment_before_verification (seller-dashboard-commissions-settlements,
+          // migration 0049) rejects this exact transition when the seller has no
+          // segment assigned yet. That is not a failure of the document decision
+          // that was already committed above — it just means verification stays
+          // PENDING until an admin assigns a segment (which itself completes
+          // verification, see assign_seller_segment). Any other error here is
+          // unexpected and still surfaces as a 500.
+          if (!verifyErr.message.includes('SELLER_SEGMENT_REQUIRED')) {
+            return json({ error: verifyErr.message }, 500);
+          }
+        } else {
+          justVerified = true;
+        }
       }
     }
   }

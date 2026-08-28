@@ -3,7 +3,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormField, form, required, submit } from '@angular/forms/signals';
 import { UserService } from '../../../core/services/user.service';
 import { SellerDocumentService } from '../../../core/services/seller-document.service';
+import { SellerSegmentService } from '../../../core/services/seller-segment.service';
 import { SellerProfile, SellerStatus } from '../../../core/models/user.model';
+import { SellerSegment } from '../../../core/models/seller-segment.model';
+import { firstValueFrom } from 'rxjs';
 import {
   SellerDocument,
   SellerDocumentStatus,
@@ -52,6 +55,32 @@ import {
           <span [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + sellerStatusClass(s.status)">
             {{ sellerStatusLabel(s.status) }}
           </span>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wider">Segmento comercial</h3>
+          <p class="text-xs text-gray-400">
+            El segmento determina la comisión de la plataforma para este vendedor. Es obligatorio antes de verificarlo.
+          </p>
+          <div class="flex items-center gap-3">
+            <select
+              (change)="selectedSegmentId.set($any($event.target).value)"
+              class="flex-1 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all bg-white"
+            >
+              <option value="" [selected]="!selectedSegmentId()">Sin asignar</option>
+              @for (seg of segments(); track seg.id) {
+                <option [value]="seg.id" [selected]="seg.id === selectedSegmentId()">{{ seg.name }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              (click)="assignSegment(s.id)"
+              [disabled]="assigningSegment() || !selectedSegmentId() || selectedSegmentId() === (s.segmentId ?? '')"
+              class="btn-primary px-4 py-2.5 text-sm disabled:opacity-60"
+            >
+              @if (assigningSegment()) { Guardando... } @else { Asignar }
+            </button>
+          </div>
         </div>
 
         @if (actionError()) {
@@ -167,12 +196,16 @@ export default class SellerReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private userService = inject(UserService);
   private documentService = inject(SellerDocumentService);
+  private segmentService = inject(SellerSegmentService);
 
   protected readonly labels = SELLER_DOCUMENT_LABELS;
   protected readonly docTypes: SellerDocumentType[] = ['RUT', 'LEGAL_REP'];
 
   seller = signal<SellerProfile | null>(null);
   documents = signal<SellerDocument[]>([]);
+  segments = signal<SellerSegment[]>([]);
+  selectedSegmentId = signal<string>('');
+  assigningSegment = signal(false);
   loading = signal(true);
   loadError = signal<string | null>(null);
   actionError = signal<string | null>(null);
@@ -191,7 +224,32 @@ export default class SellerReviewComponent implements OnInit {
       this.loading.set(false);
       return;
     }
+    try {
+      this.segments.set(await firstValueFrom(this.segmentService.getAll()));
+    } catch (err) {
+      console.error('Failed to load seller_segments:', err);
+      this.actionError.set(
+        `No se pudieron cargar los segmentos disponibles: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
     await this.load(id);
+  }
+
+  async assignSegment(sellerId: string): Promise<void> {
+    const segmentId = this.selectedSegmentId();
+    if (!segmentId) return;
+    this.assigningSegment.set(true);
+    this.actionError.set(null);
+    try {
+      await this.segmentService.assignSellerSegment(sellerId, segmentId);
+      await this.load(sellerId);
+    } catch (err) {
+      console.error('assignSegment failed:', err);
+      const detail = err instanceof Error ? err.message : String(err);
+      this.actionError.set(`No se pudo asignar el segmento: ${detail}`);
+    } finally {
+      this.assigningSegment.set(false);
+    }
   }
 
   private async load(id: string): Promise<void> {
@@ -204,6 +262,7 @@ export default class SellerReviewComponent implements OnInit {
       ]);
       this.seller.set(seller);
       this.documents.set(documents);
+      this.selectedSegmentId.set(seller.segmentId ?? '');
     } catch {
       this.loadError.set('No se pudo cargar el vendedor. Intenta de nuevo.');
     } finally {

@@ -31,6 +31,7 @@ interface SellerProfileWithOwnerRow {
   logo_key: string | null;
   address: string | null;
   status: SellerProfile['status'];
+  segment_id: string | null;
   profiles: { email: string; created_at: string } | null;
 }
 
@@ -43,6 +44,7 @@ function mapSellerProfileWithOwnerRow(row: SellerProfileWithOwnerRow): SellerPro
     logoKey: row.logo_key ?? '',
     address: row.address ?? undefined,
     status: row.status,
+    segmentId: row.segment_id,
     email: row.profiles?.email,
     createdAt: row.profiles?.created_at,
   };

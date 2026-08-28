@@ -39,6 +39,7 @@ export interface SellerProfile {
   city?: City;
   address?: string;
   status?: SellerStatus;
+  segmentId?: string | null;
   email?: string;
   createdAt?: string;
 }

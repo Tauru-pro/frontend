@@ -16,6 +16,7 @@ import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { UserStore } from '../../core/store/user.store';
 import { ProductService } from '../../core/services/product.service';
 import { SellerDocumentService } from '../../core/services/seller-document.service';
+import { SellerEarningService } from '../../core/services/seller-earning.service';
 
 @Component({
   selector: 'app-backoffice-layout',
@@ -39,6 +40,10 @@ export class BackofficeLayoutComponent {
 
   private pendingDocsCount = isPlatformBrowser(inject(PLATFORM_ID))
     ? toSignal(from(inject(SellerDocumentService).getPendingReviewCount()), { initialValue: 0 })
+    : signal(0);
+
+  private pendingCommissionReviewCount = isPlatformBrowser(inject(PLATFORM_ID))
+    ? toSignal(from(inject(SellerEarningService).getFlaggedForReviewCount()), { initialValue: 0 })
     : signal(0);
 
   private svg(raw: string): SafeHtml {
@@ -121,9 +126,44 @@ export class BackofficeLayoutComponent {
         `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`,
       ),
     },
+    {
+      label: 'Segmentos de Vendedor',
+      path: '/admin/seller-segments',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>`,
+      ),
+    },
+    {
+      label: 'Comisiones',
+      path: '/admin/commission-rules',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+      ),
+    },
+    {
+      label: 'Comisiones Pendientes',
+      path: '/admin/commission-review',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+      ),
+    },
+    {
+      label: 'Liquidaciones',
+      path: '/admin/settlements',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>`,
+      ),
+    },
   ];
 
   private readonly sellerNavItems: NavItem[] = [
+    {
+      label: 'Panel financiero',
+      path: '/seller/dashboard',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`,
+      ),
+    },
     {
       label: 'Mis Productos',
       path: '/seller/products',
@@ -153,6 +193,13 @@ export class BackofficeLayoutComponent {
       ),
     },
     {
+      label: 'Liquidaciones',
+      path: '/seller/settlements',
+      icon: this.svg(
+        `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>`,
+      ),
+    },
+    {
       label: 'Configuración',
       path: '/seller/settings',
       icon: this.svg(
@@ -161,12 +208,25 @@ export class BackofficeLayoutComponent {
     },
   ];
 
+  // Explicit per-role branches, empty otherwise — never fall through to the
+  // admin list just because the role isn't known yet. Before hydration (SSR
+  // has no session, so userStore.user() is null) or while loadUser() is still
+  // in flight client-side, `role` is undefined; showing adminNavItems in that
+  // gap briefly exposed admin-only nav items to a signed-in SELLER on reload.
   navItems = computed<NavItem[]>(() => {
-    if (this.userStore.user()?.role === 'SELLER') return this.sellerNavItems;
-    return this.adminNavItems.map((item) => {
-      if (item.path === '/admin/products') return { ...item, badge: this.pendingCount() };
-      if (item.path === '/admin/sellers') return { ...item, badge: this.pendingDocsCount() };
-      return item;
-    });
+    const role = this.userStore.user()?.role;
+
+    if (role === 'SELLER') return this.sellerNavItems;
+
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+      return this.adminNavItems.map((item) => {
+        if (item.path === '/admin/products') return { ...item, badge: this.pendingCount() };
+        if (item.path === '/admin/sellers') return { ...item, badge: this.pendingDocsCount() };
+        if (item.path === '/admin/commission-review') return { ...item, badge: this.pendingCommissionReviewCount() };
+        return item;
+      });
+    }
+
+    return [];
   });
 }

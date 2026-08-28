@@ -22,5 +22,9 @@ export enum RoutesApp {
     onboardingSurvey = 'onboarding-survey',
     profile = 'profile',
     becomeSeller = 'become-seller',
+    sellerSegments = 'seller-segments',
+    commissionRules = 'commission-rules',
+    commissionReview = 'commission-review',
+    settlements = 'settlements',
     root = '',
 }

@@ -15,5 +15,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'seller/inventory/:itemId', renderMode: RenderMode.Server },
   { path: 'seller/orders/:id', renderMode: RenderMode.Server },
   { path: 'admin/inventory', renderMode: RenderMode.Server },
+  { path: 'admin/seller-segments/:id/edit', renderMode: RenderMode.Server },
+  { path: 'admin/seller-segments/:id/sellers', renderMode: RenderMode.Server },
+  { path: 'admin/commission-rules/:segmentId/new', renderMode: RenderMode.Server },
+  { path: 'admin/settlements/:id', renderMode: RenderMode.Server },
+  { path: 'seller/settlements/:id', renderMode: RenderMode.Server },
   { path: '**', renderMode: RenderMode.Server },
 ];

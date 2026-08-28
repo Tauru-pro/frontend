@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 
 export default <Routes>[
+  { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component') },
+  { path: 'settlements', loadComponent: () => import('./settlements/settlements-list.component') },
+  { path: 'settlements/:id', loadComponent: () => import('./settlements/settlement-detail.component') },
   { path: 'products', loadComponent: () => import('./products/product-list.component') },
   { path: 'products/new', loadComponent: () => import('./products/product-form.component') },
   {
@@ -23,5 +26,5 @@ export default <Routes>[
     loadComponent: () => import('./legal-documents/seller-legal-documents.component'),
   },
   { path: 'settings', loadComponent: () => import('./settings/seller-settings.component') },
-  { path: '', redirectTo: 'products', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];
